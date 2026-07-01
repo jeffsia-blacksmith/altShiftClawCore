@@ -1,0 +1,65 @@
+name: Publish Worker Package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build package zip
+        run: |
+          mkdir -p _site
+          cd "$(git rev-parse --show-toplevel)"
+
+          # Create the zip package with the same structure as the original
+          zip -r _site/github-claw-worker-package.zip \
+            GitHubClawCore/ \
+            Terraform/
+
+          # Generate manifest
+          REVISION="$(git rev-parse HEAD)"
+          VERSION="$(jq -r '.version' github-claw-worker-package.json)"
+          PACKAGE_URL="https://jeffsia-blacksmith.github.io/altShiftClawCore/github-claw-worker-package.zip"
+
+          jq -n \
+            --arg version "$VERSION" \
+            --arg revision "$REVISION" \
+            --arg package_url "$PACKAGE_URL" \
+            --arg published_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              version: $version,
+              revision: $revision,
+              package_url: $package_url,
+              published_at: $published_at
+            }' > _site/github-claw-worker-package.json
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

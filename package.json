@@ -1,0 +1,14 @@
+{
+  "name": "altshift-claw-core",
+  "version": "0.2.21",
+  "private": true,
+  "type": "module",
+  "description": "altShiftClawCore worker package — editable src/ + esbuild rebuild to GitHubClawCore/index.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs --check"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}
