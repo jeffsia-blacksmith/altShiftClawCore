@@ -11643,7 +11643,7 @@ function To(e) {
     scheduleStorage: { database: fh(t, "SCHEDULES_DB") },
     scheduleTimeUnderstanding: { model: nc, ai: sc(t, "AI") },
     workflowInputInference: { model: nc, ai: sc(t, "AI") },
-    version: "0.2.21",
+    version: "0.2.23",
   };
 }
 var oc = async (e, t) => {
@@ -14478,6 +14478,7 @@ function fy(e) {
     "/disable     \u505C\u7528\u5C0F\u9F8D\u8766(\u9084\u662F\u6703\u6536\u96C6\u5167\u5BB9)",
     "/skills      \u5B89\u88DD\u5C0F\u9F8D\u8766\u6280\u80FD",
     "/templates   \u5B89\u88DD\u5C0F\u9F8D\u8766\u7BC4\u672C",
+    "/llm         \u8A2D\u5B9A\u5C0F\u9F8D\u8766 AI \u4F9B\u61C9\u5546\u8207\u6A21\u578B",
   ].map((r) => O(r)).join(`
 `);
 }
@@ -19900,6 +19901,397 @@ async function nu(e, t, r, n, s) {
   return (await e.reply(n, s)).message_id;
 }
 ar();
+// ╔══════════════════════════════════════════════════════════════════════════════
+// ║ [MODULE llm] /llm 指令 — AI 供應商與模型設定流程  —  BUSINESS（自行新增）
+// ║ 流程：/llm → 供應商選單 → （沿用既有 Key / 輸入新 Key）→ 模型選單（含自訂輸入）
+// ║ → 寫入 issue-N 分支的 .pi/settings.json（issue-1.yml 執行任務時讀取的真正來源）
+// ║ Key 經 repository_dispatch(update-llm-secret) 交由 GitHub Actions 寫入 repo secret，
+// ║ 使用者輸入 Key 的訊息會立即刪除。供應商/模型目錄讀自 templates/default/githubclaw.json。
+// ╚══════════════════════════════════════════════════════════════════════════════
+var llmStatePrefix = "llm-setup";
+function llmStateKey(e) {
+  return `${llmStatePrefix}:${e}`;
+}
+async function llmGetState(e, t) {
+  let r = await e.get(llmStateKey(t));
+  return r !== null ? JSON.parse(r) : null;
+}
+async function llmSetState(e, t, r) {
+  await e.put(llmStateKey(t), JSON.stringify(r), { expirationTtl: 900 });
+}
+async function llmClearState(e, t) {
+  await e.delete(llmStateKey(t));
+}
+async function llmLoadCatalog(e, t, r) {
+  let n = await Wp(e, t, r, void 0, "templates/default/githubclaw.json");
+  if (!n.content) return null;
+  try {
+    let s = JSON.parse(n.content);
+    return Array.isArray(s.providers) && s.providers.length > 0 ? s : null;
+  } catch {
+    return null;
+  }
+}
+function llmFindProvider(e, t) {
+  return e.providers.find((r) => r.id === t) ?? null;
+}
+async function llmReadSettings(e, t, r, n) {
+  let s = await Wp(e, t, r, `issue-${n}`, ".pi/settings.json");
+  if (!s.content) return {};
+  try {
+    let o = JSON.parse(s.content);
+    return o && typeof o == "object" ? o : {};
+  } catch {
+    return {};
+  }
+}
+async function llmWriteSettings(e, t, r, n, s, o) {
+  let i = `issue-${n}`,
+    a = await llmReadSettings(e, t, r, n),
+    l = { ...a, defaultProvider: s, defaultModel: o };
+  await Jy(
+    e,
+    t,
+    r,
+    i,
+    ".pi/settings.json",
+    JSON.stringify(l, null, 2) + `
+`,
+    `chore: set LLM provider ${s} / model ${o} via /llm`,
+  );
+}
+async function llmSecretExists(e, t, r, n) {
+  try {
+    return (await e.rest.actions.getRepoSecret({ owner: t, repo: r, secret_name: n }), !0);
+  } catch (s) {
+    if (yr(s)) return !1;
+    throw s;
+  }
+}
+async function llmDispatchSecretUpdate(e, t, r, n, s, o) {
+  await e.rest.repos.createDispatchEvent({
+    owner: t,
+    repo: r,
+    event_type: "update-llm-secret",
+    client_payload: { provider: n, secret_name: s, api_key: o },
+  });
+}
+async function llmValidateModel(e, t, r) {
+  try {
+    switch (e) {
+      case "openai": {
+        let n = await fetch(`https://api.openai.com/v1/models/${encodeURIComponent(r)}`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        return { ok: n.ok, skipped: !1 };
+      }
+      case "anthropic": {
+        let n = await fetch(`https://api.anthropic.com/v1/models/${encodeURIComponent(r)}`, {
+          headers: { "x-api-key": t, "anthropic-version": "2023-06-01" },
+        });
+        return { ok: n.ok, skipped: !1 };
+      }
+      case "groq": {
+        let n = await fetch(`https://api.groq.com/openai/v1/models/${encodeURIComponent(r)}`, {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        return { ok: n.ok, skipped: !1 };
+      }
+      case "google": {
+        let n = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(r)}?key=${encodeURIComponent(t)}`,
+        );
+        return { ok: n.ok, skipped: !1 };
+      }
+      case "openrouter": {
+        let n = await fetch("https://openrouter.ai/api/v1/models");
+        if (!n.ok) return { ok: !0, skipped: !0 };
+        let s = await n.json(),
+          o = Array.isArray(s?.data) && s.data.some((i) => i?.id === r);
+        return { ok: o, skipped: !1 };
+      }
+      default:
+        return { ok: !0, skipped: !0 };
+    }
+  } catch {
+    return { ok: !0, skipped: !0 };
+  }
+}
+function llmProviderKeyboard(e) {
+  let t = new F();
+  for (let r of e.providers) (t.text(`\u{1F916} ${r.label}`, `llm_provider:${r.id}`), t.row());
+  return (t.text("❌ 取消", "llm_cancel:0"), t);
+}
+function llmKeyActionKeyboard() {
+  return new F()
+    .text("♻️ 沿用已設定的 Key", "llm_key:reuse")
+    .row()
+    .text("\u{1F511} 輸入新的 API Key", "llm_key:new")
+    .row()
+    .text("❌ 取消", "llm_cancel:0");
+}
+function llmModelKeyboard(e) {
+  let t = new F();
+  for (let r = 0; r < e.length; r++) (t.text(e[r].label ?? e[r].value, `llm_model:${r}`), t.row());
+  return (
+    t.text("✍️ 自訂輸入模型名稱", "llm_model_custom:0"),
+    t.row(),
+    t.text("❌ 取消", "llm_cancel:0"),
+    t
+  );
+}
+async function llmShowModelMenu(e, t, r) {
+  let n = r.provider,
+    s = r.models ?? [],
+    o = `\u{1F9E0} 供應商：${n}
+請選擇要使用的模型，或選「自訂輸入」：`,
+    i = { reply_markup: llmModelKeyboard(s) };
+  r.promptMessageId
+    ? await e.api
+        .editMessageText(t, r.promptMessageId, o, i)
+        .catch(async () => {
+          let a = await e.reply(o, i);
+          await llmSetState(e.services.store, t, { ...r, promptMessageId: a.message_id });
+        })
+    : await e.reply(o, i).then(async (a) => {
+        await llmSetState(e.services.store, t, { ...r, promptMessageId: a.message_id });
+      });
+}
+async function llmFinish(e, t, r, n) {
+  let { octokit: s, store: o, config: i } = e.services,
+    { owner: a, repo: l } = i.github;
+  try {
+    await llmWriteSettings(s, a, l, r.issueNumber, r.provider, n);
+  } catch (d) {
+    let m = d instanceof Error ? d.message : String(d);
+    await e.reply(
+      `❌ 寫入 .pi/settings.json 失敗：${m}
+請確認 issue-${r.issueNumber} 分支存在後重試 /llm。`,
+    );
+    return;
+  }
+  await llmClearState(o, t);
+  let c = `✅ 已設定 #${r.issueNumber} 的 AI 供應商：${r.provider}
+\u{1F9E0} 模型：${n}${r.keyDispatched ? `
+\u{1F510} API Key 已送往 GitHub Actions 寫入 repo secret（${r.secretName}），約需數十秒生效。` : ""}`;
+  r.promptMessageId
+    ? await e.api.editMessageText(t, r.promptMessageId, c).catch(() => e.reply(c))
+    : await e.reply(c);
+}
+var llmComposer = new se();
+llmComposer.command("llm", async (e) => {
+  let { store: t, octokit: r, config: n } = e.services,
+    s = e.chat?.id;
+  if (!s) return;
+  let { owner: o, repo: i } = n.github,
+    a = await Ge(t, s);
+  if (!a) {
+    await e.reply(
+      "⚠️ 尚未選擇小龍蝦，請先用 /list 選擇。（LLM 設定是每隻小龍蝦獨立的）",
+    );
+    return;
+  }
+  let l;
+  try {
+    l = await llmLoadCatalog(r, o, i);
+  } catch (m) {
+    let w = m instanceof Error ? m.message : String(m);
+    await e.reply(`❌ 讀取供應商目錄失敗：${w}`);
+    return;
+  }
+  if (!l) {
+    await e.reply(
+      "❌ 找不到供應商目錄（templates/default/githubclaw.json），請先確認範本已同步。",
+    );
+    return;
+  }
+  let c = await llmReadSettings(r, o, i, a).catch(() => ({})),
+    d = [
+      `\u{1F9E0} #${a} 目前的 LLM 設定：`,
+      `供應商：${c.defaultProvider ?? "（未設定）"}`,
+      `模型：${c.defaultModel ?? "（未設定）"}`,
+      "",
+      "請選擇新的 AI 供應商：",
+    ].join(`
+`);
+  await llmSetState(t, s, { step: "selecting_provider", issueNumber: a });
+  await e.reply(d, { reply_markup: llmProviderKeyboard(l) });
+});
+llmComposer.callbackQuery(/^llm_provider:/, async (e) => {
+  let { store: t, octokit: r, config: n } = e.services,
+    s = e.chat?.id;
+  if (!s) return;
+  let o = await llmGetState(t, s);
+  if (!o) {
+    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    return;
+  }
+  let i = e.callbackQuery.data.slice("llm_provider:".length),
+    { owner: a, repo: l } = n.github,
+    c = await llmLoadCatalog(r, a, l).catch(() => null),
+    d = c ? llmFindProvider(c, i) : null;
+  if (!d) {
+    await e.answerCallbackQuery("⚠️ 無效的供應商。");
+    return;
+  }
+  await e.answerCallbackQuery();
+  let m = e.callbackQuery.message?.message_id ?? o.promptMessageId,
+    w = {
+      ...o,
+      provider: d.id,
+      secretName: d.secretName,
+      models: (d.models ?? []).map((_) => ({ value: _.value, label: _.label })),
+      promptMessageId: m,
+    },
+    y = await llmSecretExists(r, a, l, d.secretName).catch(() => !1);
+  if (y) {
+    ((w.step = "choosing_key_action"), await llmSetState(t, s, w));
+    let _ = `\u{1F511} 偵測到 repo 已有 secret：${d.secretName}
+要沿用現有的 Key，還是輸入新的？`,
+      I = { reply_markup: llmKeyActionKeyboard() };
+    m
+      ? await e.api.editMessageText(s, m, _, I).catch(() => e.reply(_, I))
+      : await e.reply(_, I);
+  } else {
+    ((w.step = "awaiting_llm_key"), await llmSetState(t, s, w));
+    let _ = `\u{1F510} 請直接回覆你的 ${d.label} API Key。
+為了安全，你的 Key 訊息會在讀取後立即刪除，並透過 GitHub Actions 寫入 repo secret（${d.secretName}），不會留在對話中。`;
+    m
+      ? await e.api.editMessageText(s, m, _).catch(() => e.reply(_))
+      : await e.reply(_);
+  }
+});
+llmComposer.callbackQuery(/^llm_key:/, async (e) => {
+  let { store: t } = e.services,
+    r = e.chat?.id;
+  if (!r) return;
+  let n = await llmGetState(t, r);
+  if (!n || n.step !== "choosing_key_action") {
+    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    return;
+  }
+  await e.answerCallbackQuery();
+  let s = e.callbackQuery.data.slice("llm_key:".length),
+    o = e.callbackQuery.message?.message_id ?? n.promptMessageId;
+  if (s === "reuse") {
+    let i = { ...n, step: "selecting_model", promptMessageId: o };
+    (await llmSetState(t, r, i), await llmShowModelMenu(e, r, i));
+  } else {
+    let i = { ...n, step: "awaiting_llm_key", promptMessageId: o };
+    await llmSetState(t, r, i);
+    let a = `\u{1F510} 請直接回覆新的 API Key。
+訊息會在讀取後立即刪除，並透過 GitHub Actions 寫入 repo secret（${n.secretName}）。`;
+    o
+      ? await e.api.editMessageText(r, o, a).catch(() => e.reply(a))
+      : await e.reply(a);
+  }
+});
+llmComposer.callbackQuery(/^llm_model:/, async (e) => {
+  let { store: t } = e.services,
+    r = e.chat?.id;
+  if (!r) return;
+  let n = await llmGetState(t, r);
+  if (!n || n.step !== "selecting_model") {
+    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    return;
+  }
+  let s = Number(e.callbackQuery.data.slice("llm_model:".length)),
+    o = Array.isArray(n.models) ? n.models[s] : null;
+  if (!o) {
+    await e.answerCallbackQuery("⚠️ 無效的模型選項。");
+    return;
+  }
+  (await e.answerCallbackQuery(), await llmFinish(e, r, n, o.value));
+});
+llmComposer.callbackQuery(/^llm_model_custom:/, async (e) => {
+  let { store: t } = e.services,
+    r = e.chat?.id;
+  if (!r) return;
+  let n = await llmGetState(t, r);
+  if (!n || n.step !== "selecting_model") {
+    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    return;
+  }
+  await e.answerCallbackQuery();
+  let s = e.callbackQuery.message?.message_id ?? n.promptMessageId,
+    o = { ...n, step: "awaiting_llm_model_input", promptMessageId: s };
+  await llmSetState(t, r, o);
+  let i = `✍️ 請直接回覆模型名稱（例如 ${n.models?.[0]?.value ?? "gpt-5-mini"}）：`;
+  s
+    ? await e.api.editMessageText(r, s, i).catch(() => e.reply(i))
+    : await e.reply(i);
+});
+llmComposer.callbackQuery(/^llm_cancel:/, async (e) => {
+  let { store: t } = e.services,
+    r = e.chat?.id;
+  if (!r) return;
+  (await llmClearState(t, r), await e.answerCallbackQuery("已取消"));
+  let n = e.callbackQuery.message?.message_id;
+  n &&
+    (await e.api
+      .editMessageText(r, n, "❌ 已取消 LLM 設定。")
+      .catch(() => {}));
+});
+llmComposer.on("message:text", async (e, t) => {
+  let r = e.message.text;
+  if (!r || r.startsWith("/")) {
+    await t();
+    return;
+  }
+  let { store: n, octokit: s, config: o } = e.services,
+    i = e.chat?.id;
+  if (!i) {
+    await t();
+    return;
+  }
+  let a = await llmGetState(n, i);
+  if (!a || (a.step !== "awaiting_llm_key" && a.step !== "awaiting_llm_model_input")) {
+    await t();
+    return;
+  }
+  if (a.step === "awaiting_llm_key") {
+    let l = r.trim(),
+      c = e.message.message_id;
+    try {
+      await e.api.deleteMessage(i, c);
+    } catch (m) {
+      console.warn("[/llm] 刪除 API Key 訊息失敗", {
+        chatId: i,
+        error: m instanceof Error ? m.message : String(m),
+      });
+    }
+    if (!l) {
+      await e.reply("⚠️ Key 不能為空，請重新輸入。");
+      return;
+    }
+    let { owner: d, repo: m } = o.github;
+    try {
+      await llmDispatchSecretUpdate(s, d, m, a.provider, a.secretName, l);
+    } catch (y) {
+      let _ = y instanceof Error ? y.message : String(y);
+      await e.reply(`❌ 觸發 secret 更新失敗：${_}`);
+      return;
+    }
+    let w = { ...a, step: "selecting_model", apiKey: l, keyDispatched: !0 };
+    (await llmSetState(n, i, w), await llmShowModelMenu(e, i, w));
+    return;
+  }
+  let l = r.trim();
+  if (!l) {
+    await e.reply("⚠️ 模型名稱不能為空，請重新輸入。");
+    return;
+  }
+  if (a.apiKey) {
+    let c = await llmValidateModel(a.provider, a.apiKey, l);
+    if (!c.ok) {
+      await e.reply(
+        `❌ 驗證失敗：供應商 ${a.provider} 找不到模型「${l}」，請確認名稱後重新輸入。`,
+      );
+      return;
+    }
+  }
+  await llmFinish(e, i, a, l);
+});
 var su = new se();
 su.on("message:text", async (e) => {
   let t = e.message.text;
@@ -20013,6 +20405,7 @@ function Of(e, t, r) {
     n.use(kt),
     n.use(Ri),
     n.use(ln),
+    n.use(llmComposer),
     n.use(su),
     n.catch((s) => console.error("[Bot Error]", s.error)),
     n
