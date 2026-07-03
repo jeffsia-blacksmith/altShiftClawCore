@@ -25,6 +25,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Bundle management workflows from Toolkit
+        run: |
+          set -euo pipefail
+          # 對齊官方 zip 結構：套件內含 actions/（實例的管理 workflows）。
+          # deploy-lobster-burger.yml 每次部署/更新核心時會把 actions/. 覆蓋進
+          # 實例的 .github/workflows/ 並 commit——這就是既有實例拿到 workflow
+          # 更新（新指令菜單、update-llm-secret.yml 等）的唯一自動通道。
+          # 單一事實來源在 altShiftClawToolkit/installer/workflows，發佈時拉取。
+          git clone --depth 1 https://github.com/jeffsia-blacksmith/altShiftClawToolkit.git /tmp/toolkit
+          rm -rf actions
+          mkdir -p actions
+          cp -R /tmp/toolkit/installer/workflows/. actions/
+
       - name: Build package zip
         run: |
           mkdir -p _site
@@ -33,7 +46,8 @@ jobs:
           # Create the zip package with the same structure as the original
           zip -r _site/github-claw-worker-package.zip \
             GitHubClawCore/ \
-            Terraform/
+            Terraform/ \
+            actions/
 
           # Generate manifest
           REVISION="$(git rev-parse HEAD)"
