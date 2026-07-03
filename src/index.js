@@ -19969,6 +19969,27 @@ async function llmSecretExists(e, t, r, n) {
     throw s;
   }
 }
+function llmValidateKeyFormat(e, t) {
+  let r = t.trim();
+  switch (e) {
+    case "google":
+      if (!r.startsWith("AIzaSy")) return { ok: !1, error: "Gemini API Key 格式不正確，通常應以 'AIzaSy' 開頭。" };
+      break;
+    case "anthropic":
+      if (!r.startsWith("sk-ant-")) return { ok: !1, error: "Anthropic Claude API Key 格式不正確，通常應以 'sk-ant-' 開頭。" };
+      break;
+    case "openai":
+      if (!r.startsWith("sk-")) return { ok: !1, error: "OpenAI API Key 格式不正確，通常應以 'sk-' 開頭。" };
+      break;
+    case "groq":
+      if (!r.startsWith("gsk_")) return { ok: !1, error: "Groq API Key 格式不正確，通常應以 'gsk_' 開頭。" };
+      break;
+    case "openrouter":
+      if (!r.startsWith("sk-or-v1-")) return { ok: !1, error: "OpenRouter API Key 格式不正確，通常應以 'sk-or-v1-' 開頭。" };
+      break;
+  }
+  return { ok: !0 };
+}
 async function llmDispatchSecretUpdate(e, t, r, n, s, o) {
   await e.rest.repos.createDispatchEvent({
     owner: t,
@@ -20263,6 +20284,11 @@ llmComposer.on("message:text", async (e, t) => {
     }
     if (!l) {
       await e.reply("⚠️ Key 不能為空，請重新輸入。");
+      return;
+    }
+    let formatCheck = llmValidateKeyFormat(a.provider, l);
+    if (!formatCheck.ok) {
+      await e.reply(`⚠️ ${formatCheck.error}`);
       return;
     }
     let { owner: d, repo: m } = o.github;
