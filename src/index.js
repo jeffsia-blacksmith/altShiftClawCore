@@ -5958,7 +5958,7 @@ async function Zo(e, t, r, n, s) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Xr] GitHub REST client wrapper  —  BUSINESS
-// ║ GitHub API 呼叫封裝（User-Agent: GitHubClawCore, X-GitHub-Api-Version）
+// ║ GitHub API 呼叫封裝（User-Agent: altShiftClawCore, X-GitHub-Api-Version）
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Xr = Oe(() => {
   "use strict";
@@ -5968,7 +5968,7 @@ function $y(e) {
   let t = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": e.apiVersion || "2022-11-28",
-    "User-Agent": e.userAgent || "GitHubClawCore",
+    "User-Agent": e.userAgent || "altShiftClawCore",
   };
   return (e.token?.trim() && (t.Authorization = `Bearer ${e.token.trim()}`), t);
 }
@@ -11637,7 +11637,7 @@ function To(e) {
           ? e.GITHUB_API_BASE_URL.trim()
           : "https://api.github.com",
       apiVersion: "2022-11-28",
-      userAgent: "GitHubClawCore/1.0.0",
+      userAgent: "altShiftClawCore/1.0.0",
       webhookPath: "/github/webhook",
     },
     scheduleStorage: { database: fh(t, "SCHEDULES_DB") },
@@ -14491,7 +14491,7 @@ Ko.command("help", async (e) => {
 });
 Ko.command("version", async (e) => {
   let { config: t } = e.services;
-  await e.reply(`\u{1F99E} GitHubClawCore v${t.version}`);
+  await e.reply(`\u{1F99E} altShiftClawCore v${t.version}`);
 });
 Ie();
 Ve();
@@ -21033,7 +21033,7 @@ function uu(e) {
       );
 }
 function cu(e, t, r = {}) {
-  console.log(`[GitHubClawCore] Telegram relay decision
+  console.log(`[altShiftClawCore] Telegram relay decision
 ${JSON.stringify({ issueNumber: e?.number ?? null, commentId: t?.id ?? null, ...r }, null, 2)}`);
 }
 function Zs(e, t, r, n = !1) {

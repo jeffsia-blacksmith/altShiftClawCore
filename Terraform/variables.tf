@@ -15,12 +15,12 @@ variable "workers_dev_subdomain" {
 }
 
 variable "github_owner" {
-  description = "GitHub repository owner used by GithubClawCoreWorker."
+  description = "GitHub repository owner used by altShiftClawCoreWorker."
   type        = string
 }
 
 variable "github_repo" {
-  description = "GitHub repository name used by GithubClawCoreWorker."
+  description = "GitHub repository name used by altShiftClawCoreWorker."
   type        = string
 }
 
@@ -31,35 +31,35 @@ variable "github_claw_worker_name_override" {
 }
 
 variable "profile_name" {
-  description = "Profile display name used by GithubClawCoreWorker."
+  description = "Profile display name used by altShiftClawCoreWorker."
   type        = string
 }
 
 variable "personality" {
-  description = "Profile personality used by GithubClawCoreWorker."
+  description = "Profile personality used by altShiftClawCoreWorker."
   type        = string
 }
 
 variable "claw_sys_github_token" {
-  description = "System GitHub token used by GithubClawCoreWorker."
+  description = "System GitHub token used by altShiftClawCoreWorker."
   type        = string
   sensitive   = true
 }
 
 variable "github_webhook_secret" {
-  description = "GitHub webhook secret used by GithubClawCoreWorker."
+  description = "GitHub webhook secret used by altShiftClawCoreWorker."
   type        = string
   sensitive   = true
 }
 
 variable "telegram_bot_token" {
-  description = "Telegram bot token used by GithubClawCoreWorker."
+  description = "Telegram bot token used by altShiftClawCoreWorker."
   type        = string
   sensitive   = true
 }
 
 variable "telegram_webhook_secret" {
-  description = "Telegram webhook secret used by GithubClawCoreWorker."
+  description = "Telegram webhook secret used by altShiftClawCoreWorker."
   type        = string
   sensitive   = true
 }
@@ -103,7 +103,7 @@ variable "debug_mode" {
 }
 
 variable "init_github_claw" {
-  description = "Whether to initialize GithubClaw bootstrap flow."
+  description = "Whether to initialize altShiftClaw bootstrap flow."
   type        = bool
   default     = true
 }
