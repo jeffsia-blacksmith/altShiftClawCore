@@ -6174,8 +6174,8 @@ var Op,
       (jy = new Map(Op.map((e) => [e.key, e]))));
     ((el = Hy({ excludeKeys: By }).map((e) => ({ ...e, label: Ky(e.key) }))),
       (uv = new Set(el.map((e) => e.key))),
-      (Np = "duotify"),
-      (Gp = "GitHubClawToolkit"),
+      (Np = "jeffsia-blacksmith"),
+      (Gp = "altShiftClawToolkit"),
       (Fp = "main"),
       (zy = 5 * 6e4),
       (Wt = null));
@@ -11643,7 +11643,7 @@ function To(e) {
     scheduleStorage: { database: fh(t, "SCHEDULES_DB") },
     scheduleTimeUnderstanding: { model: nc, ai: sc(t, "AI") },
     workflowInputInference: { model: nc, ai: sc(t, "AI") },
-    version: "0.2.23",
+    version: "0.2.24",
   };
 }
 var oc = async (e, t) => {
@@ -15113,8 +15113,8 @@ async function Ir(e, t) {
 }
 Za();
 Yr();
-var Gm = "duotify",
-  Fm = "GitHubClawToolkit",
+var Gm = "jeffsia-blacksmith",
+  Fm = "altShiftClawToolkit",
   $m = "main",
   aT = 5 * 6e4,
   Mm = {
@@ -21253,7 +21253,7 @@ function Yk(e) {
   if (Cs(e?.body || "")?.source !== "skill-installer") return "";
   let r = Jk(e?.body || "");
   return r
-    ? `https://github.com/duotify/GitHubClawToolkit/blob/main/skills/${encodeURIComponent(r)}/README.md`
+    ? `https://github.com/jeffsia-blacksmith/altShiftClawToolkit/blob/main/skills/${encodeURIComponent(r)}/README.md`
     : "";
 }
 function Zf(e, t, r) {

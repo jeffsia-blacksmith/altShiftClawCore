@@ -1,6 +1,6 @@
 {
   "name": "altshift-claw-core",
-  "version": "0.2.23",
+  "version": "0.2.24",
   "private": true,
   "type": "module",
   "description": "altShiftClawCore worker package — editable src/ + esbuild rebuild to GitHubClawCore/index.js",
