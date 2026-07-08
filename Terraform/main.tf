@@ -61,6 +61,11 @@ locals {
       text = var.personality
     },
     {
+      name = "CLAW_LANGUAGE"
+      type = "plain_text"
+      text = var.claw_language
+    },
+    {
       name = "GITHUB_WEBHOOK_SECRET"
       type = "secret_text"
       text = var.github_webhook_secret

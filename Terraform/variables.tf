@@ -40,6 +40,12 @@ variable "personality" {
   type        = string
 }
 
+variable "claw_language" {
+  description = "Default reply language for altShiftClawCoreWorker (e.g. zh-CN, en)."
+  type        = string
+  default     = "zh-CN"
+}
+
 variable "claw_sys_github_token" {
   description = "System GitHub token used by altShiftClawCoreWorker."
   type        = string
