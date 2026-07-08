@@ -6930,7 +6930,7 @@ var E_,
       (im = /<!--\s*githubclaw-artifacts:\s*(\{[\s\S]*?\})\s*-->/),
       (am = /<!--\s*githubclaw-media-meta:\s*(\{[\s\S]*?\})\s*-->/),
       (I_ = /<useTool\b[^>]*>[\s\S]*?<\/useTool>\s*/g),
-      (v_ = /^工具\s+`[^`]+`\s+(?:已完成|執行失敗)。(?:\r?\n\s*)*/),
+      (v_ = /^工具\s+`[^`]+`\s+(?:已完成|执行失败)。(?:\r?\n\s*)*/),
       (C_ = /`([^`\r\n]+?\.(?:png|jpe?g|webp|gif))`/gi),
       (R_ =
         /(^|[^A-Za-z0-9/_.-])((?:[A-Za-z0-9._-]+\/)+[A-Za-z0-9._-]+\.(?:png|jpe?g|webp|gif))(?=$|[^A-Za-z0-9/_.-])/gim),
@@ -7259,7 +7259,7 @@ var z_,
     "use strict";
     mt();
     Yr();
-    z_ = /^(\s*name:\s*)(['"]?)(?:🦞\s+)?執行小龍蝦任務(?:\s+#[\w\d]+)?\2(\s*)$/m;
+    z_ = /^(\s*name:\s*)(['"]?)(?:🦞\s+)?执行小龙虾任务(?:\s+#[\w\d]+)?\2(\s*)$/m;
   });
 function ml(e) {
   if (typeof e != "string") return null;
@@ -16035,7 +16035,7 @@ function Ws(e) {
     "\u3007": 0,
     一: 1,
     二: 2,
-    兩: 2,
+    两: 2,
     三: 3,
     四: 4,
     五: 5,
@@ -16358,7 +16358,7 @@ function HT(e, t) {
     return { status: "resolved", ruleType: e.ruleType, rulePayload: r, timezone: Fl, nextRunAt: n };
   } catch (n) {
     let s = n instanceof Error ? n.message : String(n);
-    return /已過|晚於現在/.test(s)
+    return /已过|晚于现在/.test(s)
       ? sn(
           "\u9019\u500B\u6642\u9593\u5DF2\u7D93\u904E\u4E86\uFF0C\u8ACB\u6539\u6210\u672A\u4F86\u7684\u6642\u9593\u3002",
         )
@@ -21186,7 +21186,7 @@ function Oi(e, t) {
       .split(/\r?\n/)
       .map((i) => {
         if (!n) return i;
-        if (/(圖片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, "\u5DF2\u9644\u4E0A");
+        if (/(图片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, "\u5DF2\u9644\u4E0A");
         let a = i.trim();
         return a && n.test(a)
           ? ((n.lastIndex = 0), i.replace(n, "\u5DF2\u9644\u4E0A\u5716\u7247"))
@@ -21663,7 +21663,7 @@ function oE(e) {
         .replace(/<!--\s*line-meta:\s*\{[\s\S]*?\}\s*-->\s*/g, "")
         .replace(/<a\s+href=(?:"([^"]*)"|'([^']*)')\s*>([\s\S]*?)<\/a>/gi, "$3 ($1$2)")
         .replace(/<\/?(?:b|i|u|s|tg-spoiler|code|pre|blockquote)\s*>/gi, "")
-        .replace(/^\*\*來自：\*\*.*$/gm, "")
+        .replace(/^\*\*来自：\*\*.*$/gm, "")
         .replace(/^\s*---\s*$/gm, "")
         .trim();
 }
@@ -22140,7 +22140,7 @@ function IE(e, t) {
   return (
     e
       ?.replace(gg, "")
-      .replace(/^技能(?:安裝|移除):\s*/u, "")
+      .replace(/^技能(?:安装|移除):\s*/u, "")
       .trim() ||
     t ||
     "skill"
@@ -22301,7 +22301,7 @@ function AE(e, t) {
   return (
     e
       ?.replace(kg, "")
-      .replace(/^(?:📚\s*)?(?:範本同步|範本安裝):\s*/u, "")
+      .replace(/^(?:📚\s*)?(?:范本同步|范本安装):\s*/u, "")
       .trim() ||
     t ||
     "template"

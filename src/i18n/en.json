@@ -94,11 +94,11 @@
     "update": "Update",
     "confirm_remove": "Confirm Remove",
     "reset": "Reset",
-     "keep_all": "Keep All",
-     "set_missing": "Set Missing",
-     "no_active_lobster": "There is no active Lobster currently. Please use /new to create one.",
-     "set_workflow_status": "Set workflow status",
-     "no_template": "No template",
+    "keep_all": "Keep All",
+    "set_missing": "Set Missing",
+    "no_active_lobster": "There is no active Lobster currently. Please use /new to create one.",
+    "set_workflow_status": "Set workflow status",
+    "no_template": "No template",
     "pending": "Pending",
     "completed": "Completed",
     "schedule_task": "Schedule task",
@@ -177,7 +177,8 @@
     "schedule_minutely": "Minutely",
     "schedule_weekday": "Weekday",
     "schedule_weekenday": "Weekend day",
-    "schedule_custom": "Custom"
+    "schedule_custom": "Custom",
+    "hourly": "Every hour on the {minute} minute"
   },
   "kb": {
     "confirmClose": "😭 Confirm Close",
