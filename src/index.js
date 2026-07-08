@@ -1,3 +1,71 @@
+import zhCNTranslation from "./i18n/zh-CN.json";
+import enTranslation from "./i18n/en.json";
+
+const translations = {
+  "zh-CN": zhCNTranslation,
+  "en": enTranslation
+};
+
+function t(key, params = {}, lang = "en") {
+  let dict = translations[lang] || translations["en"];
+  let parts = key.split(".");
+  let val = dict;
+  for (let part of parts) {
+    if (val && typeof val === "object" && part in val) {
+      val = val[part];
+    } else {
+      val = null;
+      break;
+    }
+  }
+  
+  if (val === null || val === undefined) {
+    let fallbackDict = translations["en"];
+    val = fallbackDict;
+    for (let part of parts) {
+      if (val && typeof val === "object" && part in val) {
+        val = val[part];
+      } else {
+        val = null;
+        break;
+      }
+    }
+  }
+
+  if (typeof val !== "string") {
+    return key;
+  }
+
+  let result = val;
+  for (let [k, v] of Object.entries(params)) {
+    result = result.replace(new RegExp(`{${k}}`, "g"), String(v ?? ""));
+  }
+  return result;
+}
+
+async function getLanguage(services) {
+  let lang = null;
+  if (services && services.store) {
+    try {
+      lang = await services.store.get("CLAW_LANGUAGE");
+    } catch (err) {
+      console.error("Error reading language from D1:", err);
+    }
+  }
+  if (!lang && services && services.config) {
+    lang = services.config.language;
+  }
+  let resolvedLang = lang || "en";
+  if (typeof globalThis !== "undefined") {
+    globalThis.globalLanguage = resolvedLang;
+  }
+  return resolvedLang;
+}
+
+function glang() {
+  return typeof globalThis !== "undefined" && globalThis.globalLanguage === "zh-CN" ? "zh-CN" : "en";
+}
+
 var Wg = Object.create;
 var Hi = Object.defineProperty;
 var qg = Object.getOwnPropertyDescriptor;
@@ -4681,10 +4749,10 @@ function Ud(e) {
 }
 function Bd(e) {
   return new F()
-    .text("\u{1F62D} \u78BA\u5B9A\u95DC\u9589", `close_issue_confirm:${e}`)
+    .text(t("kb.confirmClose", {}, glang()), `close_issue_confirm:${e}`)
     .row()
     .text(
-      "\u5148\u4E0D\u8981\uFF0C\u8B93\u7260\u518D\u6E38\u4E00\u4E0B",
+      t("kb.closeCancel", {}, glang()),
       `close_issue_cancel:${e}`,
     );
 }
@@ -4694,35 +4762,35 @@ function jd(e) {
     ? new F()
         .text(`\u2705 \u4FDD\u7559${t}`, `edit_keep_field:${e}`)
         .row()
-        .text("\u274C \u53D6\u6D88", "new_flow_cancel:current")
+        .text(t("kb.cancel", {}, glang()), "new_flow_cancel:current")
     : new F();
 }
 function Wd() {
   return new F()
-    .text("\u25B6\uFE0F \u555F\u7528 (/enable)", "edit_workflow_enabled:true")
+    .text(t("kb.enableSlash", {}, glang()), "edit_workflow_enabled:true")
     .row()
-    .text("\u23F8\uFE0F \u505C\u7528 (/disable)", "edit_workflow_enabled:false")
+    .text(t("kb.disableSlash", {}, glang()), "edit_workflow_enabled:false")
     .row()
     .text(
-      "\u2705 \u4FDD\u7559\u76EE\u524D\u8A2D\u5B9A",
+      t("kb.keepCurrentSettings", {}, glang()),
       "edit_keep_field:awaiting_workflow_enabled",
     )
     .row()
-    .text("\u274C \u53D6\u6D88", "new_flow_cancel:current");
+    .text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
 }
 function La() {
   return new F()
-    .text("\u23ED\uFE0F \u8DF3\u904E", "edit_template_reset:skip")
+    .text(t("kb.skip", {}, glang()), "edit_template_reset:skip")
     .row()
-    .text("\u274C \u53D6\u6D88", "new_flow_cancel:current");
+    .text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
 }
 function Uo(e) {
   let t = new F(),
     r = e.slice(0, Kr);
   for (let n of r) t.text(`\u{1F504} ${n}`, `new_template_select:${n}`).row();
   return (
-    t.text("\u23ED\uFE0F \u8DF3\u904E", "edit_template_reset:skip").row(),
-    t.text("\u274C \u53D6\u6D88", "new_flow_cancel:current"),
+    t.text(t("kb.skip", {}, glang()), "edit_template_reset:skip").row(),
+    t.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current"),
     t
   );
 }
@@ -4752,42 +4820,42 @@ function Ua(e) {
 }
 function Ba(e) {
   return new F()
-    .text("\u23F0 \u8A2D\u5B9A\u6392\u7A0B", `set_schedule:${e}`)
-    .text("\u{1F5C2}\uFE0F \u7BA1\u7406\u6392\u7A0B", `manage_schedule:${e}`);
+    .text(t("kb.setSchedule", {}, glang()), `set_schedule:${e}`)
+    .text(t("kb.manageSchedule", {}, glang()), `manage_schedule:${e}`);
 }
 function qd(e) {
   return new F()
-    .text("\u23F0 \u8A2D\u5B9A\u6392\u7A0B", `set_schedule:${e}`)
-    .text("\u{1F5C2}\uFE0F \u7BA1\u7406\u6392\u7A0B", `manage_schedule:${e}`)
+    .text(t("kb.setSchedule", {}, glang()), `set_schedule:${e}`)
+    .text(t("kb.manageSchedule", {}, glang()), `manage_schedule:${e}`)
     .row()
-    .text("\u270F\uFE0F \u7DE8\u8F2F", `current_edit:${e}`)
-    .text("\u{1F504} \u91CD\u7F6E\u7BC4\u672C", `current_template_reset:${e}`)
+    .text(t("kb.edit", {}, glang()), `current_edit:${e}`)
+    .text(t("kb.resetTemplate", {}, glang()), `current_template_reset:${e}`)
     .row()
-    .text("\u{1F4E6} \u6280\u80FD\u7BA1\u7406", "command_menu_skills");
+    .text(t("kb.skillsManage", {}, glang()), "command_menu_skills");
 }
 function Kd(e, t) {
   let r = new F(),
     n = t.slice(0, Kr);
   for (let s of n) r.text(`\u{1F504} ${s}`, `template_reset_select:${e}:${s}`).row();
-  return (r.text("\u274C \u53D6\u6D88", `template_reset_cancel:${e}`), r);
+  return (r.text(t("kb.cancel", {}, glang()), `template_reset_cancel:${e}`), r);
 }
 function tr() {
-  return new F().text("\u274C \u53D6\u6D88\u8A2D\u5B9A", "schedule_flow_cancel:current");
+  return new F().text(t("kb.cancelSetup", {}, glang()), "schedule_flow_cancel:current");
 }
 function Bo() {
   return new F()
     .text("\u23ED\uFE0F \u7565\u904E", "schedule_payload_skip:current")
     .row()
-    .text("\u274C \u53D6\u6D88\u8A2D\u5B9A", "schedule_flow_cancel:current");
+    .text(t("kb.cancelSetup", {}, glang()), "schedule_flow_cancel:current");
 }
 function ja(e = [], t) {
   let r = new F(),
     n = e.slice(0, Kr);
   for (let s of n) {
-    let o = Ld(s.buttonLabel || s.id || "\u6392\u7A0B");
+    let o = Ld(s.buttonLabel || s.id || t("kb.scheduleFallbackName", {}, glang()));
     r.text(o, `schedule_open:${s.id}`).row();
   }
-  return (r.text("\u2795 \u65B0\u589E\u6392\u7A0B", `set_schedule:${t}`), r);
+  return (r.text(t("kb.newSchedule", {}, glang()), `set_schedule:${t}`), r);
 }
 function Hd(e = []) {
   let t = new F(),
@@ -4805,15 +4873,15 @@ function jo(e, t, r, n = {}) {
     a = n.toggleCallbackData || `schedule_toggle:${e}`,
     l = n.deleteCallbackData || `schedule_delete:${e}`,
     c = n.backCallbackData || `manage_schedule:${t}`,
-    d = n.backText || "\u{1F519} \u8FD4\u56DE\u6392\u7A0B\u5217\u8868";
+    d = n.backText || t("kb.backToScheduleList", {}, glang());
   return new F()
-    .text("\u270F\uFE0F \u6539\u4EFB\u52D9", s)
-    .text("\u{1F552} \u6539\u6642\u9593", o)
+    .text(t("kb.changeTask", {}, glang()), s)
+    .text(t("kb.changeTime", {}, glang()), o)
     .row()
-    .text("\u{1F4E6} \u6539 Payload", i)
-    .text(r ? "\u23F8\uFE0F \u66AB\u505C" : "\u25B6\uFE0F \u555F\u7528", a)
+    .text(t("kb.changePayload", {}, glang()), i)
+    .text(r ? t("kb.pause", {}, glang()) : t("kb.enable", {}, glang()), a)
     .row()
-    .text("\u{1F5D1}\uFE0F \u522A\u9664", l)
+    .text(t("kb.delete", {}, glang()), l)
     .row()
     .text(d, c);
 }
@@ -4825,19 +4893,19 @@ function zd(e, t, r = !0) {
     toggleCallbackData: `schedule_toggle:${e}|chat`,
     deleteCallbackData: `schedule_delete:${e}|chat`,
     backCallbackData: "schedule_chat_list:current",
-    backText: "\u{1F519} \u8FD4\u56DE\u5168\u90E8\u6392\u7A0B",
+    backText: t("kb.backToAllSchedules", {}, glang()),
   });
 }
 function Qd(e) {
   return new F()
-    .text("\u{1F5D1}\uFE0F \u522A\u9664", `schedule_delete:${e}|chat`)
+    .text(t("kb.delete", {}, glang()), `schedule_delete:${e}|chat`)
     .row()
-    .text("\u{1F519} \u8FD4\u56DE\u5168\u90E8\u6392\u7A0B", "schedule_chat_list:current");
+    .text(t("kb.backToAllSchedules", {}, glang()), "schedule_chat_list:current");
 }
 function as(e, t = 0, r) {
   let n = new F();
   if (!Array.isArray(e) || e.length === 0)
-    return (n.text("\u274C \u53D6\u6D88", "skills_cancel:0"), n);
+    return (n.text(t("kb.cancel", {}, glang()), "skills_cancel:0"), n);
   let s = t * Fa,
     o = e.slice(s, s + Fa);
   for (let l = 0; l < o.length; l += Nd) {
@@ -4851,59 +4919,59 @@ function as(e, t = 0, r) {
   let i = t > 0,
     a = s + Fa < e.length;
   return (
-    i && n.text("\u2B05\uFE0F \u4E0A\u4E00\u9801", `skills_page:${t - 1}`),
-    a && n.text("\u27A1\uFE0F \u4E0B\u4E00\u9801", `skills_page:${t + 1}`),
+    i && n.text(t("kb.prevPage", {}, glang()), `skills_page:${t - 1}`),
+    a && n.text(t("kb.nextPage", {}, glang()), `skills_page:${t + 1}`),
     (i || a) && n.row(),
-    n.text("\u274C \u53D6\u6D88", "skills_cancel:0"),
+    n.text(t("kb.cancel", {}, glang()), "skills_cancel:0"),
     n
   );
 }
 function Vd(e) {
   return new F()
-    .text("\u2705 \u78BA\u5B9A\u5B89\u88DD", `skills_preview_confirm:${e}`)
+    .text(t("kb.confirmInstall", {}, glang()), `skills_preview_confirm:${e}`)
     .row()
-    .text("\u{1F519} \u56DE\u4E0A\u4E00\u6B65", "skills_preview_back:0")
+    .text(t("kb.backOneStep", {}, glang()), "skills_preview_back:0")
     .row()
-    .text("\u274C \u53D6\u6D88", "skills_cancel:0");
+    .text(t("kb.cancel", {}, glang()), "skills_cancel:0");
 }
 function Jd(e) {
   return new F()
-    .text("\u2705 \u8986\u84CB\u5B89\u88DD", `skills_overwrite:${e}`)
-    .text("\u274C \u53D6\u6D88", "skills_cancel:0");
+    .text(t("kb.overwriteInstall", {}, glang()), `skills_overwrite:${e}`)
+    .text(t("kb.cancel", {}, glang()), "skills_cancel:0");
 }
 function Wo(e) {
   return new F()
-    .text("\u2705 \u5B89\u88DD", `skills_confirm:${e}`)
-    .text("\u274C \u53D6\u6D88", "skills_cancel:0");
+    .text(t("kb.install", {}, glang()), `skills_confirm:${e}`)
+    .text(t("kb.cancel", {}, glang()), "skills_cancel:0");
 }
 function Yd() {
   return new F()
-    .text("\u267B\uFE0F \u6CBF\u7528\u73FE\u6709\u503C", "skills_existing_secret:reuse")
+    .text(t("kb.reuseExistingValue", {}, glang()), "skills_existing_secret:reuse")
     .row()
-    .text("\u270F\uFE0F \u91CD\u65B0\u8F38\u5165", "skills_existing_secret:modify")
+    .text(t("kb.reenterValue", {}, glang()), "skills_existing_secret:modify")
     .row()
-    .text("\u274C \u53D6\u6D88", "skills_cancel:0");
+    .text(t("kb.cancel", {}, glang()), "skills_cancel:0");
 }
 function ls() {
-  return new F().text("\u274C \u53D6\u6D88", "skills_cancel:0");
+  return new F().text(t("kb.cancel", {}, glang()), "skills_cancel:0");
 }
 function Wa(e) {
   return new F()
-    .text("\u{1F5D1} \u79FB\u9664", `skills_remove_from_list:${e}`)
-    .text("\u{1F504} \u66F4\u65B0", `skills_update_from_list:${e}`)
+    .text(t("kb.removeFromList", {}, glang()), `skills_remove_from_list:${e}`)
+    .text(t("kb.updateFromList", {}, glang()), `skills_update_from_list:${e}`)
     .row()
     .text("\u{1F519} \u4E0A\u4E00\u6B65", "skills_preview_back:0");
 }
 function Xd(e) {
   return new F()
-    .text("\u{1F5D1}\uFE0F \u78BA\u5B9A\u79FB\u9664", `skills_remove_confirm_from_list:${e}`)
+    .text(t("kb.confirmRemove", {}, glang()), `skills_remove_confirm_from_list:${e}`)
     .row()
     .text("\u{1F519} \u4E0A\u4E00\u6B65", `skills_remove_back:${e}`);
 }
 function us(e, t = 0, r) {
   let n = new F();
   if (!Array.isArray(e) || e.length === 0)
-    return (n.text("\u274C \u53D6\u6D88", "templates_cancel:0"), n);
+    return (n.text(t("kb.cancel", {}, glang()), "templates_cancel:0"), n);
   let s = t * $a,
     o = e.slice(s, s + $a);
   for (let l = 0; l < o.length; l += 2) {
@@ -4921,53 +4989,53 @@ function us(e, t = 0, r) {
   let i = t > 0,
     a = s + $a < e.length;
   return (
-    i && n.text("\u2B05\uFE0F \u4E0A\u4E00\u9801", `templates_page:${t - 1}`),
-    a && n.text("\u27A1\uFE0F \u4E0B\u4E00\u9801", `templates_page:${t + 1}`),
+    i && n.text(t("kb.prevPage", {}, glang()), `templates_page:${t - 1}`),
+    a && n.text(t("kb.nextPage", {}, glang()), `templates_page:${t + 1}`),
     (i || a) && n.row(),
-    n.text("\u274C \u53D6\u6D88", "templates_cancel:0"),
+    n.text(t("kb.cancel", {}, glang()), "templates_cancel:0"),
     n
   );
 }
 function Zd(e) {
   return new F()
-    .text("\u2705 \u78BA\u5B9A\u5B89\u88DD", "templates_preview_confirm:0")
+    .text(t("kb.confirmInstall", {}, glang()), "templates_preview_confirm:0")
     .row()
-    .text("\u{1F519} \u56DE\u4E0A\u4E00\u6B65", "templates_preview_back:0")
+    .text(t("kb.backOneStep", {}, glang()), "templates_preview_back:0")
     .row()
-    .text("\u274C \u53D6\u6D88", "templates_cancel:0");
+    .text(t("kb.cancel", {}, glang()), "templates_cancel:0");
 }
 function ep(e) {
   return new F()
-    .text("\u2705 \u8986\u84CB\u5B89\u88DD", "templates_overwrite:0")
-    .text("\u274C \u53D6\u6D88", "templates_cancel:0");
+    .text(t("kb.overwriteInstall", {}, glang()), "templates_overwrite:0")
+    .text(t("kb.cancel", {}, glang()), "templates_cancel:0");
 }
 function qo(e) {
   return new F()
-    .text("\u2705 \u5B89\u88DD", "templates_confirm:0")
-    .text("\u274C \u53D6\u6D88", "templates_cancel:0");
+    .text(t("kb.install", {}, glang()), "templates_confirm:0")
+    .text(t("kb.cancel", {}, glang()), "templates_cancel:0");
 }
 function tp() {
-  return new F().text("\u274C \u53D6\u6D88", "new_flow_cancel:current");
+  return new F().text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
 }
 function rp() {
   return new F()
-    .text("\u{1F511} \u73FE\u5728\u8A2D\u5B9A", "templates_env_setup:0")
-    .text("\u274C \u53D6\u6D88", "templates_env_cancel:0");
+    .text(t("kb.setNow", {}, glang()), "templates_env_setup:0")
+    .text(t("kb.cancel", {}, glang()), "templates_env_cancel:0");
 }
 function np() {
   return new F()
-    .text("\u{1F504} \u91CD\u65B0\u8A2D\u5B9A", "templates_env_resetall:0")
-    .text("\u23ED\uFE0F \u6CBF\u7528\u73FE\u6709", "templates_env_keepall:0");
+    .text(t("kb.resetAll", {}, glang()), "templates_env_resetall:0")
+    .text(t("kb.keepAllExisting", {}, glang()), "templates_env_keepall:0");
 }
 function sp() {
   return new F()
-    .text("\u{1F511} \u8A2D\u5B9A\u7F3A\u5C11\u7684", "templates_env_setup:0")
+    .text(t("kb.setMissing", {}, glang()), "templates_env_setup:0")
     .row()
     .text("\u{1F504} \u5168\u90E8\u91CD\u65B0\u8A2D\u5B9A", "templates_env_resetall:0")
-    .text("\u274C \u53D6\u6D88", "templates_env_cancel:0");
+    .text(t("kb.cancel", {}, glang()), "templates_env_cancel:0");
 }
 function hr(e = "templates") {
-  return new F().text("\u274C \u53D6\u6D88\u8A2D\u5B9A", `${e}_env_cancel:`);
+  return new F().text(t("kb.cancelSetup", {}, glang()), `${e}_env_cancel:`);
 }
 function op() {
   return new F()
@@ -4976,14 +5044,14 @@ function op() {
 }
 function Lt() {
   return new F()
-    .text("\u23ED\uFE0F \u8DF3\u904E", "linebot_input_skip:")
-    .text("\u274C \u53D6\u6D88", "linebot_deploy_cancel:");
+    .text(t("kb.skip", {}, glang()), "linebot_input_skip:")
+    .text(t("kb.cancel", {}, glang()), "linebot_deploy_cancel:");
 }
 function ip() {
   return new F()
     .text("\u{1F680} \u958B\u59CB\u90E8\u7F72", "linebot_deploy_confirm:")
     .text("\u270F\uFE0F \u4FEE\u6539", "linebot_edit_params:")
-    .text("\u274C \u53D6\u6D88", "linebot_deploy_cancel:");
+    .text(t("kb.cancel", {}, glang()), "linebot_deploy_cancel:");
 }
 function ap() {
   return new F()
@@ -4998,7 +5066,7 @@ function ap() {
     .text("\u2B05\uFE0F \u8FD4\u56DE", "linebot_edit_back:");
 }
 function wr() {
-  return new F().text("\u274C \u53D6\u6D88", "linebot_deploy_cancel:");
+  return new F().text(t("kb.cancel", {}, glang()), "linebot_deploy_cancel:");
 }
 var Kr,
   Md,
@@ -5212,73 +5280,75 @@ var my,
     "use strict";
     my = /([_*\[\]()~`>#+=|{}.!\\-])/g;
   });
-function br(e) {
+function br(e, gLang = glang()) {
   let t = e.rulePayload;
-  if (e.ruleType === "cron" && typeof t.expression == "string") return mp(t.expression).description;
+  if (e.ruleType === "cron" && typeof t.expression == "string") return mp(t.expression, gLang).description;
   if (e.ruleType === "interval" && typeof t.minutes == "number")
-    return `\u6BCF ${t.minutes} \u5206\u9418`;
+    return t("schedule.minutely", { minutes: t.minutes }, gLang);
   if (e.ruleType === "once" && typeof t.run_at == "string") {
     let o = new Date(t.run_at);
-    return Number.isNaN(o.getTime())
-      ? "\u55AE\u6B21\u57F7\u884C"
-      : `\u55AE\u6B21 ${o.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })}`;
+    if (Number.isNaN(o.getTime()))
+      return t("schedule.once", {}, gLang);
+    return t("schedule.run_at_once", { run_at: o.toLocaleString(gLang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei" }) }, gLang);
   }
   let r = typeof t.hour == "number" ? String(t.hour).padStart(2, "0") : "??",
     n = typeof t.minute == "number" ? String(t.minute).padStart(2, "0") : "00",
     s = `${r}:${n}`;
   switch (e.ruleType) {
     case "daily":
-      return `\u6BCF\u5929 ${s}`;
+      return t("schedule.daily", { time: s }, gLang);
     case "hourly": {
       let o = typeof t.interval_hours == "number" ? t.interval_hours : 1;
       return o === 1
-        ? `\u6BCF\u5C0F\u6642\u7B2C ${n} \u5206`
-        : `\u6BCF ${o} \u5C0F\u6642\uFF08\u7B2C ${n} \u5206\uFF09`;
+        ? t("schedule.hourly", { minute: n }, gLang)
+        : t("schedule.hourlyInterval", { hours: o, minute: n }, gLang);
     }
     case "minutely":
-      return `\u6BCF ${typeof t.interval_minutes == "number" ? t.interval_minutes : 1} \u5206\u9418`;
+      return t("schedule.minutely", { minutes: typeof t.interval_minutes == "number" ? t.interval_minutes : 1 }, gLang);
     case "weekly":
-      return `\u6BCF\u9031${Array.isArray(t.weekdays) ? t.weekdays.map((i) => zr[i] ?? String(i)).join("\u3001") : typeof t.weekday == "number" ? (zr[t.weekday] ?? String(t.weekday)) : "?"} ${s}`;
+      let weekdays = Array.isArray(t.weekdays) ? t.weekdays.map((i) => t("schedule.weekday_" + i, {}, gLang)) : (typeof t.weekday == "number" ? [t("schedule.weekday_" + t.weekday, {}, gLang)] : ["?"]);
+      return t("schedule.weekly", { weekdays: weekdays.join("、"), time: s }, gLang);
     case "weekday":
-      return `\u5DE5\u4F5C\u65E5 ${s}`;
+      return t("schedule.weekday", { time: s }, gLang);
     case "weekenday":
-      return `\u5047\u65E5 ${s}`;
+      return t("schedule.weekenday", { time: s }, gLang);
     default:
       return e.ruleType;
   }
 }
-function cs(e) {
-  if (e.ruleType === "interval") return "\u56FA\u5B9A\u9593\u9694";
-  if (e.ruleType === "once") return "\u55AE\u6B21";
+function cs(e, gLang = glang()) {
+  if (e.ruleType === "interval") return t("schedule.interval", {}, gLang);
+  if (e.ruleType === "once") return t("schedule.once", {}, gLang);
   if (e.ruleType === "cron") {
     let r = e.rulePayload.expression;
-    if (typeof r == "string") return mp(r).type;
+    if (typeof r == "string") return mp(r, gLang).type;
   }
   return (
     {
-      daily: "\u6BCF\u5929",
-      hourly: "\u6BCF\u5C0F\u6642",
-      minutely: "\u56FA\u5B9A\u9593\u9694",
-      weekly: "\u6BCF\u9031",
-      weekday: "\u5DE5\u4F5C\u65E5",
-      weekenday: "\u5047\u65E5",
+      daily: t("schedule.daily", {}, gLang),
+      hourly: t("schedule.hourly", {}, gLang),
+      minutely: t("schedule.interval", {}, gLang),
+      weekly: t("schedule.weekly", {}, gLang),
+      weekday: t("schedule.weekday", {}, gLang),
+      weekenday: t("schedule.weekenday", {}, gLang),
     }[e.ruleType] ?? e.ruleType
   );
 }
-function pp(e) {
-  let t = e.match(/^(\d)-(\d)$/);
-  if (t) {
-    let n = zr[parseInt(t[1])] ?? t[1],
-      s = zr[parseInt(t[2])] ?? t[2];
-    return `\u6BCF\u9031${n}\u5230\u9031${s}`;
+function pp(e, gLang = glang()) {
+  let weekdayNames = [t("schedule.weekday_0", {}, gLang), t("schedule.weekday_1", {}, gLang), t("schedule.weekday_2", {}, gLang), t("schedule.weekday_3", {}, gLang), t("schedule.weekday_4", {}, gLang), t("schedule.weekday_5", {}, gLang), t("schedule.weekday_6", {}, gLang)];
+  let match = e.match(/^(\d)-(\d)$/);
+  if (match) {
+    let startWeekday = weekdayNames[parseInt(match[1])],
+      endWeekday = weekdayNames[parseInt(match[2])];
+    return t("schedule.weekly", { weekdays: `${startWeekday}-${endWeekday}`, time: "" }, gLang).replace(/\s*\$/, "");
   }
   if (e.includes(","))
-    return `\u6BCF\u9031${e
+    return t("schedule.weekly", { weekdays: e
       .split(",")
-      .map((s) => zr[parseInt(s)] ?? s)
-      .join("\u3001")}`;
+      .map((s) => weekdayNames[parseInt(s)])
+      .join("、"), time: "" }, gLang).replace(/\s*\$/, "");
   let r = parseInt(e);
-  return !isNaN(r) && zr[r] ? `\u6BCF\u9031${zr[r]}` : `\u6BCF\u9031 ${e}`;
+  return !isNaN(r) && weekdayNames[r] ? t("schedule.weekly", { weekdays: weekdayNames[r], time: "" }, gLang).replace(/\s*\$/, "") : t("schedule.weekly", { weekdays: e, time: "" }, gLang).replace(/\s*\$/, "");
 }
 function Ho(e, t) {
   return `${e.padStart(2, "0")}:${t.padStart(2, "0")}`;
@@ -5297,57 +5367,58 @@ function wy(e, t, r) {
 function Ja(e, t) {
   return e.map((r) => Ho(String(r), t)).join("\u3001");
 }
-function mp(e) {
-  let t = e.trim().split(/\s+/);
-  if (t.length !== 5) return { type: "\u81EA\u8A02\u6392\u7A0B", description: e };
-  let r = t[0],
-    n = t[1],
-    s = t[2],
-    o = t[4],
-    i = wy(n, 0, 23);
-  if (r.startsWith("*/") && n === "*" && s === "*" && o === "*") {
-    let a = parseInt(r.slice(2));
-    return a === 1
-      ? { type: "\u6BCF\u5206\u9418", description: "\u6BCF\u5206\u9418" }
-      : { type: "\u56FA\u5B9A\u9593\u9694", description: `\u6BCF ${a} \u5206\u9418` };
+function mp(e, gLang = glang()) {
+  let parts = e.trim().split(/\s+/);
+  if (parts.length !== 5) return { type: t("schedule.cron_type", {}, gLang), description: e };
+  let minute = parts[0],
+    hour = parts[1],
+    day = parts[2],
+    month = parts[3],
+    weekday = parts[4],
+    daysOfWeek = wy(hour, 0, 23);
+  if (minute.startsWith("*/") && hour === "*" && day === "*" && weekday === "*") {
+    let interval = parseInt(minute.slice(2));
+    return interval === 1
+      ? { type: t("schedule.type_minutely", {}, gLang), description: t("schedule.type_minutely", {}, gLang) }
+      : { type: t("schedule.type_interval", {}, gLang), description: t("schedule.minutely", { minutes: interval }, gLang) };
   }
-  if (/^\d+$/.test(r) && n.startsWith("*/") && s === "*" && o === "*") {
-    let a = parseInt(n.slice(2));
+  if (/^\d+$/.test(minute) && hour.startsWith("*/") && day === "*" && weekday === "*") {
+    let intervalHours = parseInt(hour.slice(2));
     return {
-      type: "\u56FA\u5B9A\u9593\u9694",
-      description: `${a === 1 ? "\u6BCF\u5C0F\u6642" : `\u6BCF ${a} \u5C0F\u6642`}\uFF08\u7B2C ${r} \u5206\uFF09`,
+      type: t("schedule.type_interval", {}, gLang),
+      description: t("schedule.hourlyInterval", { hours: intervalHours, minute: minute }, gLang),
     };
   }
-  if (/^\d+$/.test(r) && n === "*" && s === "*" && o === "*")
+  if (/^\d+$/.test(minute) && hour === "*" && day === "*" && weekday === "*")
     return {
-      type: "\u6BCF\u5C0F\u6642",
+      type: t("schedule.type_hourly", {}, gLang),
       description:
-        r === "0" ? "\u6BCF\u5C0F\u6642\u6574\u9EDE" : `\u6BCF\u5C0F\u6642\u7B2C ${r} \u5206`,
+        minute === "0" ? t("schedule.type_hourly", {}, gLang) : t("schedule.hourly", { minute: minute }, gLang),
     };
-  if (/^\d+$/.test(r) && /^\d+$/.test(n) && /^\d+$/.test(s) && o === "*") {
-    let a = Ho(n, r);
-    return { type: "\u6BCF\u6708", description: `\u6BCF\u6708 ${parseInt(s)} \u865F ${a}` };
+  if (/^\d+$/.test(minute) && /^\d+$/.test(hour) && /^\d+$/.test(day) && weekday === "*") {
+    let time = Ho(hour, minute);
+    return { type: t("schedule.type_monthly", {}, gLang), description: t("schedule.daily", { time: time }, gLang) };
   }
-  if (/^\d+$/.test(r) && /^\d+$/.test(n) && s === "*" && o !== "*") {
-    let a = Ho(n, r);
-    return { type: "\u6BCF\u9031", description: `${pp(o)} ${a}` };
+  if (/^\d+$/.test(minute) && /^\d+$/.test(hour) && day === "*" && weekday !== "*") {
+    let time = Ho(hour, minute);
+    return { type: t("schedule.type_weekly", {}, gLang), description: t("schedule.weekly", { weekdays: pp(weekday, gLang), time: time }, gLang) };
   }
-  return /^\d+$/.test(r) && i && i.length > 1 && s === "*" && o !== "*"
-    ? { type: "\u6BCF\u9031", description: `${pp(o)} ${Ja(i, r)}` }
-    : /^\d+$/.test(r) && /^\d+$/.test(n) && s === "*" && o === "*"
-      ? { type: "\u6BCF\u5929", description: `\u6BCF\u5929 ${Ho(n, r)}` }
-      : /^\d+$/.test(r) && i && i.length > 1 && s === "*" && o === "*"
-        ? { type: "\u6BCF\u5929", description: `\u6BCF\u5929 ${Ja(i, r)}` }
-        : /^\d+$/.test(r) && i && i.length > 1 && /^\d+$/.test(s) && o === "*"
-          ? { type: "\u6BCF\u6708", description: `\u6BCF\u6708 ${parseInt(s)} \u865F ${Ja(i, r)}` }
-          : { type: "\u81EA\u8A02\u6392\u7A0B", description: e };
+  return /^\d+$/.test(minute) && daysOfWeek && daysOfWeek.length > 1 && day === "*" && weekday !== "*"
+    ? { type: t("schedule.type_weekly", {}, gLang), description: t("schedule.weekly", { weekdays: pp(weekday, gLang), time: Ja(daysOfWeek, minute) }, gLang) }
+    : /^\d+$/.test(minute) && /^\d+$/.test(hour) && day === "*" && weekday === "*"
+      ? { type: t("schedule.type_daily", {}, gLang), description: t("schedule.daily", { time: Ho(hour, minute) }, gLang) }
+      : /^\d+$/.test(minute) && daysOfWeek && daysOfWeek.length > 1 && day === "*" && weekday === "*"
+        ? { type: t("schedule.type_daily", {}, gLang), description: t("schedule.daily", { time: Ja(daysOfWeek, minute) }, gLang) }
+        : /^\d+$/.test(minute) && daysOfWeek && daysOfWeek.length > 1 && /^\d+$/.test(day) && weekday === "*"
+          ? { type: t("schedule.type_monthly", {}, gLang), description: t("schedule.monthly", { day: parseInt(day), time: Ja(daysOfWeek, minute) }, gLang) }
+          : { type: t("schedule.cron_type", {}, gLang), description: e };
 }
-function Bt(e) {
-  let t = new Date(e);
-  return Number.isNaN(t.getTime()) ? e : t.toLocaleString("zh-TW", { timeZone: "Asia/Taipei" });
+function Bt(e, gLang = glang()) {
+  let date = new Date(e);
+  return Number.isNaN(date.getTime()) ? e : date.toLocaleString(gLang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei" });
 }
 var zr,
-  ds = Oe(() => {
+  xs = Oe(() => {
     "use strict";
     zr = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
   });
@@ -5379,39 +5450,39 @@ function _y(e) {
   let t = e.issue.title?.trim();
   return t ? `\\#${e.issue.number} ${O(t)}` : `\\#${e.issue.number}`;
 }
-function Ty(e) {
+function Ty(e, gLang = glang()) {
   let t = e.models.sources.filter((r) => r.model?.trim());
   return t.length === 0
-    ? [ps(e.models.fallbackLabel || "\u7531 Workflow \u5B9A\u7FA9")]
+    ? [ps(e.models.fallbackLabel || t("schedule.workflow_defined_label", {}, gLang))]
     : t.map((r) => zo(O(`${yy[r.source]} (${r.model.trim()})`)));
 }
-function ky(e) {
+function ky(e, gLang = glang()) {
   return e.length > 0
     ? e.map((t) => ps(t))
-    : [ps("\u5C1A\u672A\u5B89\u88DD\u4EFB\u4F55\u6280\u80FD")];
+    : [ps(t("schedule.no_skills_installed", {}, gLang))];
 }
-function Ey(e) {
+function Ey(e, gLang = glang()) {
   return e.length === 0
-    ? [ps("\u5C1A\u672A\u8A2D\u5B9A\u6392\u7A0B")]
+    ? [ps(t("schedule.no_schedules_set", {}, gLang))]
     : e.map((t) => {
         let r = [
           `${t.ruleTypeLabel}\uFF1A${t.ruleSummary}`,
           by[t.status] ?? t.status,
-          t.shouldNotify ? "\u901A\u77E5\u958B\u555F" : "\u901A\u77E5\u95DC\u9589",
+          t.shouldNotify ? t("schedule.notify_open", {}, gLang) : t("schedule.notify_close", {}, gLang),
         ];
         return (
-          t.nextRunAt && r.push(`\u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(t.nextRunAt)}`),
+          t.nextRunAt && r.push(`\u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(t.nextRunAt, gLang)}`),
           t.prompt && r.push(`\u63D0\u793A\uFF1A${t.prompt}`),
           ps(r.join("\uFF5C"))
         );
       });
 }
-function Sy(e) {
+function Sy(e, gLang = glang()) {
   return e.exists
     ? [zo(`${O("\u6A94\u6848\uFF1A")}${vy(e)}`), zo(`${O("\u72C0\u614B\uFF1A")}${Cy(e)}`)]
     : [
         O(
-          "\u5C1A\u672A\u8A2D\u5B9A\u5DE5\u4F5C\u6D41\u7A0B\uFF0C\u60A8\u53EF\u4EE5\u900F\u904E /edit \u91CD\u7F6E\u7BC4\u672C\u4F86\u555F\u7528\u5C0F\u9F8D\u8766\u7684\u5DE5\u4F5C\u6D41\u7A0B\u3002",
+          `尚未設定工作流程，您可以透過 /edit 重置範本來啟用小龍蝦的工作流程。`,
         ),
       ];
 }
@@ -7377,7 +7448,7 @@ function gl(e) {
   let { step: t, mode: r = "create" } = e;
   if (t === "awaiting_template") {
     let n = new F();
-    return (n.text("\u274C \u53D6\u6D88", "new_flow_cancel:current"), n);
+    return (n.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current"), n);
   }
   return t === "awaiting_template_reset"
     ? La()
@@ -7744,7 +7815,7 @@ async function wl(e) {
         return;
       }
       let y = Ua(w);
-      y.text("\u274C \u53D6\u6D88", "new_flow_cancel:current");
+      y.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
       let _ = yt({
         chatId: i,
         step: "awaiting_template",
@@ -7935,7 +8006,7 @@ async function yl(e) {
         workflowEnabled: m.workflowEnabled,
         template: l.template,
       }),
-      _ = d === "edit" ? Uo(w) : Ua(w).text("\u274C \u53D6\u6D88", "new_flow_cancel:current");
+      _ = d === "edit" ? Uo(w) : Ua(w).text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
     await e.editMessageText(
       `\u26A0\uFE0F \u7BC4\u672C\u300C${c}\u300D\u76EE\u524D\u4E0D\u5728\u9F8D\u8766\u5821\u5167\uFF0C\u8ACB\u91CD\u65B0\u9078\u64C7\u3002
 
@@ -11609,6 +11680,8 @@ function To(e) {
     r = Fr(t, "GITHUB_OWNER"),
     n = Fr(t, "GITHUB_REPO");
   return {
+    language:
+      typeof e.CLAW_LANGUAGE == "string" && e.CLAW_LANGUAGE.trim() ? e.CLAW_LANGUAGE.trim() : "en",
     profileName:
       typeof e.PROFILE_NAME == "string" && e.PROFILE_NAME.trim() ? e.PROFILE_NAME.trim() : n,
     personality:
@@ -14453,40 +14526,38 @@ za.command("start", async (e) => {
 });
 Ie();
 Xe();
-function fy(e) {
+function fy(e, lang = "en") {
   return [
-    `\u{1F99E} ${e}`,
+    t("help.title", { repoFullName: e }, lang),
     "",
-    "\u55E8\uFF01\u6211\u662F\u4F60\u7684\u5C0F\u9F8D\u8766\u7BA1\u5BB6\u3002",
-    "\u4F60\u53EA\u8981\u4E0B\u6307\u4EE4\uFF0C\u6211\u5C31\u5E6B\u4F60\u641E\u5B9A\u4E00\u5207\u3002",
+    t("help.welcome", {}, lang),
     "",
-    "\u{1F99E} \u9F8D\u8766\u5821\u7BA1\u7406\u547D\u4EE4",
-    "/list      \u5217\u51FA\u9F8D\u8766\u5821\u4E2D\u6240\u6709\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766",
-    "/new       \u5728\u9F8D\u8766\u5821\u4E2D\u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766",
-    "/schedules   \u5217\u51FA\u9F8D\u8766\u5821\u6240\u6709\u6392\u7A0B",
-    "/version   \u67E5\u8A62\u9F8D\u8766\u5821\u6838\u5FC3\u7248\u672C",
-    "/autoupdate \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3",
-    "/check      \u5FEB\u901F\u9375\u67E5\u9F8D\u8766\u5821\u76F8\u95DC\u8A2D\u5B9A",
+    t("help.lobster_burger_management", {}, lang),
+    t("help.list_desc", {}, lang),
+    t("help.new_desc", {}, lang),
+    t("help.schedules_desc", {}, lang),
+    t("help.version_desc", {}, lang),
+    t("help.autoupdate_desc", {}, lang),
+    t("help.check_desc", {}, lang),
     "",
-    "\u{1F99E} \u5C0F\u9F8D\u8766\u7BA1\u7406\u547D\u4EE4",
-    "/current   \u986F\u793A\u76EE\u524D\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766",
-    "/status    \u986F\u793A\u76EE\u524D\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766\u72C0\u614B\u6458\u8981",
-    "/edit      \u7DE8\u8F2F\u76EE\u524D\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766",
-    "/close     \u95DC\u9589\u76EE\u524D\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766",
-    "/clear     \u6E05\u9664\u76EE\u524D\u503C\u73ED\u4E2D\u7684\u5C0F\u9F8D\u8766\u8A18\u61B6",
-    "/workflow  \u67E5\u8A62\u5C0F\u9F8D\u8766\u4EFB\u52D9\u72C0\u614B",
-    "/enable      \u555F\u7528\u5C0F\u9F8D\u8766",
-    "/disable     \u505C\u7528\u5C0F\u9F8D\u8766(\u9084\u662F\u6703\u6536\u96C6\u5167\u5BB9)",
-    "/skills      \u5B89\u88DD\u5C0F\u9F8D\u8766\u6280\u80FD",
-    "/templates   \u5B89\u88DD\u5C0F\u9F8D\u8766\u7BC4\u672C",
-    "/llm         \u8A2D\u5B9A\u5C0F\u9F8D\u8766 AI \u4F9B\u61C9\u5546\u8207\u6A21\u578B",
-  ].map((r) => O(r)).join(`
-`);
+    t("help.lobster_management", {}, lang),
+    t("help.current_desc", {}, lang),
+    t("help.status_desc", {}, lang),
+    t("help.edit_desc", {}, lang),
+    t("help.close_desc", {}, lang),
+    t("help.clear_desc", {}, lang),
+    t("help.workflow_desc", {}, lang),
+    t("help.enable_desc", {}, lang),
+    t("help.disable_desc", {}, lang),
+    t("help.skills_desc", {}, lang),
+    t("help.templates_desc", {}, lang),
+    t("help.llm_desc", {}, lang),
+  ].map((r) => O(r)).join("\n");
 }
 var Ko = new se();
 Ko.command("help", async (e) => {
   let { config: t } = e.services,
-    r = fy(t.github.repoFullName);
+    r = fy(t.github.repoFullName, e.language);
   await e.reply(r, { parse_mode: "MarkdownV2" });
 });
 Ko.command("version", async (e) => {
@@ -17265,18 +17336,14 @@ async function Ql(e, t, r, n) {
     promptMessageId: ur(e),
   }),
     await e.editMessageText(
-      `\u{1F511} \u6280\u80FD *${O(r.skillName)}* \u9700\u8981\u8A2D\u5B9A\u74B0\u5883\u8B8A\u6578
-
-\u8ACB\u8F38\u5165 *${O(n[0])}* \u7684\u503C
-
-\uFF081/${n.length}\uFF09`,
+      e.t("skills.need_envs", { skillName: r.skillName, envName: n[0], currentIndex: 1, totalLength: n.length }),
       { parse_mode: "MarkdownV2", reply_markup: ls() },
     ));
 }
 async function Tf(e, t, r) {
   (await ht(e.services.store, t, { ...r, step: "confirm_install" }),
     await e.editMessageText(
-      `\u78BA\u8A8D\u5B89\u88DD\u6280\u80FD *${O(r.skillName)}* \u5230 ${Vt(r)}\uFF1F`,
+      e.t("skills.confirm_install", { skillName: r.skillName, target: Vt(r) }),
       { parse_mode: "MarkdownV2", reply_markup: Wo(r.skillName) },
     ));
 }
@@ -17299,14 +17366,7 @@ async function Vl(e, t, r, n) {
         promptMessageId: ur(e),
       }),
       await e.editMessageText(
-        [
-          `\u{1F510} \u5DF2\u5075\u6E2C\u5230\u6280\u80FD *${O(r)}* \u9700\u8981\u7684 Secret \u5DF2\u5B58\u5728\uFF1A`,
-          "",
-          ok(d),
-          "",
-          "\u4F60\u8981\u6CBF\u7528\u73FE\u6709\u503C\uFF0C\u9084\u662F\u91CD\u65B0\u8F38\u5165\uFF1F",
-        ].join(`
-`),
+        e.t("skills.secret_exists", { skillName: r, existingSecrets: ok(d) }),
         { parse_mode: "MarkdownV2", reply_markup: Yd() },
       ))
     : m.length > 0
@@ -17322,7 +17382,7 @@ wt.callbackQuery(/^skills_pick:/, async (e) =>
       o = await at(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17330,23 +17390,17 @@ wt.callbackQuery(/^skills_pick:/, async (e) =>
     let i = await ys(s.github, r),
       a = i?.name || r,
       l = i?.description
-        ? `
-
-${O(i.description)}`
+        ? `\n\n${O(i.description)}`
         : "";
     (Array.isArray(o.installedSkills) ? o.installedSkills : []).includes(r)
       ? (await ht(n, t, { ...o, step: "preview_installed", skillName: r }),
         await e.editMessageText(
-          `\u{1F4E6} *${O(a)}* \u2705 \\(\u5DF2\u5B89\u88DD\\)${l}
-
-\u6B64\u6280\u80FD\u5DF2\u5B89\u88DD\u65BC ${Vt(o)}\uFF0C\u8ACB\u9078\u64C7\u64CD\u4F5C\uFF1A`,
+          e.t("skills.installed_preview", { skillName: a, description: l, target: Vt(o) }),
           { parse_mode: "MarkdownV2", reply_markup: Wa(r) },
         ))
       : (await ht(n, t, { ...o, step: "preview", skillName: r }),
         await e.editMessageText(
-          `\u{1F4E6} *${O(a)}*${l}
-
-\u662F\u5426\u8981\u5B89\u88DD\u6B64\u6280\u80FD\u5230 ${Vt(o)}\uFF1F`,
+          e.t("skills.preview", { skillName: a, description: l, target: Vt(o) }),
           { parse_mode: "MarkdownV2", reply_markup: Vd(r) },
         ));
   }),
@@ -17361,7 +17415,7 @@ wt.callbackQuery(/^skills_preview_confirm:/, async (e) =>
       l = await at(n, t);
     if (!l) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17371,7 +17425,7 @@ wt.callbackQuery(/^skills_preview_confirm:/, async (e) =>
       (await ht(n, t, { ...l, step: "confirm_overwrite", skillName: r }),
         await e.answerCallbackQuery(),
         await e.editMessageText(
-          `\u26A0\uFE0F \u6280\u80FD *${O(r)}* \u5DF2\u5B89\u88DD\u5728 ${Vt(l)}\uFF0C\u662F\u5426\u8986\u84CB\uFF1F`,
+          e.t("skills.confirm_overwrite", { skillName: r, target: Vt(l) }),
           { parse_mode: "MarkdownV2", reply_markup: Jd(r) },
         ));
       return;
@@ -17387,7 +17441,7 @@ wt.callbackQuery(/^skills_preview_back:/, async (e) =>
       s = await at(r, t);
     if (!s) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17396,7 +17450,7 @@ wt.callbackQuery(/^skills_preview_back:/, async (e) =>
     await e.answerCallbackQuery();
     let i = Array.isArray(s.installedSkills) ? new Set(s.installedSkills) : void 0;
     await e.editMessageText(
-      `\u{1F6E0} \u9078\u64C7\u8981\u5B89\u88DD\u7684\u6280\u80FD\u5230 ${Vt(s)}`,
+      e.t("skills.select_install", { target: Vt(s) }),
       { parse_mode: "MarkdownV2", reply_markup: as(o, 0, i) },
     );
   }),
@@ -19021,7 +19075,7 @@ kt.callbackQuery(/^edit_flow_env_cancel:/, async (e) => {
 Ie();
 var Ri = new se();
 Ri.callbackQuery("command_menu_skills", async (e) => {
-  (await e.answerCallbackQuery("\u{1F4E6} \u6280\u80FD\u7BA1\u7406"), await Il(e));
+  (await e.answerCallbackQuery(t("kb.skillsManage", {}, glang())), await Il(e));
 });
 var hk = {
   command_menu_list: { command: "/list", label: "\u{1F4CB} Issue \u5217\u8868" },
@@ -20032,6 +20086,15 @@ async function llmValidateModel(e, t, r) {
           o = Array.isArray(s?.data) && s.data.some((i) => i?.id === r);
         return { ok: o, skipped: !1 };
       }
+      case "ollama-cloud": {
+        let n = await fetch("https://ollama.com/v1/models", {
+          headers: { Authorization: `Bearer ${t}` },
+        });
+        if (!n.ok) return { ok: !0, skipped: !0 };
+        let s = await n.json(),
+          o = Array.isArray(s?.data) && s.data.some((i) => i?.id === r);
+        return { ok: o, skipped: !1 };
+      }
       default:
         return { ok: !0, skipped: !0 };
     }
@@ -20413,6 +20476,11 @@ function Of(e, t, r) {
   let n = new $o(e, { ContextConstructor: xd(r) });
   return (
     n.use(Pd(t.telegram)),
+    n.use(async (ctx, next) => {
+      ctx.language = await getLanguage(ctx.services);
+      ctx.t = (key, params) => t(key, params, ctx.language);
+      await next();
+    }),
     n.use(za),
     n.use(Ko),
     n.use(Va),
