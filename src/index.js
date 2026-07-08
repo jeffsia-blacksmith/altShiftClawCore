@@ -100,7 +100,7 @@ var Ou = (e, t, r) => (
 );
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE kc] content-type parser  —  VENDOR
-// ║ MIME/媒体类型解析（npm: content-type）
+// ║ MIME/media type parsing (npm: content-type)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var kc = zi((T0, ts) => {
   "use strict";
@@ -364,7 +364,7 @@ async function Ea(e, t) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Et] grammY (Telegram framework)  —  VENDOR
-// ║ Telegram Bot 框架：filter query、context、middleware（npm: grammy）
+// ║ Telegram Bot framework: filter query, context, middleware (npm: grammy)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Et = Oe(() => {
   "use strict";
@@ -5105,7 +5105,7 @@ async function rr(e, t, r) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE mt] new-flow helpers  —  BUSINESS
-// ║ Telegram 新建龍蝦流程輔助（new-flow: 前綴狀態）
+// ║ Telegram new Lobster flow helper (new-flow: prefix state)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var mt = Oe(() => {
   "use strict";
@@ -5479,10 +5479,10 @@ function Ey(e, gLang = glang()) {
 }
 function Sy(e, gLang = glang()) {
   return e.exists
-    ? [zo(`${O("\u6A94\u6848\uFF1A")}${vy(e)}`), zo(`${O("\u72C0\u614B\uFF1A")}${Cy(e)}`)]
+    ? [zo(`${O("File: ")}${vy(e)}`), zo(`${O("Status: ")}${Cy(e)}`)]
     : [
         O(
-          `尚未設定工作流程，您可以透過 /edit 重置範本來啟用小龍蝦的工作流程。`,
+          `No workflow configured yet. You can run /edit to reset the template and enable the Lobster workflow.`,
         ),
       ];
 }
@@ -5592,7 +5592,7 @@ async function Vr(e, t) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE ms] D1 database helpers  —  BUSINESS
-// ║ D1 綁定存取、schedules/kv 讀寫封裝
+// ║ D1 binding access, schedules/kv read/write wrapper
 // ╚══════════════════════════════════════════════════════════════════════════════
 var ms = Oe(() => {
   "use strict";
@@ -6010,7 +6010,7 @@ function hs(e) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Yr] GitHub API helper (small)  —  BUSINESS
-// ║ GitHub API 小工具（14 行）
+// ║ GitHub API small utilities (14 lines)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Yr = Oe(() => {
   "use strict";
@@ -6029,7 +6029,7 @@ async function Zo(e, t, r, n, s) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Xr] GitHub REST client wrapper  —  BUSINESS
-// ║ GitHub API 呼叫封裝（User-Agent: altShiftClawCore, X-GitHub-Api-Version）
+// ║ GitHub API call wrapper (User-Agent: altShiftClawCore, X-GitHub-Api-Version)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Xr = Oe(() => {
   "use strict";
@@ -6457,7 +6457,7 @@ function Kp(e) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE ar] workflow run status  —  BUSINESS
-// ║ workflow run 狀態（completed/running/disabled）
+// ║ workflow run states (completed/running/disabled)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var ar = Oe(() => {
   "use strict";
@@ -6679,7 +6679,7 @@ function u_(e) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Ss] state finalization  —  BUSINESS
-// ║ 狀態機 finalized 處理
+// ║ State machine finalized handling
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Ss = Oe(() => {
   "use strict";
@@ -6997,7 +6997,7 @@ async function ai(e, t, r, n, s, o) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE xs] GraphQL / templates  —  BUSINESS
-// ║ POST /graphql、templates 相關
+// ║ POST /graphql, templates related
 // ╚══════════════════════════════════════════════════════════════════════════════
 var xs = Oe(() => {
   "use strict";
@@ -7289,7 +7289,7 @@ function Mn(e) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Ms] new-flow state (part 1)  —  BUSINESS
-// ║ 新建流程狀態機（awaiting_name…）
+// ║ New flow state machine (awaiting_name…)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Ms = Oe(() => {
   "use strict";
@@ -7324,7 +7324,7 @@ function ci(e) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE di] new-flow state (part 2)  —  BUSINESS
-// ║ 新建流程狀態機（awaiting_description…）
+// ║ New flow state machine (awaiting_description…)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var di = Oe(() => {
   "use strict";
@@ -7484,7 +7484,7 @@ function Sm(e, t) {
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Im] templates/default handling  —  BUSINESS
-// ║ 預設範本處理
+// ║ Default template handling
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Im = Oe(() => {
   "use strict";
@@ -8330,12 +8330,12 @@ var Gs,
   });
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE cf] crypto PRNG (part)  —  VENDOR
-// ║ 隨機數/加密（tweetnacl 相關）
+// ║ Random number/crypto (tweetnacl related)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var cf = zi(() => {});
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE df] tweetnacl (crypto)  —  VENDOR
-// ║ NaCl 加密庫：簽章/加密（npm: tweetnacl）
+// ║ NaCl crypto: signature/encryption (npm: tweetnacl)
 // ╚══════════════════════════════════════════════════════════════════════════════
 var df = zi((YR, Si) => {
   (function (e) {
@@ -12034,7 +12034,7 @@ function wc(e, t) {
 var bc = wc(null, yh);
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Pc] @octokit + AI workflow  —  VENDOR+BIZ
-// ║ Octokit GitHub SDK（graphql/auth-token/request）+ 夾雜 AI workflow 參數業務
+// ║ Octokit GitHub SDK (graphql/auth-token/request) + AI workflow param business logic
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Pc = Ou(kc(), 1);
 var xh = /^-?\d+$/,
@@ -17078,7 +17078,7 @@ _s();
 ti();
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Hl] Telegram install/setup flow  —  BUSINESS
-// ║ 安裝流程 UI：awaiting_env、confirm_install、Secret 處理、範本 modelVar 驗證、MarkdownV2
+// ║ Installer flow UI: awaiting_env, confirm_install, Secret handling, template modelVar validation, MarkdownV2
 // ╚══════════════════════════════════════════════════════════════════════════════
 var Hl = Ou(df(), 1),
   mf = new Uint32Array([
@@ -19957,11 +19957,11 @@ async function nu(e, t, r, n, s) {
 }
 ar();
 // ╔══════════════════════════════════════════════════════════════════════════════
-// ║ [MODULE llm] /llm 指令 — AI 供應商與模型設定流程  —  BUSINESS（自行新增）
-// ║ 流程：/llm → 供應商選單 → （沿用既有 Key / 輸入新 Key）→ 模型選單（含自訂輸入）
-// ║ → 寫入 issue-N 分支的 .pi/settings.json（issue-1.yml 執行任務時讀取的真正來源）
-// ║ Key 經 repository_dispatch(update-llm-secret) 交由 GitHub Actions 寫入 repo secret，
-// ║ 使用者輸入 Key 的訊息會立即刪除。供應商/模型目錄讀自 templates/default/githubclaw.json。
+// ║ [MODULE llm] /llm command — AI provider and model setup flow — BUSINESS (self-added)
+// ║ Flow: /llm → provider menu → (reuse existing key / enter new key) → model menu (incl. custom input)
+// ║ → writes to issue-N branch's .pi/settings.json (the real source read by issue-1.yml at task time)
+// ║ Key is delivered via repository_dispatch(update-llm-secret) to GitHub Actions to write to repo secret,
+// ║ and the user's key message is deleted immediately. The provider/model catalog is read from templates/default/githubclaw.json.
 // ╚══════════════════════════════════════════════════════════════════════════════
 var llmStatePrefix = "llm-setup";
 function llmStateKey(e) {
@@ -20027,19 +20027,19 @@ function llmValidateKeyFormat(e, t) {
   let r = t.trim();
   switch (e) {
     case "google":
-      if (!r.startsWith("AIzaSy")) return { ok: !1, error: "Gemini API Key 格式不正確，通常應以 'AIzaSy' 開頭。" };
+      if (!r.startsWith("AIzaSy")) return { ok: !1, error: "Gemini API Key format is incorrect; it should start with 'AIzaSy'." };
       break;
     case "anthropic":
-      if (!r.startsWith("sk-ant-")) return { ok: !1, error: "Anthropic Claude API Key 格式不正確，通常應以 'sk-ant-' 開頭。" };
+      if (!r.startsWith("sk-ant-")) return { ok: !1, error: "Anthropic Claude API Key format is incorrect; it should start with 'sk-ant-'." };
       break;
     case "openai":
-      if (!r.startsWith("sk-")) return { ok: !1, error: "OpenAI API Key 格式不正確，通常應以 'sk-' 開頭。" };
+      if (!r.startsWith("sk-")) return { ok: !1, error: "OpenAI API Key format is incorrect; it should start with 'sk-'." };
       break;
     case "groq":
-      if (!r.startsWith("gsk_")) return { ok: !1, error: "Groq API Key 格式不正確，通常應以 'gsk_' 開頭。" };
+      if (!r.startsWith("gsk_")) return { ok: !1, error: "Groq API Key format is incorrect; it should start with 'gsk_'." };
       break;
     case "openrouter":
-      if (!r.startsWith("sk-or-v1-")) return { ok: !1, error: "OpenRouter API Key 格式不正確，通常應以 'sk-or-v1-' 開頭。" };
+      if (!r.startsWith("sk-or-v1-")) return { ok: !1, error: "OpenRouter API Key format is incorrect; it should start with 'sk-or-v1-'." };
       break;
   }
   return { ok: !0 };
@@ -20105,31 +20105,31 @@ async function llmValidateModel(e, t, r) {
 function llmProviderKeyboard(e) {
   let t = new F();
   for (let r of e.providers) (t.text(`\u{1F916} ${r.label}`, `llm_provider:${r.id}`), t.row());
-  return (t.text("❌ 取消", "llm_cancel:0"), t);
+  return (t.text("❌ Cancel", "llm_cancel:0"), t);
 }
 function llmKeyActionKeyboard() {
   return new F()
-    .text("♻️ 沿用已設定的 Key", "llm_key:reuse")
+    .text("♻️ Reuse existing Key", "llm_key:reuse")
     .row()
-    .text("\u{1F511} 輸入新的 API Key", "llm_key:new")
+    .text("\u{1F511} Enter a new API Key", "llm_key:new")
     .row()
-    .text("❌ 取消", "llm_cancel:0");
+    .text("❌ Cancel", "llm_cancel:0");
 }
 function llmModelKeyboard(e) {
   let t = new F();
   for (let r = 0; r < e.length; r++) (t.text(e[r].label ?? e[r].value, `llm_model:${r}`), t.row());
   return (
-    t.text("✍️ 自訂輸入模型名稱", "llm_model_custom:0"),
+    t.text("✍️ Custom model name input", "llm_model_custom:0"),
     t.row(),
-    t.text("❌ 取消", "llm_cancel:0"),
+    t.text("❌ Cancel", "llm_cancel:0"),
     t
   );
 }
 async function llmShowModelMenu(e, t, r) {
   let n = r.provider,
     s = r.models ?? [],
-    o = `\u{1F9E0} 供應商：${n}
-請選擇要使用的模型，或選「自訂輸入」：`,
+    o = `\u{1F9E0} Provider: ${n}
+Choose a model to use, or pick "Custom input":`,
     i = { reply_markup: llmModelKeyboard(s) };
   r.promptMessageId
     ? await e.api
@@ -20150,15 +20150,15 @@ async function llmFinish(e, t, r, n) {
   } catch (d) {
     let m = d instanceof Error ? d.message : String(d);
     await e.reply(
-      `❌ 寫入 .pi/settings.json 失敗：${m}
-請確認 issue-${r.issueNumber} 分支存在後重試 /llm。`,
+      `❌ Failed to write .pi/settings.json: ${m}
+Please confirm the issue-${r.issueNumber} branch exists, then retry /llm.`,
     );
     return;
   }
   await llmClearState(o, t);
-  let c = `✅ 已設定 #${r.issueNumber} 的 AI 供應商：${r.provider}
-\u{1F9E0} 模型：${n}${r.keyDispatched ? `
-\u{1F510} API Key 已送往 GitHub Actions 寫入 repo secret（${r.secretName}），約需數十秒生效。` : ""}`;
+  let c = `✅ Set #${r.issueNumber} AI provider: ${r.provider}
+\u{1F9E0} Model: ${n}${r.keyDispatched ? `
+\u{1F510} API Key has been sent to GitHub Actions to write to repo secret (${r.secretName}); it takes effect in tens of seconds.` : ""}`;
   r.promptMessageId
     ? await e.api.editMessageText(t, r.promptMessageId, c).catch(() => e.reply(c))
     : await e.reply(c);
@@ -20172,7 +20172,7 @@ llmComposer.command("llm", async (e) => {
     a = await Ge(t, s);
   if (!a) {
     await e.reply(
-      "⚠️ 尚未選擇小龍蝦，請先用 /list 選擇。（LLM 設定是每隻小龍蝦獨立的）",
+      "⚠️ No Lobster selected yet. Please use /list to pick one first. (LLM settings are per-Lobster.)",
     );
     return;
   }
@@ -20181,22 +20181,22 @@ llmComposer.command("llm", async (e) => {
     l = await llmLoadCatalog(r, o, i);
   } catch (m) {
     let w = m instanceof Error ? m.message : String(m);
-    await e.reply(`❌ 讀取供應商目錄失敗：${w}`);
+    await e.reply(`❌ Failed to load provider catalog: ${w}`);
     return;
   }
   if (!l) {
     await e.reply(
-      "❌ 找不到供應商目錄（templates/default/githubclaw.json），請先確認範本已同步。",
+      "❌ Provider catalog not found (templates/default/githubclaw.json). Please ensure the template is synced.",
     );
     return;
   }
   let c = await llmReadSettings(r, o, i, a).catch(() => ({})),
     d = [
-      `\u{1F9E0} #${a} 目前的 LLM 設定：`,
-      `供應商：${c.defaultProvider ?? "（未設定）"}`,
-      `模型：${c.defaultModel ?? "（未設定）"}`,
+      `\u{1F9E0} #${a} current LLM settings:`,
+      `Provider: ${c.defaultProvider ?? "(not set)"}`,
+      `Model: ${c.defaultModel ?? "(not set)"}`,
       "",
-      "請選擇新的 AI 供應商：",
+      "Choose a new AI provider:",
     ].join(`
 `);
   await llmSetState(t, s, { step: "selecting_provider", issueNumber: a });
@@ -20208,7 +20208,7 @@ llmComposer.callbackQuery(/^llm_provider:/, async (e) => {
   if (!s) return;
   let o = await llmGetState(t, s);
   if (!o) {
-    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    await e.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
     return;
   }
   let i = e.callbackQuery.data.slice("llm_provider:".length),
@@ -20216,7 +20216,7 @@ llmComposer.callbackQuery(/^llm_provider:/, async (e) => {
     c = await llmLoadCatalog(r, a, l).catch(() => null),
     d = c ? llmFindProvider(c, i) : null;
   if (!d) {
-    await e.answerCallbackQuery("⚠️ 無效的供應商。");
+    await e.answerCallbackQuery("⚠️ Invalid provider.");
     return;
   }
   await e.answerCallbackQuery();
@@ -20231,16 +20231,16 @@ llmComposer.callbackQuery(/^llm_provider:/, async (e) => {
     y = await llmSecretExists(r, a, l, d.secretName).catch(() => !1);
   if (y) {
     ((w.step = "choosing_key_action"), await llmSetState(t, s, w));
-    let _ = `\u{1F511} 偵測到 repo 已有 secret：${d.secretName}
-要沿用現有的 Key，還是輸入新的？`,
+    let _ = `\u{1F511} Detected an existing repo secret: ${d.secretName}
+Reuse the existing Key, or enter a new one?`,
       I = { reply_markup: llmKeyActionKeyboard() };
     m
       ? await e.api.editMessageText(s, m, _, I).catch(() => e.reply(_, I))
       : await e.reply(_, I);
   } else {
     ((w.step = "awaiting_llm_key"), await llmSetState(t, s, w));
-    let _ = `\u{1F510} 請直接回覆你的 ${d.label} API Key。
-為了安全，你的 Key 訊息會在讀取後立即刪除，並透過 GitHub Actions 寫入 repo secret（${d.secretName}），不會留在對話中。`;
+    let _ = `\u{1F510} Please reply directly with your ${d.label} API Key.
+For security, your Key message will be deleted immediately after reading, and sent to GitHub Actions to write to repo secret (${d.secretName}); it will not remain in the chat.`;
     m
       ? await e.api.editMessageText(s, m, _).catch(() => e.reply(_))
       : await e.reply(_);
@@ -20252,7 +20252,7 @@ llmComposer.callbackQuery(/^llm_key:/, async (e) => {
   if (!r) return;
   let n = await llmGetState(t, r);
   if (!n || n.step !== "choosing_key_action") {
-    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    await e.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
     return;
   }
   await e.answerCallbackQuery();
@@ -20264,8 +20264,8 @@ llmComposer.callbackQuery(/^llm_key:/, async (e) => {
   } else {
     let i = { ...n, step: "awaiting_llm_key", promptMessageId: o };
     await llmSetState(t, r, i);
-    let a = `\u{1F510} 請直接回覆新的 API Key。
-訊息會在讀取後立即刪除，並透過 GitHub Actions 寫入 repo secret（${n.secretName}）。`;
+    let a = `\u{1F510} Please reply directly with your new API Key.
+The message will be deleted immediately after reading, and sent to GitHub Actions to write to repo secret (${n.secretName}).`;
     o
       ? await e.api.editMessageText(r, o, a).catch(() => e.reply(a))
       : await e.reply(a);
@@ -20277,13 +20277,13 @@ llmComposer.callbackQuery(/^llm_model:/, async (e) => {
   if (!r) return;
   let n = await llmGetState(t, r);
   if (!n || n.step !== "selecting_model") {
-    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    await e.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
     return;
   }
   let s = Number(e.callbackQuery.data.slice("llm_model:".length)),
     o = Array.isArray(n.models) ? n.models[s] : null;
   if (!o) {
-    await e.answerCallbackQuery("⚠️ 無效的模型選項。");
+    await e.answerCallbackQuery("⚠️ Invalid model option.");
     return;
   }
   (await e.answerCallbackQuery(), await llmFinish(e, r, n, o.value));
@@ -20294,14 +20294,14 @@ llmComposer.callbackQuery(/^llm_model_custom:/, async (e) => {
   if (!r) return;
   let n = await llmGetState(t, r);
   if (!n || n.step !== "selecting_model") {
-    await e.answerCallbackQuery("⚠️ 選單已失效，請重新執行 /llm。");
+    await e.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
     return;
   }
   await e.answerCallbackQuery();
   let s = e.callbackQuery.message?.message_id ?? n.promptMessageId,
     o = { ...n, step: "awaiting_llm_model_input", promptMessageId: s };
   await llmSetState(t, r, o);
-  let i = `✍️ 請直接回覆模型名稱（例如 ${n.models?.[0]?.value ?? "gpt-5-mini"}）：`;
+  let i = `✍️ Please reply directly with the model name (e.g. ${n.models?.[0]?.value ?? "gpt-5-mini"}):`;
   s
     ? await e.api.editMessageText(r, s, i).catch(() => e.reply(i))
     : await e.reply(i);
@@ -20310,11 +20310,11 @@ llmComposer.callbackQuery(/^llm_cancel:/, async (e) => {
   let { store: t } = e.services,
     r = e.chat?.id;
   if (!r) return;
-  (await llmClearState(t, r), await e.answerCallbackQuery("已取消"));
+  (await llmClearState(t, r), await e.answerCallbackQuery("Cancelled"));
   let n = e.callbackQuery.message?.message_id;
   n &&
     (await e.api
-      .editMessageText(r, n, "❌ 已取消 LLM 設定。")
+      .editMessageText(r, n, "❌ LLM setup cancelled.")
       .catch(() => {}));
 });
 llmComposer.on("message:text", async (e, t) => {
@@ -20340,13 +20340,13 @@ llmComposer.on("message:text", async (e, t) => {
     try {
       await e.api.deleteMessage(i, c);
     } catch (m) {
-      console.warn("[/llm] 刪除 API Key 訊息失敗", {
+      console.warn("[/llm] Failed to delete API Key message", {
         chatId: i,
         error: m instanceof Error ? m.message : String(m),
       });
     }
     if (!l) {
-      await e.reply("⚠️ Key 不能為空，請重新輸入。");
+      await e.reply("⚠️ Key cannot be empty. Please enter it again.");
       return;
     }
     let formatCheck = llmValidateKeyFormat(a.provider, l);
@@ -20359,7 +20359,7 @@ llmComposer.on("message:text", async (e, t) => {
       await llmDispatchSecretUpdate(s, d, m, a.provider, a.secretName, l);
     } catch (y) {
       let _ = y instanceof Error ? y.message : String(y);
-      await e.reply(`❌ 觸發 secret 更新失敗：${_}`);
+      await e.reply(`❌ Failed to trigger secret update: ${_}`);
       return;
     }
     let w = { ...a, step: "selecting_model", apiKey: l, keyDispatched: !0 };
@@ -20368,14 +20368,14 @@ llmComposer.on("message:text", async (e, t) => {
   }
   let l = r.trim();
   if (!l) {
-    await e.reply("⚠️ 模型名稱不能為空，請重新輸入。");
+    await e.reply("⚠️ Model name cannot be empty. Please enter it again.");
     return;
   }
   if (a.apiKey) {
     let c = await llmValidateModel(a.provider, a.apiKey, l);
     if (!c.ok) {
       await e.reply(
-        `❌ 驗證失敗：供應商 ${a.provider} 找不到模型「${l}」，請確認名稱後重新輸入。`,
+        `❌ Validation failed: provider ${a.provider} cannot find model "${l}". Please confirm the name and try again.`,
       );
       return;
     }

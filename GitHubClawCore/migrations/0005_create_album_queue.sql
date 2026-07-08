@@ -1,5 +1,5 @@
--- album_queue: 暫存同一 media_group 的所有項目，以抵達時間為 debounce 基準
--- 當最後抵達的 Worker 判斷「quiet period 已過」後，一次性 claim 所有項目並統一處理
+-- album_queue: buffer all items of the same media_group, debounced by arrival timestamp
+-- when the last-arriving Worker determines the quiet period has passed, claim all items at once and process them together
 CREATE TABLE IF NOT EXISTS album_queue (
   media_group_id TEXT NOT NULL,
   message_id     INTEGER NOT NULL,

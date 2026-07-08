@@ -28,11 +28,11 @@ jobs:
       - name: Bundle management workflows from Toolkit
         run: |
           set -euo pipefail
-          # 對齊官方 zip 結構：套件內含 actions/（實例的管理 workflows）。
-          # deploy-lobster-burger.yml 每次部署/更新核心時會把 actions/. 覆蓋進
-          # 實例的 .github/workflows/ 並 commit——這就是既有實例拿到 workflow
-          # 更新（新指令菜單、update-llm-secret.yml 等）的唯一自動通道。
-          # 單一事實來源在 altShiftClawToolkit/installer/workflows，發佈時拉取。
+          # Match the official zip layout: the package contains actions/ (the instance's managing workflows).
+          # deploy-lobster-burger.yml overwrites actions/ into the instance's .github/workflows/ on
+          # every deploy/update of the core and commits it — this is the only auto-channel through
+          # which existing instances pick up workflow updates (new command menu, update-llm-secret.yml, etc.).
+          # The single source of truth is altShiftClawToolkit/installer/workflows, pulled at publish time.
           git clone --depth 1 https://github.com/jeffsia-blacksmith/altShiftClawToolkit.git /tmp/toolkit
           rm -rf actions
           mkdir -p actions
