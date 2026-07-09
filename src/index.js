@@ -14440,9 +14440,9 @@ function xd(e) {
 }
 Ie();
 function Pd(e) {
-  let t = new se();
+  let mw = new se();
   return (
-    t.use(async (r, n) => {
+    mw.use(async (r, n) => {
       let s = r.from?.id ?? null,
         o = r.chat?.id ?? null,
         i = r.chat?.type ?? null,
@@ -14452,31 +14452,31 @@ function Pd(e) {
           "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID \u8207 TELEGRAM_ALLOWED_CHAT_ID \u5FC5\u9808\u540C\u6642\u8A2D\u5B9A\uFF0C\u62D2\u7D55\u6240\u6709\u8ACB\u6C42\u3002",
         ),
           await r.reply(
-            "\u26A0\uFE0F \u6A5F\u5668\u4EBA\u5C1A\u672A\u5B8C\u6210\u6388\u6B0A\u8A2D\u5B9A\uFF0C\u8ACB\u5148\u8A2D\u5B9A TELEGRAM_ALLOWED_FROM_ID \u8207 TELEGRAM_ALLOWED_CHAT_ID\u3002",
+            t("access.notFullyConfigured", {}, glang()),
           ));
         return;
       }
       if (i !== "private") {
-        await r.reply("\u6B64\u6A5F\u5668\u4EBA\u50C5\u63A5\u53D7\u79C1\u4EBA\u804A\u5929\u3002");
+        await r.reply(t("access.privateOnly", {}, glang()));
         return;
       }
       if (s !== e.allowedFromId) {
-        await r.reply("\u672A\u6388\u6B0A\u7684\u4F7F\u7528\u8005\u3002");
+        await r.reply(t("access.unauthorizedUser", {}, glang()));
         return;
       }
       if (o !== e.allowedChatId) {
-        await r.reply("\u672A\u6388\u6B0A\u7684\u804A\u5929\u5BA4\u3002");
+        await r.reply(t("access.unauthorizedChat", {}, glang()));
         return;
       }
       if (a.length > 0 && a.length > e.maxMessageLength) {
         await r.reply(
-          `\u8A0A\u606F\u904E\u9577\uFF0C\u9650\u5236\u70BA ${e.maxMessageLength} \u500B\u5B57\u5143\u3002`,
+          t("access.messageTooLong", { max: e.maxMessageLength }, glang()),
         );
         return;
       }
       await n();
     }),
-    t
+    mw
   );
 }
 Ie();
@@ -14485,10 +14485,11 @@ mt();
 ft();
 var za = new se();
 za.command("start", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github;
+  let gL = glang();
   try {
-    let { data: i } = await t.rest.issues.listForRepo({
+    let { data: i } = await ok.rest.issues.listForRepo({
         owner: s,
         repo: o,
         state: "open",
@@ -14505,7 +14506,7 @@ za.command("start", async (e) => {
         .map((I) => ({ number: I.number, title: I.title }));
     if (a.length === 0) {
       await e.reply(
-        "\u{1F99E} \u76EE\u524D\u6C92\u6709\u4EFB\u4F55\u9F8D\u8766\uFF0C\u8ACB\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766\u3002",
+        t("core.noLobstersYet", {}, gL),
       );
       return;
     }
@@ -14515,19 +14516,19 @@ za.command("start", async (e) => {
       w = [
         c
           ? d
-            ? `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7684\u662F\uFF1A#${d.number} ${d.title || "\uFF08\u672A\u547D\u540D\u5C0F\u9F8D\u8766\uFF09"}`
-            : `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7D00\u9304\u662F #${c}\uFF0C\u4F46\u76EE\u524D\u5217\u8868\u88E1\u627E\u4E0D\u5230\uFF08\u53EF\u80FD\u5DF2\u95DC\u9589\uFF09\u3002`
+            ? t("core.currentActive", { number: d.number, title: d.title || t("core.unnamedLobster", {}, gL) }, gL)
+            : t("core.currentActiveNotFound", { number: c }, gL)
           : null,
-        "\u{1F99E} \u4F60\u7684\u9F8D\u8766\u5011\uFF1A",
+        t("core.yourLobsters", {}, gL),
       ].filter(Boolean).join(`
 `),
       y = Do(a),
       _ = await e.reply(w, { reply_markup: y });
     l && _.message_id && (await Sn(r, l, { mode: "list", messageId: _.message_id }));
   } catch (i) {
-    (console.error("[/start] \u57F7\u884C\u5931\u6557", i),
+    (console.error("[/start] 執行失敗", i),
       await e.reply(
-        "\u274C \u57F7\u884C /start \u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
+        t("core.startError", {}, gL),
       ));
   }
 });

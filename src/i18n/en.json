@@ -315,5 +315,20 @@
     "summary": "Content Summary (Web/PDF/Video)",
     "telegram-notify": "Telegram Notification",
     "tools-package-builder": "Tools Package Builder"
+  },
+  "access": {
+    "notFullyConfigured": "⚠️ The bot's authorization isn't fully configured yet — please set TELEGRAM_ALLOWED_FROM_ID and TELEGRAM_ALLOWED_CHAT_ID first.",
+    "privateOnly": "This bot only accepts private chats.",
+    "unauthorizedUser": "Unauthorized user.",
+    "unauthorizedChat": "Unauthorized chat.",
+    "messageTooLong": "Message too long — limit is {max} characters."
+  },
+  "core": {
+    "noLobstersYet": "🦞 No lobsters yet — use /new to create one.",
+    "currentActive": "🦞 Currently active: #{number} {title}",
+    "currentActiveNotFound": "🦞 The current record is #{number}, but it's not in the list right now (may have been closed).",
+    "yourLobsters": "🦞 Your lobsters:",
+    "startError": "❌ Something went wrong running /start — please try again later.",
+    "unnamedLobster": "(Unnamed lobster)"
   }
 }

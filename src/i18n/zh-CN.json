@@ -315,5 +315,20 @@
     "summary": "内容摘要（网页/PDF/影片）",
     "telegram-notify": "Telegram 通知",
     "tools-package-builder": "Tools 套件建立器"
+  },
+  "access": {
+    "notFullyConfigured": "⚠️ 机器人尚未完成授权设定，请先设定 TELEGRAM_ALLOWED_FROM_ID 与 TELEGRAM_ALLOWED_CHAT_ID。",
+    "privateOnly": "此机器人仅接受私人聊天。",
+    "unauthorizedUser": "未授权的使用者。",
+    "unauthorizedChat": "未授权的聊天室。",
+    "messageTooLong": "讯息过长，限制为 {max} 个字元。"
+  },
+  "core": {
+    "noLobstersYet": "🦞 目前没有任何龙虾，请使用 /new 建立新的小龙虾。",
+    "currentActive": "🦞 目前值班的是：#{number} {title}",
+    "currentActiveNotFound": "🦞 目前值班纪录是 #{number}，但目前列表里找不到（可能已关闭）。",
+    "yourLobsters": "🦞 你的龙虾们：",
+    "startError": "❌ 执行 /start 时发生错误，请稍后再试。",
+    "unnamedLobster": "（未命名小龙虾）"
   }
 }
