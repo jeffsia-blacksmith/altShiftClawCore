@@ -19328,16 +19328,15 @@ function xf(e) {
       return "\u{1F4C1} \u5A92\u9AD4";
   }
 }
-function xi(e, t, r, n) {
+function xi(e, t_files, r, n) {
   let s = [Xl(e), n].filter(Boolean),
-    o = t.map((l) => Ak(l)),
-    i = t.map((l) => `\`${l.repoPath}\``).join(", "),
-    a = [...s, "", `**\u4F86\u81EA\uFF1A** ${vk(e)} \xB7 ${Ck(e)}`, "", "---", "", ...o];
+    o = t_files.map((l) => Ak(l)),
+    i = t_files.map((l) => `\`${l.repoPath}\``).join(", "),
+    a = [...s, "", t("core.messageFromSource", { sender: vk(e), chat: Ck(e) }, glang()), "", "---", "", ...o];
   return (
     r && a.push("", r),
-    i && a.push("", `\u76F8\u5C0D\u4F4D\u7F6E\uFF1A${i}`),
-    a.join(`
-`)
+    i && a.push("", t("core.relativeLocation", { path: i }, glang())),
+    a.join(`\n`)
   );
 }
 function Mk(e, t) {
@@ -19361,25 +19360,25 @@ function Ok(e, t) {
 `)
   );
 }
-async function Ys(e, t) {
+async function Ys(e, t_msg) {
   let { store: r, octokit: n, config: s } = e.services,
     o = e.chat.id;
   if (await Ke(r, o)) {
     await e.reply(
-      "\u{1F99E} \u9019\u500B\u6B04\u4F4D\u8ACB\u76F4\u63A5\u8F38\u5165\u6587\u5B57\uFF0C\u4E0D\u63A5\u53D7\u5A92\u9AD4\u8A0A\u606F\u3002",
+      t("core.mediaNotAccepted", {}, glang()),
     );
     return;
   }
   if (await sr(r, o)) {
     await e.reply(
-      "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u4E2D\u8ACB\u4F7F\u7528\u6587\u5B57\u56DE\u8986",
+      t("core.useTextInSchedule", {}, glang()),
     );
     return;
   }
   let l = await Ge(r, o);
   if (!l) {
     await e.reply(
-      "\u26A0\uFE0F \u76EE\u524D\u6C92\u6709\u6D3B\u8E8D\u7684 Issue\uFF0C\u8ACB\u5148\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0 Issue\u3002",
+      t("core.noActiveIssueWarn", {}, glang()),
     );
     return;
   }
@@ -19521,26 +19520,26 @@ async function Ys(e, t) {
   }
   d && (await e.reply(c.restingMessage));
 }
-async function Nk(e, t, r) {
+async function Nk(e, t_file, r) {
   let { store: n, octokit: s, config: o } = e.services,
     i = e.services.d1,
     a = e.chat.id;
   if (await Ke(n, a)) {
     await e.reply(
-      "\u{1F99E} \u9019\u500B\u6B04\u4F4D\u8ACB\u76F4\u63A5\u8F38\u5165\u6587\u5B57\uFF0C\u4E0D\u63A5\u53D7\u5A92\u9AD4\u8A0A\u606F\u3002",
+      t("core.mediaNotAccepted", {}, glang()),
     );
     return;
   }
   if (await sr(n, a)) {
     await e.reply(
-      "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u4E2D\u8ACB\u4F7F\u7528\u6587\u5B57\u56DE\u8986",
+      t("core.useTextInSchedule", {}, glang()),
     );
     return;
   }
   let d = await Ge(n, a);
   if (!d) {
     await e.reply(
-      "\u26A0\uFE0F \u76EE\u524D\u6C92\u6709\u6D3B\u8E8D\u7684 Issue\uFF0C\u8ACB\u5148\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0 Issue\u3002",
+      t("core.noActiveIssueWarn", {}, glang()),
     );
     return;
   }
@@ -19557,7 +19556,7 @@ async function Nk(e, t, r) {
       chat: e.message?.chat,
     },
     U = (e.message?.caption ?? "").trim(),
-    K = eu(t.fileName ?? t.fileId, tu(t.field, t.fileName)),
+    K = eu(t_file.fileName ?? t_file.fileId, tu(t_file.field, t_file.fileName)),
     Ce = ru(K);
   (await i
     .prepare(
@@ -19569,9 +19568,9 @@ async function Nk(e, t, r) {
     .bind(
       r,
       _,
-      t.fileId,
+      t_file.fileId,
       Ce,
-      t.field,
+      t_file.field,
       P,
       d,
       o.github.owner,
