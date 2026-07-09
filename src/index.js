@@ -6131,8 +6131,8 @@ function qy(e) {
   return jy.get(ws(e)) ?? null;
 }
 function Ky(e) {
-  let t = ws(e);
-  return Uy[t] ?? qy(t)?.label ?? t;
+  let id = ws(e);
+  return (Object.hasOwn(Uy, id) ? t(`skillCatalog.${id}`, {}, glang()) : null) ?? qy(id)?.label ?? id;
 }
 function Mp(e, t) {
   return [...new Set(e.map(ws).filter((r) => t.has(r)))];

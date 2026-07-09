@@ -295,5 +295,25 @@
     "noActiveLobster": "⚠️ 目前没有活跃的小龙虾，先用 /new 建立一只或用 /list 选择。",
     "readIssueFailedRetry": "❌ 读取 Issue 资料失败，请稍后重试。",
     "notCreatedByNewFlow": "⚠️ 目前活跃的 Issue 不是用 /new 建立的小龙虾，暂时无法用 /edit 编辑。"
+  },
+  "skillCatalog": {
+    "audio-transcriber": "语音转文字",
+    "call-agent-via-issue": "Issue 代理委派",
+    "deep-researcher": "深度研究",
+    "felo-search": "Felo 即时搜寻",
+    "felo-slides": "Felo 简报生成",
+    "felo-web-fetch": "Felo 网页撷取",
+    "felo-x-search": "Felo X 搜寻",
+    "find-skills": "技能探索",
+    "google-stitch": "Google Stitch 设计生成",
+    "image-describer": "图片描述与辨识",
+    "meeting-note-formatter": "会议笔记整理",
+    "gemini-nanobanana": "Nano Banana 图像生成",
+    "playwright-cli": "网页自动化测试",
+    "sendgrid": "SendGrid 邮件发送",
+    "skill-creator": "技能建立与优化",
+    "summary": "内容摘要（网页/PDF/影片）",
+    "telegram-notify": "Telegram 通知",
+    "tools-package-builder": "Tools 套件建立器"
   }
 }

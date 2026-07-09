@@ -295,5 +295,25 @@
     "noActiveLobster": "⚠️ No active lobster right now — use /new to create one or /list to pick one.",
     "readIssueFailedRetry": "❌ Failed to read the Issue data — please try again later.",
     "notCreatedByNewFlow": "⚠️ The currently active Issue wasn't created via /new, so it can't be edited with /edit right now."
+  },
+  "skillCatalog": {
+    "audio-transcriber": "Audio-to-Text Transcription",
+    "call-agent-via-issue": "Issue Agent Delegation",
+    "deep-researcher": "Deep Research",
+    "felo-search": "Felo Instant Search",
+    "felo-slides": "Felo Slide Generation",
+    "felo-web-fetch": "Felo Web Fetch",
+    "felo-x-search": "Felo X Search",
+    "find-skills": "Skill Discovery",
+    "google-stitch": "Google Stitch Design Generation",
+    "image-describer": "Image Description & Recognition",
+    "meeting-note-formatter": "Meeting Notes Formatting",
+    "gemini-nanobanana": "Nano Banana Image Generation",
+    "playwright-cli": "Web Automation Testing",
+    "sendgrid": "SendGrid Email Sending",
+    "skill-creator": "Skill Creation & Optimization",
+    "summary": "Content Summary (Web/PDF/Video)",
+    "telegram-notify": "Telegram Notification",
+    "tools-package-builder": "Tools Package Builder"
   }
 }
