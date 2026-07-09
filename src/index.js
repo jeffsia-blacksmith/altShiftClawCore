@@ -5515,7 +5515,6 @@ var by,
   wp = Oe(() => {
     "use strict";
     Xe();
-    ds();
     ((by = Object.freeze({
       active: "\u555F\u7528",
       paused: "\u66AB\u505C",
@@ -6652,7 +6651,6 @@ var Yy,
     ms();
     Jr();
     Xr();
-    ds();
     ti();
     ar();
     ((Yy = "\u7531 Workflow \u5B9A\u7FA9"),
@@ -15828,8 +15826,6 @@ async function RT(e, t, r) {
 Ie();
 Jr();
 Ve();
-ds();
-ds();
 function yi(e) {
   let t = typeof e == "string" ? e.trim() : "";
   if (!t) return { scheduleId: "", source: "issue" };
