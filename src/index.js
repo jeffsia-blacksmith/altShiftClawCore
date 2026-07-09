@@ -4727,7 +4727,13 @@ function cy(e) {
   return Object.hasOwn(Fd, e);
 }
 function dy(e) {
-  return cy(e) ? (Fd[e] ?? "") : "";
+  return cy(e)
+    ? t(
+        { awaiting_name: "newFlow.stepName", awaiting_description: "newFlow.stepDescription", awaiting_template: "newFlow.stepTemplate" }[e],
+        {},
+        glang(),
+      )
+    : "";
 }
 function $d(e) {
   return e.length <= Md ? e : `${e.slice(0, Md - 1)}\u2026`;
@@ -4757,10 +4763,10 @@ function Bd(e) {
     );
 }
 function jd(e) {
-  let t = dy(e);
-  return t
+  let stepLabel = dy(e);
+  return stepLabel
     ? new F()
-        .text(`\u2705 \u4FDD\u7559${t}`, `edit_keep_field:${e}`)
+        .text(t("newFlow.keepFieldButton", { step: stepLabel }, glang()), `edit_keep_field:${e}`)
         .row()
         .text(t("kb.cancel", {}, glang()), "new_flow_cancel:current")
     : new F();
@@ -5031,7 +5037,7 @@ function sp() {
   return new F()
     .text(t("kb.setMissing", {}, glang()), "templates_env_setup:0")
     .row()
-    .text("\u{1F504} \u5168\u90E8\u91CD\u65B0\u8A2D\u5B9A", "templates_env_resetall:0")
+    .text(t("kb.resetAllEnvVars", {}, glang()), "templates_env_resetall:0")
     .text(t("kb.cancel", {}, glang()), "templates_env_cancel:0");
 }
 function hr(e = "templates") {
@@ -5039,8 +5045,8 @@ function hr(e = "templates") {
 }
 function op() {
   return new F()
-    .text("\u{1F916} \u7E7C\u7E8C\u8A2D\u5B9A LINE Bot", "linebot_setup_continue:")
-    .text("\u23ED\uFE0F \u4E4B\u5F8C\u518D\u624B\u52D5\u89F8\u767C", "linebot_setup_skip:");
+    .text(t("kb.continueLineBotSetup", {}, glang()), "linebot_setup_continue:")
+    .text(t("kb.triggerLaterManually", {}, glang()), "linebot_setup_skip:");
 }
 function Lt() {
   return new F()
@@ -5049,8 +5055,8 @@ function Lt() {
 }
 function ip() {
   return new F()
-    .text("\u{1F680} \u958B\u59CB\u90E8\u7F72", "linebot_deploy_confirm:")
-    .text("\u270F\uFE0F \u4FEE\u6539", "linebot_edit_params:")
+    .text(t("kb.startDeploy", {}, glang()), "linebot_deploy_confirm:")
+    .text(t("kb.edit", {}, glang()), "linebot_edit_params:")
     .text(t("kb.cancel", {}, glang()), "linebot_deploy_cancel:");
 }
 function ap() {
@@ -5058,12 +5064,12 @@ function ap() {
     .text("\u{1F916} Bot ID", "linebot_edit:bot_id")
     .text("\u{1F4FA} Channel ID", "linebot_edit:channel_id")
     .row()
-    .text("\u{1F4AC} \u9810\u8A2D\u56DE\u61C9", "linebot_edit:reply_msg")
-    .text("\u{1F99E} \u5C0F\u9F8D\u8766", "linebot_edit:issue_number")
+    .text(t("kb.defaultReply", {}, glang()), "linebot_edit:reply_msg")
+    .text(t("kb.issueNumberLabel", {}, glang()), "linebot_edit:issue_number")
     .row()
-    .text("\u{1F552} \u6642\u5340", "linebot_edit:utc_offset")
+    .text(t("kb.timezone", {}, glang()), "linebot_edit:utc_offset")
     .row()
-    .text("\u2B05\uFE0F \u8FD4\u56DE", "linebot_edit_back:");
+    .text(t("kb.back", {}, glang()), "linebot_edit_back:");
 }
 function wr() {
   return new F().text(t("kb.cancel", {}, glang()), "linebot_deploy_cancel:");
@@ -7360,12 +7366,12 @@ function X_(e, t) {
 }
 function Z_(e) {
   return e !== !1
-    ? "\u555F\u7528\uFF08\u6703\u6D3E\u5DE5\u7D66\u5C0F\u9F8D\u8766\u57F7\u884C\uFF09"
-    : "\u505C\u7528\uFF08\u50C5\u6536\u96C6\u8CC7\u6599\u5230 Issue\uFF09";
+    ? t("newFlow.workflowEnabledOn", {}, glang())
+    : t("newFlow.workflowEnabledOff", {}, glang());
 }
 function eT(e) {
   let {
-      step: t,
+      step: stp,
       mode: r = "create",
       name: n = "",
       description: s = "",
@@ -7374,89 +7380,90 @@ function eT(e) {
     } = e,
     a = [],
     l = r === "edit",
-    c = Y_(t),
-    d = l ? `${X_(c.step, c.total)} ` : "";
+    c = Y_(stp),
+    d = l ? `${X_(c.step, c.total)} ` : "",
+    gL = glang();
   return (
     i && a.push(i, ""),
-    t === "awaiting_name"
+    stp === "awaiting_name"
       ? (l
           ? a.push(
-              `\u270F\uFE0F ${d}\u8ACB\u8F38\u5165\u65B0\u7684\u5C0F\u9F8D\u8766\u540D\u7A31`,
-              `\u76EE\u524D\u540D\u7A31\uFF1A${Mn(n)}`,
+              t("newFlow.editNamePrompt", { step: d }, gL),
+              t("newFlow.currentName", { name: Mn(n) }, gL),
               "",
-              "\u{1F446} \u60F3\u4FDD\u7559\u539F\u503C\u5C31\u6309\u300C\u4FDD\u7559\u540D\u7A31\u300D\uFF0C\u60F3\u4E2D\u6B62\u5C31\u6309\u300C\u53D6\u6D88\u300D\u3002",
+              t("newFlow.keepNameHint", {}, gL),
             )
           : a.push(
-              "\u{1F99E} \u8ACB\u8F38\u5165\u9019\u96BB\u5C0F\u9F8D\u8766\u7684\u540D\u7A31",
+              t("newFlow.enterName", {}, gL),
               "",
-              "\u4F8B\u5982\uFF1A\u8A18\u5E33\u5C0F\u9F8D\u8766\u3001\u767C\u7968\u6574\u7406\u3001\u5BA2\u670D\u56DE\u8986",
+              t("newFlow.enterNameExample", {}, gL),
             ),
         a.join(`
 `))
-      : t === "awaiting_description"
+      : stp === "awaiting_description"
         ? (l
             ? a.push(
-                `\u{1F4DD} ${d}\u8ACB\u8F38\u5165\u300C${Mn(n)}\u300D\u7684\u65B0\u63CF\u8FF0`,
-                `\u76EE\u524D\u63CF\u8FF0\uFF1A${Mn(s)}`,
+                t("newFlow.editDescriptionPrompt", { step: d, name: Mn(n) }, gL),
+                t("newFlow.currentDescription", { description: Mn(s) }, gL),
                 "",
-                "\u{1F446} \u60F3\u4FDD\u7559\u539F\u503C\u5C31\u6309\u300C\u4FDD\u7559\u63CF\u8FF0\u300D\uFF0C\u60F3\u4E2D\u6B62\u5C31\u6309\u300C\u53D6\u6D88\u300D\u3002",
+                t("newFlow.keepDescriptionHint", {}, gL),
               )
             : a.push(
-                `\u{1F4DD} \u8ACB\u8F38\u5165\u300C${Mn(n)}\u300D\u7684\u63CF\u8FF0`,
+                t("newFlow.enterDescription", { name: Mn(n) }, gL),
                 "",
-                "\u4F8B\u5982\uFF1A\u6574\u7406\u65E5\u5E38\u6536\u652F\u3001\u5206\u985E\u767C\u7968\u3001\u8F38\u51FA\u8A18\u5E33\u6458\u8981",
+                t("newFlow.enterDescriptionExample", {}, gL),
               ),
           a.join(`
 `))
-        : t === "awaiting_template"
+        : stp === "awaiting_template"
           ? (a.push(
-              "\u{1F4E6} \u8ACB\u9078\u64C7\u5C0F\u9F8D\u8766\u7684\u7BC4\u672C",
+              t("newFlow.selectTemplate", {}, gL),
               "",
-              "\u{1F447} \u9EDE\u9078\u4E0B\u65B9\u6309\u9215\u9078\u64C7\u7BC4\u672C\u3002",
+              t("newFlow.selectTemplateHint", {}, gL),
             ),
             a.join(`
 `))
-          : t === "awaiting_workflow_enabled"
+          : stp === "awaiting_workflow_enabled"
             ? (a.push(
-                `\u{1F6A6} ${d}\u8ACB\u8A2D\u5B9A\u300C${Mn(n)}\u300D\u662F\u5426\u555F\u7528\uFF1F`,
+                t("newFlow.setWorkflowEnabledPrompt", { step: d, name: Mn(n) }, gL),
                 "",
-                `\u76EE\u524D\u72C0\u614B\uFF1A${Z_(o)}`,
+                t("newFlow.currentWorkflowStatus", { status: Z_(o) }, gL),
                 "",
-                "\u{1F447} \u9019\u4E00\u6B65\u7B49\u540C /enable \u8207 /disable\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u6309\u6309\u9215\u5B8C\u6210\u3002",
+                t("newFlow.workflowEnabledHint", {}, gL),
               ),
               a.join(`
 `))
-            : t === "awaiting_template_reset"
+            : stp === "awaiting_template_reset"
               ? (a.push(
-                  `\u{1F504} ${d}\u662F\u5426\u8981\u91CD\u8A2D\u5C0F\u9F8D\u8766\u7BC4\u672C\uFF1F`,
+                  t("newFlow.resetTemplatePrompt", { step: d }, gL),
                   "",
-                  "\u9078\u4E00\u500B\u7BC4\u672C\uFF0C\u5C31\u6703\u7528\u9078\u64C7\u7684\u7BC4\u672C\u8986\u84CB\u6389\u76EE\u524D\u7684\u7BC4\u672C\u3002",
-                  "\u5982\u679C\u4E0D\u9700\u8981\u91CD\u8A2D\uFF0C\u76F4\u63A5\u6309\u300C\u23ED\uFE0F \u8DF3\u904E\u300D\u5C31\u597D\u3002",
+                  t("newFlow.resetTemplateHint1", {}, gL),
+                  t("newFlow.resetTemplateHint2", {}, gL),
                 ),
                 a.join(`
 `))
               : (a.push(
-                  "\u26A0\uFE0F \u5EFA\u7ACB\u6D41\u7A0B\u72C0\u614B\u7570\u5E38\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new\u3002",
+                  t("newFlow.stateInvalid", {}, gL),
                 ),
                 a.join(`
 `))
   );
 }
 function gl(e) {
-  let { step: t, mode: r = "create" } = e;
-  if (t === "awaiting_template") {
+  let { step: stp, mode: r = "create" } = e;
+  if (stp === "awaiting_template") {
     let n = new F();
     return (n.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current"), n);
   }
-  return t === "awaiting_template_reset"
+  return stp === "awaiting_template_reset"
     ? La()
     : r !== "edit"
       ? tp()
-      : t === "awaiting_workflow_enabled"
+      : stp === "awaiting_workflow_enabled"
         ? Wd()
-        : t === "awaiting_template_reset"
+        : stp === "awaiting_template_reset"
           ? La()
-          : jd(t);
+          : jd(stp);
 }
 function yt(e) {
   let t = gl({ step: e.step, mode: e.mode });
@@ -7473,12 +7480,12 @@ function yt(e) {
     reply_markup: t,
   };
 }
-function Sm(e, t) {
-  return !t?.number || !t?.title
-    ? "\u26A0\uFE0F \u5C0F\u9F8D\u8766\u5B8C\u6210\u6D41\u7A0B\u767C\u751F\u554F\u984C\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002"
+function Sm(e, runInfo) {
+  return !runInfo?.number || !runInfo?.title
+    ? t("newFlow.completionError", {}, glang())
     : e === "edit"
-      ? `\u2705 \u5DF2\u66F4\u65B0\u9F8D\u8766\u300C${t.title}\u300D(#${t.number})`
-      : `\u2705 \u5DF2\u5EFA\u7ACB\u9F8D\u8766\u300C${t.title}\u300D(#${t.number})`;
+      ? t("newFlow.updatedLobster", { title: runInfo.title, number: runInfo.number }, glang())
+      : t("newFlow.createdLobster", { title: runInfo.title, number: runInfo.number }, glang());
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Im] templates/default handling  —  BUSINESS
@@ -7828,27 +7835,27 @@ async function wl(e) {
     }
     if (a.step === "awaiting_template") {
       await e.reply(
-        "\u26A0\uFE0F \u8ACB\u7528\u4E0B\u65B9\u6309\u9215\u9078\u64C7\u7BC4\u672C\uFF0C\u6216\u6309\u300C\u53D6\u6D88\u300D\u4E2D\u6B62\u6D41\u7A0B\u3002",
+        t("newFlow.useButtonsTemplate", {}, glang()),
       );
       return;
     }
     if (a.step === "awaiting_template_reset") {
       await e.reply(
-        "\u26A0\uFE0F \u8ACB\u7528\u4E0B\u65B9\u6309\u9215\u9078\u64C7\u7BC4\u672C\u6216\u6309\u300C\u8DF3\u904E\u300D\u3002",
+        t("newFlow.useButtonsTemplateReset", {}, glang()),
       );
       return;
     }
     if (a.step === "awaiting_workflow_enabled") {
       if (a.isSubmitting) {
         await e.reply(
-          "\u26A0\uFE0F \u5C0F\u9F8D\u8766\u66F4\u65B0\u4E2D\uFF0C\u8ACB\u7A0D\u5019\uFF0C\u907F\u514D\u91CD\u8907\u9001\u51FA\u3002",
+          t("newFlow.updatingPleaseWait", {}, glang()),
         );
         return;
       }
       let d = tT(l, a.workflowEnabled, c);
       if (d == null) {
         await e.reply(
-          "\u26A0\uFE0F \u8ACB\u8F38\u5165\u300C\u555F\u7528 / \u505C\u7528\u300D\uFF0C\u6216\u76F4\u63A5\u6309\u4E0B\u65B9\u6309\u9215\u9078\u64C7\u6D3E\u5DE5\u72C0\u614B\u3002",
+          t("newFlow.enterEnableDisable", {}, glang()),
           { reply_markup: gl({ step: "awaiting_workflow_enabled", mode: c }) },
         );
         return;
@@ -7861,7 +7868,7 @@ async function wl(e) {
       } catch (w) {
         (console.error("[/edit] finishNewFlow \u5931\u6557", w),
           await e.reply(
-            "\u274C \u66F4\u65B0\u5C0F\u9F8D\u8766\u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /edit\u3002",
+            t("newFlow.updateErrorRetryEdit", {}, glang()),
           ));
       }
       return;
@@ -7871,27 +7878,27 @@ async function wl(e) {
       step: a.step,
     }),
       await e.reply(
-        "\u26A0\uFE0F \u5EFA\u7ACB\u6D41\u7A0B\u72C0\u614B\u7570\u5E38\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new\u3002",
+        t("newFlow.stateInvalid", {}, glang()),
       ));
   }
 }
 async function bl(e) {
-  let { store: t, octokit: r, config: n } = e.services,
+  let { store: st, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!i) return;
   let a = e.callbackQuery?.data?.split(":")[1];
   if (!a) return;
-  let l = await Ke(t, i);
+  let l = await Ke(st, i);
   if (!l || l.mode !== "edit" || !Em(l.step)) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
   if (a !== l.step) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
@@ -7905,20 +7912,20 @@ async function bl(e) {
     template: l.template,
   };
   if (l.step === "awaiting_name") {
-    await Be(t, i, { ...l, step: "awaiting_description" });
+    await Be(st, i, { ...l, step: "awaiting_description" });
     let d = yt({ ...c, step: "awaiting_description" });
-    (await e.answerCallbackQuery("\u2705 \u5DF2\u4FDD\u7559\u540D\u7A31"),
+    (await e.answerCallbackQuery(t("newFlow.nameKept", {}, glang())),
       await e.editMessageText(d.text, { reply_markup: d.reply_markup }));
     return;
   }
   if (l.step === "awaiting_description") {
-    (await Be(t, i, { ...l, step: "awaiting_template_reset" }),
-      await e.answerCallbackQuery("\u2705 \u5DF2\u4FDD\u7559\u63CF\u8FF0"));
+    (await Be(st, i, { ...l, step: "awaiting_template_reset" }),
+      await e.answerCallbackQuery(t("newFlow.descriptionKept", {}, glang())));
     let d = [];
     try {
       d = await tn(r, s, o);
     } catch (y) {
-      console.warn("[/edit] \u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\u5931\u6557", {
+      console.warn("[/edit] 讀取範本清單失敗", {
         error: y instanceof Error ? y.message : String(y),
       });
     }
@@ -7932,49 +7939,49 @@ async function bl(e) {
     return;
   }
   if (l.step === "awaiting_template_reset") {
-    await Be(t, i, { ...l, step: "awaiting_workflow_enabled" });
+    await Be(st, i, { ...l, step: "awaiting_workflow_enabled" });
     let d = yt({ ...c, step: "awaiting_workflow_enabled" });
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u8DF3\u904E\u7BC4\u672C\u91CD\u8A2D"),
+    (await e.answerCallbackQuery(t("newFlow.templateResetSkipped", {}, glang())),
       await e.editMessageText(d.text, { reply_markup: d.reply_markup }));
     return;
   }
   if (l.step === "awaiting_workflow_enabled") {
     let d = { ...l, isSubmitting: !0 };
-    (await Be(t, i, d),
-      await e.answerCallbackQuery("\u2705 \u5DF2\u4FDD\u7559\u6D3E\u5DE5\u8A2D\u5B9A"));
+    (await Be(st, i, d),
+      await e.answerCallbackQuery(t("newFlow.workflowSettingKept", {}, glang())));
     try {
       let m = await Os(e, d);
       await Ns(e, m, "edit");
     } catch (m) {
-      (console.error("[/edit] finishNewFlow \u4FDD\u7559\u6B04\u4F4D\u5931\u6557", m),
+      (console.error("[/edit] finishNewFlow 保留欄位失敗", m),
         await e.editMessageText(
-          "\u274C \u66F4\u65B0\u5C0F\u9F8D\u8766\u6642\u767C\u751F\u932F\u8AA4\u3002",
+          t("newFlow.updateErrorGeneric", {}, glang()),
         ));
     }
   }
 }
 async function yl(e) {
-  let { store: t, octokit: r, config: n } = e.services,
+  let { store: st, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!i) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
+      t("newFlow.buttonExpiredRetry", {}, glang()),
     );
     return;
   }
   let a = e.callbackQuery?.data?.split(":")[1] ?? "",
-    l = await Ke(t, i);
+    l = await Ke(st, i);
   if (!l || (l.step !== "awaiting_template" && l.step !== "awaiting_template_reset")) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
   if (l.isSubmitting) return;
   let c = a.trim();
   if (!c) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684\u7BC4\u672C\u9078\u64C7");
+    await e.answerCallbackQuery(t("newFlow.invalidTemplateChoice", {}, glang()));
     return;
   }
   let d = l.mode === "edit" ? "edit" : "create",
@@ -7983,17 +7990,17 @@ async function yl(e) {
   try {
     w = await tn(r, s, o);
   } catch (y) {
-    (console.warn(`[/${d}] \u91CD\u65B0\u9A57\u8B49\u7BC4\u672C\u6E05\u55AE\u5931\u6557`, {
+    (console.warn(`[/${d}] 重新驗證範本清單失敗`, {
       error: y instanceof Error ? y.message : String(y),
     }),
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u76EE\u524D\u7121\u6CD5\u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66",
+        t("newFlow.templateListReadFailedRetry", {}, glang()),
       ));
     return;
   }
   if (!w.includes(c)) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u7BC4\u672C\u5DF2\u4E0D\u5B58\u5728\uFF0C\u8ACB\u91CD\u65B0\u9078\u64C7",
+      t("newFlow.templateNoLongerExists", {}, glang()),
     );
     let y = yt({
         chatId: i,
@@ -8006,7 +8013,7 @@ async function yl(e) {
       }),
       _ = d === "edit" ? Uo(w) : Ua(w).text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
     await e.editMessageText(
-      `\u26A0\uFE0F \u7BC4\u672C\u300C${c}\u300D\u76EE\u524D\u4E0D\u5728\u9F8D\u8766\u5821\u5167\uFF0C\u8ACB\u91CD\u65B0\u9078\u64C7\u3002
+      `${t("newFlow.templateNotInLobster", { template: c }, glang())}
 
 ${y.text}`,
       { reply_markup: _ },
@@ -8016,8 +8023,8 @@ ${y.text}`,
   if (d === "edit") {
     ((m.step = "awaiting_workflow_enabled"),
       (m.resetTemplate = !0),
-      await Be(t, i, m),
-      await e.answerCallbackQuery("\u2705 \u5C07\u4EE5\u6B64\u7BC4\u672C\u91CD\u8A2D"));
+      await Be(st, i, m),
+      await e.answerCallbackQuery(t("newFlow.templateWillReset", {}, glang())));
     let y = yt({
       chatId: i,
       step: "awaiting_workflow_enabled",
@@ -8031,79 +8038,79 @@ ${y.text}`,
     return;
   }
   ((m.isSubmitting = !0),
-    await Be(t, i, m),
-    await e.answerCallbackQuery("\u2705 \u5DF2\u9078\u64C7\u7BC4\u672C"),
+    await Be(st, i, m),
+    await e.answerCallbackQuery(t("newFlow.templateSelected", {}, glang())),
     await e.editMessageText(
-      "\u23F3 \u6B63\u5728\u5EFA\u7ACB\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u7A0D\u5019\u22EF",
+      t("newFlow.creatingPleaseWait", {}, glang()),
     ));
   try {
     let y = await Os(e, m);
     await Ns(e, y, "edit");
   } catch (y) {
-    (console.error("[/new] finishNewFlow \u7BC4\u672C\u9078\u64C7\u5931\u6557", y),
+    (console.error("[/new] finishNewFlow 範本選擇失敗", y),
       await e.editMessageText(Cm(y)));
   }
 }
 async function _l(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
+      t("newFlow.buttonExpiredRetry", {}, glang()),
     );
     return;
   }
   let n = e.callbackQuery?.data?.split(":")[1] ?? "",
-    s = await Ke(t, r);
+    s = await Ke(st, r);
   if (!s || s.step !== "awaiting_workflow_enabled") {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
   if (s.isSubmitting) return;
   let o = ml(n);
   if (o == null) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684\u6D3E\u5DE5\u8A2D\u5B9A\u503C");
+    await e.answerCallbackQuery(t("newFlow.invalidWorkflowValue", {}, glang()));
     return;
   }
   let i = { ...s, workflowEnabled: o, isSubmitting: !0 };
-  (await Be(t, r, i),
+  (await Be(st, r, i),
     await e.answerCallbackQuery(
       o
-        ? "\u2705 \u5DF2\u8A2D\u5B9A\u70BA\u555F\u7528\u6D3E\u5DE5"
-        : "\u2705 \u5DF2\u8A2D\u5B9A\u70BA\u505C\u7528\u6D3E\u5DE5",
+        ? t("newFlow.workflowSetEnabled", {}, glang())
+        : t("newFlow.workflowSetDisabled", {}, glang()),
     ));
   try {
     let a = await Os(e, i);
     await Ns(e, a, "edit");
   } catch (a) {
-    (console.error("[/edit] finishNewFlow workflow \u9078\u64C7\u5931\u6557", a),
+    (console.error("[/edit] finishNewFlow workflow 選擇失敗", a),
       await e.editMessageText(
-        "\u274C \u66F4\u65B0\u5C0F\u9F8D\u8766\u6642\u767C\u751F\u932F\u8AA4\u3002",
+        t("newFlow.updateErrorGeneric", {}, glang()),
       ));
   }
 }
 async function Tl(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
+      t("newFlow.buttonExpiredRetry", {}, glang()),
     );
     return;
   }
-  let n = await Ke(t, r);
+  let n = await Ke(st, r);
   if (!n || n.step !== "awaiting_template_reset") {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
   if (n.isSubmitting) return;
   let s = { ...n, step: "awaiting_workflow_enabled", resetTemplate: !1 };
-  (await Be(t, r, s),
-    await e.answerCallbackQuery("\u23ED\uFE0F \u8DF3\u904E\u7BC4\u672C\u91CD\u8A2D"));
+  (await Be(st, r, s),
+    await e.answerCallbackQuery(t("newFlow.templateResetSkipped", {}, glang())));
   let o = yt({
     chatId: r,
     step: "awaiting_workflow_enabled",
@@ -8116,74 +8123,72 @@ async function Tl(e) {
   await e.editMessageText(o.text, { reply_markup: o.reply_markup });
 }
 async function kl(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
+      t("newFlow.buttonExpiredRetry", {}, glang()),
     );
     return;
   }
-  if (!(await Ke(t, r))) {
+  if (!(await Ke(st, r))) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u8868\u55AE\u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /new \u6216 /edit",
+      t("newFlow.formExpiredEdit", {}, glang()),
     );
     return;
   }
-  (await Dt(t, r),
-    await e.answerCallbackQuery("\u{1F6D1} \u5DF2\u53D6\u6D88\u8A2D\u5B9A\u6D41\u7A0B"),
+  (await Dt(st, r),
+    await e.answerCallbackQuery(t("newFlow.setupCancelled", {}, glang())),
     await e.editMessageText(
-      "\u{1F6D1} \u5DF2\u53D6\u6D88\u5C0F\u9F8D\u8766\u8A2D\u5B9A\u6D41\u7A0B\u3002",
+      t("newFlow.lobsterSetupCancelled", {}, glang()),
       { reply_markup: { inline_keyboard: [] } },
     ));
 }
 async function mi(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("newFlow.buttonExpiredShort", {}, glang()));
     return;
   }
-  let n = await Ke(t, r);
+  let n = await Ke(st, r);
   if (!n || n.step !== "awaiting_env_input") {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("newFlow.flowExpired", {}, glang()));
     return;
   }
   let s = n.pendingEnvs ?? [];
   if (s.length === 0) {
     await e.answerCallbackQuery(
-      "\u6C92\u6709\u9700\u8981\u8A2D\u5B9A\u7684\u74B0\u5883\u8B8A\u6578",
+      t("newFlow.noEnvVarsNeeded", {}, glang()),
     );
     return;
   }
   (await e.answerCallbackQuery(),
-    await Be(t, r, {
+    await Be(st, r, {
       ...n,
       currentEnvIndex: 0,
       collectedEnvs: {},
       promptMessageId: e.callbackQuery?.message?.message_id,
     }),
     await e.editMessageText(
-      `\u{1F511} \u8ACB\u8F38\u5165 *${O(s[0])}* \u7684\u503C
-
-\uFF081/${s.length}\uFF09`,
+      t("newFlow.enterEnvValue", { name: O(s[0]), current: 1, total: s.length }, glang()),
       { parse_mode: "MarkdownV2", reply_markup: hr(n.mode === "edit" ? "edit_flow" : "new_flow") },
     ));
 }
 async function fi(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("newFlow.buttonExpiredShort", {}, glang()));
     return;
   }
-  let n = await Ke(t, r);
+  let n = await Ke(st, r);
   if (!n) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("newFlow.flowExpired", {}, glang()));
     return;
   }
   await e.answerCallbackQuery(
-    "\u23ED\uFE0F \u5DF2\u7565\u904E\u74B0\u5883\u8B8A\u6578\u8A2D\u5B9A",
+    t("newFlow.envSetupSkipped", {}, glang()),
   );
   let s = {
     ...n,
@@ -8193,7 +8198,7 @@ async function fi(e) {
     envCheckDone: !0,
   };
   if (n.mode === "edit") {
-    ((s.step = "awaiting_workflow_enabled"), (s.resetTemplate = !0), await Be(t, r, s));
+    ((s.step = "awaiting_workflow_enabled"), (s.resetTemplate = !0), await Be(st, r, s));
     let o = yt({
       chatId: r,
       step: "awaiting_workflow_enabled",
@@ -8205,42 +8210,42 @@ async function fi(e) {
     });
     await e.editMessageText(o.text, { reply_markup: o.reply_markup });
   } else {
-    ((s.step = "awaiting_template"), (s.isSubmitting = !0), await Be(t, r, s));
+    ((s.step = "awaiting_template"), (s.isSubmitting = !0), await Be(st, r, s));
     try {
       let o = await Os(e, s);
       await Ns(e, o, "edit");
     } catch (o) {
-      (console.error("[/new] finishNewFlow env skip \u5931\u6557", o),
+      (console.error("[/new] finishNewFlow env skip 失敗", o),
         await e.editMessageText(Cm(o)));
     }
   }
 }
 async function gi(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("newFlow.buttonExpiredShort", {}, glang()));
     return;
   }
-  (await Dt(t, r),
-    await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-    await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u6D41\u7A0B", { reply_markup: new F() }));
+  (await Dt(st, r),
+    await e.answerCallbackQuery(t("newFlow.cancelledShort", {}, glang())),
+    await e.editMessageText(t("newFlow.flowCancelled", {}, glang()), { reply_markup: new F() }));
 }
 async function Rm(e) {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id ?? e.callbackQuery?.message?.chat.id;
   if (!i) return;
   let a = await Ge(r, i);
   if (!a || a <= 0) {
     await e.reply(
-      "\u26A0\uFE0F \u76EE\u524D\u6C92\u6709\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766\uFF0C\u5148\u7528 /new \u5EFA\u7ACB\u4E00\u96BB\u6216\u7528 /list \u9078\u64C7\u3002",
+      t("newFlow.noActiveLobster", {}, glang()),
     );
     return;
   }
   let l = null;
   try {
-    let { data: _ } = await t.rest.issues.get({ owner: s, repo: o, issue_number: a });
+    let { data: _ } = await ok.rest.issues.get({ owner: s, repo: o, issue_number: a });
     l = { number: _.number, title: _.title, body: _.body ?? null };
   } catch (_) {
     (console.error("[/edit] \u8B80\u53D6 issue \u5931\u6557", {
@@ -8249,15 +8254,15 @@ async function Rm(e) {
       error: _ instanceof Error ? _.message : String(_),
     }),
       await e.reply(
-        "\u274C \u8B80\u53D6 Issue \u8CC7\u6599\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u91CD\u8A66\u3002",
+        t("newFlow.readIssueFailedRetry", {}, glang()),
       ));
     return;
   }
-  let c = await jp(t, s, o, l.number),
+  let c = await jp(ok, s, o, l.number),
     d = ui(l.body, { fallbackName: l.title });
   if (!d) {
     await e.reply(
-      "\u26A0\uFE0F \u76EE\u524D\u6D3B\u8E8D\u7684 Issue \u4E0D\u662F\u7528 /new \u5EFA\u7ACB\u7684\u5C0F\u9F8D\u8766\uFF0C\u66AB\u6642\u7121\u6CD5\u7528 /edit \u7DE8\u8F2F\u3002",
+      t("newFlow.notCreatedByNewFlow", {}, glang()),
     );
     return;
   }
