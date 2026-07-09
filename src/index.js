@@ -4791,13 +4791,13 @@ function La() {
     .text(t("kb.cancel", {}, glang()), "new_flow_cancel:current");
 }
 function Uo(e) {
-  let t = new F(),
+  let kb = new F(),
     r = e.slice(0, Kr);
-  for (let n of r) t.text(`\u{1F504} ${n}`, `new_template_select:${n}`).row();
+  for (let n of r) kb.text(`\u{1F504} ${n}`, `new_template_select:${n}`).row();
   return (
-    t.text(t("kb.skip", {}, glang()), "edit_template_reset:skip").row(),
-    t.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current"),
-    t
+    kb.text(t("kb.skip", {}, glang()), "edit_template_reset:skip").row(),
+    kb.text(t("kb.cancel", {}, glang()), "new_flow_cancel:current"),
+    kb
   );
 }
 function Da(e = []) {
@@ -5287,32 +5287,32 @@ var my,
     my = /([_*\[\]()~`>#+=|{}.!\\-])/g;
   });
 function br(e, gLang = glang()) {
-  let t = e.rulePayload;
-  if (e.ruleType === "cron" && typeof t.expression == "string") return mp(t.expression, gLang).description;
-  if (e.ruleType === "interval" && typeof t.minutes == "number")
-    return t("schedule.minutely", { minutes: t.minutes }, gLang);
-  if (e.ruleType === "once" && typeof t.run_at == "string") {
-    let o = new Date(t.run_at);
+  let rp = e.rulePayload;
+  if (e.ruleType === "cron" && typeof rp.expression == "string") return mp(rp.expression, gLang).description;
+  if (e.ruleType === "interval" && typeof rp.minutes == "number")
+    return t("schedule.minutely", { minutes: rp.minutes }, gLang);
+  if (e.ruleType === "once" && typeof rp.run_at == "string") {
+    let o = new Date(rp.run_at);
     if (Number.isNaN(o.getTime()))
       return t("schedule.once", {}, gLang);
     return t("schedule.run_at_once", { run_at: o.toLocaleString(gLang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei" }) }, gLang);
   }
-  let r = typeof t.hour == "number" ? String(t.hour).padStart(2, "0") : "??",
-    n = typeof t.minute == "number" ? String(t.minute).padStart(2, "0") : "00",
+  let r = typeof rp.hour == "number" ? String(rp.hour).padStart(2, "0") : "??",
+    n = typeof rp.minute == "number" ? String(rp.minute).padStart(2, "0") : "00",
     s = `${r}:${n}`;
   switch (e.ruleType) {
     case "daily":
       return t("schedule.daily", { time: s }, gLang);
     case "hourly": {
-      let o = typeof t.interval_hours == "number" ? t.interval_hours : 1;
+      let o = typeof rp.interval_hours == "number" ? rp.interval_hours : 1;
       return o === 1
         ? t("schedule.hourly", { minute: n }, gLang)
         : t("schedule.hourlyInterval", { hours: o, minute: n }, gLang);
     }
     case "minutely":
-      return t("schedule.minutely", { minutes: typeof t.interval_minutes == "number" ? t.interval_minutes : 1 }, gLang);
+      return t("schedule.minutely", { minutes: typeof rp.interval_minutes == "number" ? rp.interval_minutes : 1 }, gLang);
     case "weekly":
-      let weekdays = Array.isArray(t.weekdays) ? t.weekdays.map((i) => t("schedule.weekday_" + i, {}, gLang)) : (typeof t.weekday == "number" ? [t("schedule.weekday_" + t.weekday, {}, gLang)] : ["?"]);
+      let weekdays = Array.isArray(rp.weekdays) ? rp.weekdays.map((i) => t("schedule.weekday_" + i, {}, gLang)) : (typeof rp.weekday == "number" ? [t("schedule.weekday_" + rp.weekday, {}, gLang)] : ["?"]);
       return t("schedule.weekly", { weekdays: weekdays.join("、"), time: s }, gLang);
     case "weekday":
       return t("schedule.weekday", { time: s }, gLang);
@@ -5457,10 +5457,10 @@ function _y(e) {
   return t ? `\\#${e.issue.number} ${O(t)}` : `\\#${e.issue.number}`;
 }
 function Ty(e, gLang = glang()) {
-  let t = e.models.sources.filter((r) => r.model?.trim());
-  return t.length === 0
+  let srcs = e.models.sources.filter((r) => r.model?.trim());
+  return srcs.length === 0
     ? [ps(e.models.fallbackLabel || t("schedule.workflow_defined_label", {}, gLang))]
-    : t.map((r) => zo(O(`${yy[r.source]} (${r.model.trim()})`)));
+    : srcs.map((r) => zo(O(`${yy[r.source]} (${r.model.trim()})`)));
 }
 function ky(e, gLang = glang()) {
   return e.length > 0
@@ -5470,16 +5470,22 @@ function ky(e, gLang = glang()) {
 function Ey(e, gLang = glang()) {
   return e.length === 0
     ? [ps(t("schedule.no_schedules_set", {}, gLang))]
-    : e.map((t) => {
+    : e.map((sch) => {
         let r = [
-          `${t.ruleTypeLabel}\uFF1A${t.ruleSummary}`,
-          by[t.status] ?? t.status,
-          t.shouldNotify ? t("schedule.notify_open", {}, gLang) : t("schedule.notify_close", {}, gLang),
+          `${sch.ruleTypeLabel}：${sch.ruleSummary}`,
+          sch.status === "active"
+            ? t("schedule.schedule_status_enabled", {}, gLang)
+            : sch.status === "paused"
+              ? t("schedule.schedule_status_paused", {}, gLang)
+              : sch.status === "cancelled"
+                ? t("schedule.schedule_status_cancelled", {}, gLang)
+                : sch.status,
+          sch.shouldNotify ? t("schedule.notify_open", {}, gLang) : t("schedule.notify_close", {}, gLang),
         ];
         return (
-          t.nextRunAt && r.push(`\u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(t.nextRunAt, gLang)}`),
-          t.prompt && r.push(`\u63D0\u793A\uFF1A${t.prompt}`),
-          ps(r.join("\uFF5C"))
+          sch.nextRunAt && r.push(`下次執行：${Bt(sch.nextRunAt, gLang)}`),
+          sch.prompt && r.push(`提示：${sch.prompt}`),
+          ps(r.join("｜"))
         );
       });
 }
@@ -7751,11 +7757,11 @@ async function Ns(e, t, r) {
     }
 }
 async function wl(e) {
-  let { store: t, octokit: r, config: n } = e.services,
+  let { store: st, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id;
   if (!i) return;
-  let a = await Ke(t, i);
+  let a = await Ke(st, i);
   if (!a) return;
   let l = (e.message?.text ?? "").trim(),
     c = a.mode === "edit" ? "edit" : "create";
@@ -7763,7 +7769,7 @@ async function wl(e) {
     if (a.step === "awaiting_name") {
       let d = vm(l, a.name, c),
         m = { ...a, step: "awaiting_description", mode: c, name: d };
-      await Be(t, i, m);
+      await Be(st, i, m);
       let w = yt({
         chatId: i,
         step: "awaiting_description",
@@ -7779,12 +7785,12 @@ async function wl(e) {
       let d = vm(l, a.description, c);
       if (c === "edit") {
         let I = { ...a, step: "awaiting_template_reset", mode: "edit", description: d };
-        await Be(t, i, I);
+        await Be(st, i, I);
         let P = [];
         try {
           P = await tn(r, s, o);
         } catch (K) {
-          console.warn("[/edit] \u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\u5931\u6557", {
+          console.warn("[/edit] 讀取範本清單失敗", {
             error: K instanceof Error ? K.message : String(K),
           });
         }
@@ -7806,12 +7812,12 @@ async function wl(e) {
         return;
       }
       let m = { ...a, step: "awaiting_template", mode: "create", description: d };
-      await Be(t, i, m);
+      await Be(st, i, m);
       let w = [];
       try {
         w = await tn(r, s, o);
       } catch (I) {
-        console.warn("[/new] \u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\u5931\u6557", {
+        console.warn("[/new] 讀取範本清單失敗", {
           error: I instanceof Error ? I.message : String(I),
         });
       }
@@ -7861,19 +7867,19 @@ async function wl(e) {
         return;
       }
       let m = { ...a, mode: "edit", workflowEnabled: d, isSubmitting: !0 };
-      await Be(t, i, m);
+      await Be(st, i, m);
       try {
         let w = await Os(e, m);
         await Ns(e, w, "reply");
       } catch (w) {
-        (console.error("[/edit] finishNewFlow \u5931\u6557", w),
+        (console.error("[/edit] finishNewFlow 失敗", w),
           await e.reply(
             t("newFlow.updateErrorRetryEdit", {}, glang()),
           ));
       }
       return;
     }
-    (console.warn("[/new] \u672A\u9810\u671F\u7684\u6587\u5B57\u8F38\u5165\u6B65\u9A5F", {
+    (console.warn("[/new] 未預期的文字輸入步驟", {
       chatId: i,
       step: a.step,
     }),
