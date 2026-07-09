@@ -6494,7 +6494,7 @@ async function Hp(e) {
     models: {
       sources: a,
       hasConfiguredModel: a.some((c) => c.model !== null),
-      fallbackLabel: a.some((c) => c.model !== null) ? null : Yy,
+      fallbackLabel: null,
     },
     workflow: l,
   };
@@ -6656,8 +6656,7 @@ function l_(e) {
   }
   return null;
 }
-var Yy,
-  Xy,
+var Xy,
   zp = Oe(() => {
     "use strict";
     ms();
@@ -6665,11 +6664,10 @@ var Yy,
     Xr();
     ti();
     ar();
-    ((Yy = "\u7531 Workflow \u5B9A\u7FA9"),
-      (Xy = [
-        { source: "copilot", label: "GitHub Copilot", path: ".copilot/config.json", parse: a_ },
-        { source: "codex", label: "Codex", path: ".codex/config.toml", parse: l_ },
-      ]));
+    (Xy = [
+      { source: "copilot", label: "GitHub Copilot", path: ".copilot/config.json", parse: a_ },
+      { source: "codex", label: "Codex", path: ".codex/config.toml", parse: l_ },
+    ]);
   });
 async function ks(e, t) {
   let { octokit: r, d1: n, config: s } = e.services,
