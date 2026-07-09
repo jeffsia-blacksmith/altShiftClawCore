@@ -371,7 +371,11 @@
     "flowCancelled": "❌ Flow cancelled",
     "noActiveLobster": "⚠️ No active lobster right now — use /new to create one or /list to pick one.",
     "readIssueFailedRetry": "❌ Failed to read the Issue data — please try again later.",
-    "notCreatedByNewFlow": "⚠️ The currently active Issue wasn't created via /new, so it can't be edited with /edit right now."
+    "notCreatedByNewFlow": "⚠️ The currently active Issue wasn't created via /new, so it can't be edited with /edit right now.",
+    "noTemplatesInstalled": "⚠️ No templates are installed in Lobster Castle yet — please install some with /templates first.",
+    "errorTemplateNotInstalled": "❌ Template not installed in Lobster Castle",
+    "errorTemplateReadFailed": "❌ Failed to read template",
+    "errorCreateFailed": "❌ An error occurred while creating the lobster."
   },
   "skillCatalog": {
     "audio-transcriber": "Audio-to-Text Transcription",

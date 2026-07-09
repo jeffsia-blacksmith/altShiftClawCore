@@ -7532,14 +7532,15 @@ function rT(e) {
   };
 }
 function Cm(e) {
+  let gL = glang();
   return fm(e)
-    ? `\u274C ${e instanceof Error ? e.message : "\u7BC4\u672C\u5C1A\u672A\u5B89\u88DD\u5230\u9F8D\u8766\u5821"}`
+    ? `\u274C ${e instanceof Error ? e.message : t("newFlow.errorTemplateNotInstalled", {}, gL)}`
     : gm(e)
-      ? `\u274C ${e instanceof Error ? e.message : "\u8B80\u53D6\u7BC4\u672C\u5931\u6557"}`
-      : "\u274C \u5EFA\u7ACB\u5C0F\u9F8D\u8766\u6642\u767C\u751F\u932F\u8AA4\u3002";
+      ? `\u274C ${e instanceof Error ? e.message : t("newFlow.errorTemplateReadFailed", {}, gL)}`
+      : t("newFlow.errorCreateFailed", {}, gL);
 }
 function hl() {
-  return "\u26A0\uFE0F \u76EE\u524D\u9F8D\u8766\u5821\u5C1A\u672A\u5B89\u88DD\u4EFB\u4F55\u7BC4\u672C\uFF0C\u8ACB\u5148\u7528 /templates \u5B89\u88DD\u3002";
+  return t("newFlow.noTemplatesInstalled", {}, glang());
 }
 function pi(e) {
   return typeof e == "string" && e.trim() !== "" ? e.trim() : "default";

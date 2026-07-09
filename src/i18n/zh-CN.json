@@ -371,7 +371,11 @@
     "flowCancelled": "❌ 已取消流程",
     "noActiveLobster": "⚠️ 目前没有活跃的小龙虾，先用 /new 建立一只或用 /list 选择。",
     "readIssueFailedRetry": "❌ 读取 Issue 资料失败，请稍后重试。",
-    "notCreatedByNewFlow": "⚠️ 目前活跃的 Issue 不是用 /new 建立的小龙虾，暂时无法用 /edit 编辑。"
+    "notCreatedByNewFlow": "⚠️ 目前活跃的 Issue 不是用 /new 建立的小龙虾，暂时无法用 /edit 编辑。",
+    "noTemplatesInstalled": "⚠️ 目前龙虾堡尚未安装任何范本，请先用 /templates 安装。",
+    "errorTemplateNotInstalled": "❌ 范本尚未安装到龙虾堡",
+    "errorTemplateReadFailed": "❌ 读取范本失败",
+    "errorCreateFailed": "❌ 建立小龙虾时发生错误。"
   },
   "skillCatalog": {
     "audio-transcriber": "语音转文字",
