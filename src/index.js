@@ -4908,11 +4908,11 @@ function Qd(e) {
     .row()
     .text(t("kb.backToAllSchedules", {}, glang()), "schedule_chat_list:current");
 }
-function as(e, t = 0, r) {
+function as(e, page = 0, r) {
   let n = new F();
   if (!Array.isArray(e) || e.length === 0)
     return (n.text(t("kb.cancel", {}, glang()), "skills_cancel:0"), n);
-  let s = t * Fa,
+  let s = page * Fa,
     o = e.slice(s, s + Fa);
   for (let l = 0; l < o.length; l += Nd) {
     let c = o.slice(l, l + Nd);
@@ -4922,11 +4922,11 @@ function as(e, t = 0, r) {
     }
     n.row();
   }
-  let i = t > 0,
+  let i = page > 0,
     a = s + Fa < e.length;
   return (
-    i && n.text(t("kb.prevPage", {}, glang()), `skills_page:${t - 1}`),
-    a && n.text(t("kb.nextPage", {}, glang()), `skills_page:${t + 1}`),
+    i && n.text(t("kb.prevPage", {}, glang()), `skills_page:${page - 1}`),
+    a && n.text(t("kb.nextPage", {}, glang()), `skills_page:${page + 1}`),
     (i || a) && n.row(),
     n.text(t("kb.cancel", {}, glang()), "skills_cancel:0"),
     n
