@@ -20033,7 +20033,7 @@ function llmValidateKeyFormat(e, t) {
   let r = t.trim();
   switch (e) {
     case "google":
-      if (!r.startsWith("AIzaSy")) return { ok: !1, error: "Gemini API Key format is incorrect; it should start with 'AIzaSy'." };
+      if (!r.startsWith("AIza") && !r.startsWith("AQ.")) return { ok: !1, error: "Gemini API Key format is incorrect; it should start with 'AIza' or 'AQ.'." };
       break;
     case "anthropic":
       if (!r.startsWith("sk-ant-")) return { ok: !1, error: "Anthropic Claude API Key format is incorrect; it should start with 'sk-ant-'." };
