@@ -8,3 +8,8 @@ node_modules/
 
 # test bundle (built by test/guardrails.mjs)
 test/.test-bundle.mjs
+
+# local-only wrangler dev config (not for production)
+wrangler.local.toml
+.dev.vars
+.wrangler/
