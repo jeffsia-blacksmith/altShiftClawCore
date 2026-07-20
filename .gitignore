@@ -5,3 +5,6 @@ _site/
 .terraform.lock.hcl
 
 node_modules/
+
+# test bundle (built by test/guardrails.mjs)
+test/.test-bundle.mjs
