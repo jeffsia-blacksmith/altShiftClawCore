@@ -59,7 +59,7 @@ esbuild `__export`（`Mu`）重新导出、名称可读：
 2. 厂商库（🔵）不用读懂内部，需要时整块换成 npm 套件 import。
 3. 业务模组（🟢）：IDE rename-symbol 整理该块变数，够大就抽成 `src/modules/<name>.js` 再 import。
 4. `npm run check`（比大小、不覆写）→ `npm run build`（产生 `GitHubClawCore/index.js`）。
-5. 对照 `src/index.orig.bundle.js` 做行为回归（`wrangler dev` 打 `/health`）。
+5. 行为回归：`npm run test:guardrails`（e2e：`/health`、`/github/webhook`、workflow_notifications CRUD round-trip），或 `wrangler dev --local` 手打 `/health`。
 
 ## 现况
 - ✅ 整体**已完整识别到模组层级**（身份 + 行范围 + 证据），标注已写入源码。
