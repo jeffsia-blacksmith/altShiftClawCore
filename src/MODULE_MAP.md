@@ -52,6 +52,7 @@
 esbuild `__export`（`Mu`）重新导出、名称可读：
 - **workflow_notifications CRUD**（原 ns `Sa`，**已抽到 `src/modules/workflow-notifications.js`**）：`createWorkflowNotification`、`getWorkflowNotificationByRequestId`、`getWorkflowNotificationByRunId`、`getRecentPendingNotificationByWorkflowPath`、`updateWorkflowNotificationByRequestId`、`deleteWorkflowNotificationByRequestId`、`initWorkflowNotificationsTable`
 - **Telegram new/edit flow**（ns `Am`）：`newCommand`、`initEditFlow`、`handleNewFlowTextInput`、`handleNewFlowTemplateSelection`、`handleNewFlowWorkflowStateSelection`、`handleNewFlowEnvSetup`、`handleNewFlowEnvSkip`、`handleNewFlowEnvCancel`、`handleNewFlowKeepField`、`handleNewFlowTemplateReset`、`handleNewFlowCancel`
+  - ⚠️ **抽离评估（2026-07）**：Am 区块 ~2,300 行 / 63 个函数，引用 ~80 个外部混淆符号（grammY `F`/`Ge`/`Lt`/`Pt`、D1 `ms`、templates `Im`、GitHub `Xr`、finalization `Ss`、workflow `ar` 等）。**高耦合，不可直接搬**。前置条件：(a) 先建 Telegram `/new` 流程 e2e 护栏；(b) 画依赖图并决定每个外部符号用 import / DI / 复制。建议作为独立一轮工作。
 
 ## 反混淆 / 维护工作流（渐进、按需）
 1. 从上表把需求对到模组前缀 → 在 `src/index.js` 搜 `[MODULE xx]` 跳到区块。
