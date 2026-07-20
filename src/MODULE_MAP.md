@@ -15,6 +15,7 @@
 |---|---|---|---|---|---|
 | ~~`kc`~~ | ~~33~~ | ~~260~~ | 🔵 vendor | ~~**content-type** 解析~~ → **已抽换为 npm `content-type` + `src/modules/content-type-shim.js`**（保留 `safeParse`/`defaultContentType` 语义） | "invalid media type", "invalid parameter format" |
 | `Et` | 293 | 4,736 | 🔵 vendor | **grammY**（Telegram Bot 框架） | "filter query", "Shortcuts in", "milliseconds" |
+| ~~`Sa`~~ | (was ns `Sa`) | (was ~200) | 🟢 business | ~~workflow_notifications CRUD~~ → **已抽到 `src/modules/workflow-notifications.js`**；index.js 顶层用 `var Sa = WorkflowNotifications` + 混淆名 alias (`Ta`/`Gt`/`At`/`Xt`/`Ne`/`ka`/`Ea`) 保持所有调用点不动 | "Expected a D1 database binding" |
 | `mt` | 5,030 | 480 | 🟢 business | new-flow helpers | "new-flow:" |
 | `ms` | 5,510 | 414 | 🟢 business | **D1 database helpers** | "Expected a D1 database binding" |
 | `Yr` | 5,924 | 15 | 🟢 business | GitHub API 小工具 | — |
@@ -49,7 +50,7 @@
 
 ## 两个「导出名未混淆」的业务模组（最佳下手点）
 esbuild `__export`（`Mu`）重新导出、名称可读：
-- **workflow_notifications CRUD**（ns `Sa`）：`createWorkflowNotification`、`getWorkflowNotificationByRequestId`、`getWorkflowNotificationByRunId`、`getRecentPendingNotificationByWorkflowPath`、`updateWorkflowNotificationByRequestId`、`deleteWorkflowNotificationByRequestId`、`initWorkflowNotificationsTable`
+- **workflow_notifications CRUD**（原 ns `Sa`，**已抽到 `src/modules/workflow-notifications.js`**）：`createWorkflowNotification`、`getWorkflowNotificationByRequestId`、`getWorkflowNotificationByRunId`、`getRecentPendingNotificationByWorkflowPath`、`updateWorkflowNotificationByRequestId`、`deleteWorkflowNotificationByRequestId`、`initWorkflowNotificationsTable`
 - **Telegram new/edit flow**（ns `Am`）：`newCommand`、`initEditFlow`、`handleNewFlowTextInput`、`handleNewFlowTemplateSelection`、`handleNewFlowWorkflowStateSelection`、`handleNewFlowEnvSetup`、`handleNewFlowEnvSkip`、`handleNewFlowEnvCancel`、`handleNewFlowKeepField`、`handleNewFlowTemplateReset`、`handleNewFlowCancel`
 
 ## 反混淆 / 维护工作流（渐进、按需）
