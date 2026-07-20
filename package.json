@@ -12,6 +12,7 @@
     "esbuild": "^0.24.0"
   },
   "dependencies": {
-    "content-type": "^1.0.5"
+    "content-type": "^1.0.5",
+    "tweetnacl": "^1.0.3"
   }
 }

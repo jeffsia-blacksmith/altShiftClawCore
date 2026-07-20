@@ -25,8 +25,8 @@
 | `Ms` | 7,183 | 31 | 🟢 business | new-flow state（1） | "awaiting_name" |
 | `di` | 7,214 | 156 | 🟢 business | new-flow state（2） | "awaiting_description" |
 | `Im` | 7,370 | 842 | 🟢 business | templates/default 处理 | "default" |
-| `cf` | 8,212 | 1 | 🔵 vendor | crypto PRNG（part） | "no PRNG" |
-| `df` | 8,213 | 3,692 | 🔵 vendor | **tweetnacl**（NaCl 加密） | "bad nonce size", "bad public key size", "use Uint8Array" |
+| ~~`cf`~~ | ~~8,212~~ | ~~1~~ | 🔵 vendor | ~~crypto PRNG stub~~ → **随 df 一起移除**（npm tweetnacl 自带 Workers PRNG init） | "no PRNG" |
+| ~~`df`~~ | ~~8,213~~ | ~~3,692~~ | 🔵 vendor | ~~**tweetnacl**（NaCl 加密）~~ → **已抽换为 npm `tweetnacl` + `src/modules/tweetnacl-shim.js`**（box API 一致，PRNG 自动用 `self.crypto`） | "bad nonce size", "bad public key size", "use Uint8Array" |
 | `Pc` | 11,906 | 5,039 | 🟡 混合 | **@octokit** SDK + AI workflow 业务 | "[@octokit/graphql]", "[@octokit/auth-token]", "AI 没有回传 workflow 参数" |
 | `Hl` | 16,946 | 3,054 | 🟢 business | **Telegram 安装/设定流程** | "awaiting_env", "confirm_install", "MarkdownV2", "范本…modelVar" |
 | （顶层） | ~20,000 | ~2,200 | 🟢 business | **Worker 入口 + 路由** | fetch/scheduled、`/github/webhook` `/active-issue` `/api` |
