@@ -25,6 +25,7 @@ const result = await build({
   minify: true,
   write: false,
   legalComments: "none",
+  alias: { crypto: join(root, "src/modules/empty.js") },
 });
 const output = result.outputFiles[0].text;
 

@@ -13,8 +13,9 @@
 
 | 前缀 | 起始行 | 行数 | 类别 | 身份 | 证据 |
 |---|---|---|---|---|---|
-| `kc` | 33 | 260 | 🔵 vendor | **content-type** 解析 | "invalid media type", "invalid parameter format" |
+| ~~`kc`~~ | ~~33~~ | ~~260~~ | 🔵 vendor | ~~**content-type** 解析~~ → **已抽换为 npm `content-type` + `src/modules/content-type-shim.js`**（保留 `safeParse`/`defaultContentType` 语义） | "invalid media type", "invalid parameter format" |
 | `Et` | 293 | 4,736 | 🔵 vendor | **grammY**（Telegram Bot 框架） | "filter query", "Shortcuts in", "milliseconds" |
+| ~~`Sa`~~ | (was ns `Sa`) | (was ~200) | 🟢 business | ~~workflow_notifications CRUD~~ → **已抽到 `src/modules/workflow-notifications.js`**；index.js 顶层用 `var Sa = WorkflowNotifications` + 混淆名 alias (`Ta`/`Gt`/`At`/`Xt`/`Ne`/`ka`/`Ea`) 保持所有调用点不动 | "Expected a D1 database binding" |
 | `mt` | 5,030 | 480 | 🟢 business | new-flow helpers | "new-flow:" |
 | `ms` | 5,510 | 414 | 🟢 business | **D1 database helpers** | "Expected a D1 database binding" |
 | `Yr` | 5,924 | 15 | 🟢 business | GitHub API 小工具 | — |
@@ -25,8 +26,8 @@
 | `Ms` | 7,183 | 31 | 🟢 business | new-flow state（1） | "awaiting_name" |
 | `di` | 7,214 | 156 | 🟢 business | new-flow state（2） | "awaiting_description" |
 | `Im` | 7,370 | 842 | 🟢 business | templates/default 处理 | "default" |
-| `cf` | 8,212 | 1 | 🔵 vendor | crypto PRNG（part） | "no PRNG" |
-| `df` | 8,213 | 3,692 | 🔵 vendor | **tweetnacl**（NaCl 加密） | "bad nonce size", "bad public key size", "use Uint8Array" |
+| ~~`cf`~~ | ~~8,212~~ | ~~1~~ | 🔵 vendor | ~~crypto PRNG stub~~ → **随 df 一起移除**（npm tweetnacl 自带 Workers PRNG init） | "no PRNG" |
+| ~~`df`~~ | ~~8,213~~ | ~~3,692~~ | 🔵 vendor | ~~**tweetnacl**（NaCl 加密）~~ → **已抽换为 npm `tweetnacl` + `src/modules/tweetnacl-shim.js`**（box API 一致，PRNG 自动用 `self.crypto`） | "bad nonce size", "bad public key size", "use Uint8Array" |
 | `Pc` | 11,906 | 5,039 | 🟡 混合 | **@octokit** SDK + AI workflow 业务 | "[@octokit/graphql]", "[@octokit/auth-token]", "AI 没有回传 workflow 参数" |
 | `Hl` | 16,946 | 3,054 | 🟢 business | **Telegram 安装/设定流程** | "awaiting_env", "confirm_install", "MarkdownV2", "范本…modelVar" |
 | （顶层） | ~20,000 | ~2,200 | 🟢 business | **Worker 入口 + 路由** | fetch/scheduled、`/github/webhook` `/active-issue` `/api` |
@@ -49,15 +50,16 @@
 
 ## 两个「导出名未混淆」的业务模组（最佳下手点）
 esbuild `__export`（`Mu`）重新导出、名称可读：
-- **workflow_notifications CRUD**（ns `Sa`）：`createWorkflowNotification`、`getWorkflowNotificationByRequestId`、`getWorkflowNotificationByRunId`、`getRecentPendingNotificationByWorkflowPath`、`updateWorkflowNotificationByRequestId`、`deleteWorkflowNotificationByRequestId`、`initWorkflowNotificationsTable`
+- **workflow_notifications CRUD**（原 ns `Sa`，**已抽到 `src/modules/workflow-notifications.js`**）：`createWorkflowNotification`、`getWorkflowNotificationByRequestId`、`getWorkflowNotificationByRunId`、`getRecentPendingNotificationByWorkflowPath`、`updateWorkflowNotificationByRequestId`、`deleteWorkflowNotificationByRequestId`、`initWorkflowNotificationsTable`
 - **Telegram new/edit flow**（ns `Am`）：`newCommand`、`initEditFlow`、`handleNewFlowTextInput`、`handleNewFlowTemplateSelection`、`handleNewFlowWorkflowStateSelection`、`handleNewFlowEnvSetup`、`handleNewFlowEnvSkip`、`handleNewFlowEnvCancel`、`handleNewFlowKeepField`、`handleNewFlowTemplateReset`、`handleNewFlowCancel`
+  - ⚠️ **抽离评估（2026-07）**：Am 区块 ~2,300 行 / 63 个函数，引用 ~80 个外部混淆符号（grammY `F`/`Ge`/`Lt`/`Pt`、D1 `ms`、templates `Im`、GitHub `Xr`、finalization `Ss`、workflow `ar` 等）。**高耦合，不可直接搬**。前置条件：(a) 先建 Telegram `/new` 流程 e2e 护栏；(b) 画依赖图并决定每个外部符号用 import / DI / 复制。建议作为独立一轮工作。
 
 ## 反混淆 / 维护工作流（渐进、按需）
 1. 从上表把需求对到模组前缀 → 在 `src/index.js` 搜 `[MODULE xx]` 跳到区块。
 2. 厂商库（🔵）不用读懂内部，需要时整块换成 npm 套件 import。
 3. 业务模组（🟢）：IDE rename-symbol 整理该块变数，够大就抽成 `src/modules/<name>.js` 再 import。
 4. `npm run check`（比大小、不覆写）→ `npm run build`（产生 `GitHubClawCore/index.js`）。
-5. 对照 `src/index.orig.bundle.js` 做行为回归（`wrangler dev` 打 `/health`）。
+5. 行为回归：`npm run test:guardrails`（e2e：`/health`、`/github/webhook`、workflow_notifications CRUD round-trip），或 `wrangler dev --local` 手打 `/health`。
 
 ## 现况
 - ✅ 整体**已完整识别到模组层级**（身份 + 行范围 + 证据），标注已写入源码。

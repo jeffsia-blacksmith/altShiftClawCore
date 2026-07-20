@@ -6,9 +6,14 @@
   "description": "altShiftClawCore worker package — editable src/ + esbuild rebuild to GitHubClawCore/index.js",
   "scripts": {
     "build": "node build.mjs",
-    "check": "node build.mjs --check"
+    "check": "node build.mjs --check",
+    "test:guardrails": "node test/guardrails.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "content-type": "^1.0.5",
+    "tweetnacl": "^1.0.3"
   }
 }
