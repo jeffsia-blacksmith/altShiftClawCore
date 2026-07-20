@@ -13,7 +13,7 @@
 
 | 前缀 | 起始行 | 行数 | 类别 | 身份 | 证据 |
 |---|---|---|---|---|---|
-| `kc` | 33 | 260 | 🔵 vendor | **content-type** 解析 | "invalid media type", "invalid parameter format" |
+| ~~`kc`~~ | ~~33~~ | ~~260~~ | 🔵 vendor | ~~**content-type** 解析~~ → **已抽换为 npm `content-type` + `src/modules/content-type-shim.js`**（保留 `safeParse`/`defaultContentType` 语义） | "invalid media type", "invalid parameter format" |
 | `Et` | 293 | 4,736 | 🔵 vendor | **grammY**（Telegram Bot 框架） | "filter query", "Shortcuts in", "milliseconds" |
 | `mt` | 5,030 | 480 | 🟢 business | new-flow helpers | "new-flow:" |
 | `ms` | 5,510 | 414 | 🟢 business | **D1 database helpers** | "Expected a D1 database binding" |

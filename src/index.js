@@ -1,5 +1,6 @@
 import zhCNTranslation from "./i18n/zh-CN.json";
 import enTranslation from "./i18n/en.json";
+import contentTypeShim from "./modules/content-type-shim.js";
 
 const translations = {
   "zh-CN": zhCNTranslation,
@@ -98,64 +99,6 @@ var Ou = (e, t, r) => (
   (r = e != null ? Wg(Hg(e)) : {}),
   Qg(t || !e || !e.__esModule ? Hi(r, "default", { value: e, enumerable: !0 }) : r, e)
 );
-// ╔══════════════════════════════════════════════════════════════════════════════
-// ║ [MODULE kc] content-type parser  —  VENDOR
-// ║ MIME/media type parsing (npm: content-type)
-// ╚══════════════════════════════════════════════════════════════════════════════
-var kc = zi((T0, ts) => {
-  "use strict";
-  var Io = function () {};
-  Io.prototype = Object.create(null);
-  var Eo =
-      /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu,
-    So = /\\([\v\u0020-\u00ff])/gu,
-    yc = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u,
-    $r = { type: "", parameters: new Io() };
-  Object.freeze($r.parameters);
-  Object.freeze($r);
-  function _c(e) {
-    if (typeof e != "string")
-      throw new TypeError("argument header is required and must be a string");
-    let t = e.indexOf(";"),
-      r = t !== -1 ? e.slice(0, t).trim() : e.trim();
-    if (yc.test(r) === !1) throw new TypeError("invalid media type");
-    let n = { type: r.toLowerCase(), parameters: new Io() };
-    if (t === -1) return n;
-    let s, o, i;
-    for (Eo.lastIndex = t; (o = Eo.exec(e));) {
-      if (o.index !== t) throw new TypeError("invalid parameter format");
-      ((t += o[0].length),
-        (s = o[1].toLowerCase()),
-        (i = o[2]),
-        i[0] === '"' && ((i = i.slice(1, i.length - 1)), So.test(i) && (i = i.replace(So, "$1"))),
-        (n.parameters[s] = i));
-    }
-    if (t !== e.length) throw new TypeError("invalid parameter format");
-    return n;
-  }
-  function Tc(e) {
-    if (typeof e != "string") return $r;
-    let t = e.indexOf(";"),
-      r = t !== -1 ? e.slice(0, t).trim() : e.trim();
-    if (yc.test(r) === !1) return $r;
-    let n = { type: r.toLowerCase(), parameters: new Io() };
-    if (t === -1) return n;
-    let s, o, i;
-    for (Eo.lastIndex = t; (o = Eo.exec(e));) {
-      if (o.index !== t) return $r;
-      ((t += o[0].length),
-        (s = o[1].toLowerCase()),
-        (i = o[2]),
-        i[0] === '"' && ((i = i.slice(1, i.length - 1)), So.test(i) && (i = i.replace(So, "$1"))),
-        (n.parameters[s] = i));
-    }
-    return t !== e.length ? $r : n;
-  }
-  ts.exports.default = { parse: _c, safeParse: Tc };
-  ts.exports.parse = _c;
-  ts.exports.safeParse = Tc;
-  ts.exports.defaultContentType = $r;
-});
 var Sa = {};
 Mu(Sa, {
   createWorkflowNotification: () => Gt,
@@ -12044,7 +11987,7 @@ var bc = wc(null, yh);
 // ║ [MODULE Pc] @octokit + AI workflow  —  VENDOR+BIZ
 // ║ Octokit GitHub SDK (graphql/auth-token/request) + AI workflow param business logic
 // ╚══════════════════════════════════════════════════════════════════════════════
-var Pc = Ou(kc(), 1);
+var Pc = contentTypeShim;
 var xh = /^-?\d+$/,
   Ic = /^-?\d+n+$/,
   la = JSON.stringify,
