@@ -278,7 +278,35 @@
       "disabled": "停用",
       "running": "启用 \\(正在执行任务 {run}\\)",
       "idle": "启用 \\(闲置中\\)"
-    }
+    },
+    "statusPaused": "已停用",
+    "statusActive": "启用中",
+    "workflowStateActive": "启用中",
+    "workflowStateDisabledManually": "已手动停用",
+    "card": {
+      "detailTitle": "🗂️ 🦞 {name} (#{issueNumber}) 排程详情",
+      "standaloneDetailTitle": "🗂️ {label} 排程详情",
+      "id": "🆔 {id}",
+      "status": "📍 状态：{status}",
+      "rule": "🗓️ 规则：{rule}",
+      "nextRun": "⏭️ 下次执行：{nextRun}",
+      "notify": "🔔 通知：{state}",
+      "notifyOn": "开启",
+      "notifyOff": "关闭",
+      "task": "📝 任务：{prompt}",
+      "payload": "📦 Payload：{payload}",
+      "deleteHint": "如果这笔排程是之前已收工的小龙虾留下的，也可以直接从这里删掉。"
+    },
+    "listTitle": "🗂️ 🦞 {name} (#{issueNumber}) 的排程列表",
+    "listEmpty": "目前还没有排程。",
+    "listManageHint": "请点下方按钮管理指定排程。",
+    "thisChatListTitle": "🗂️ 这个聊天目前的排程列表",
+    "thisChatListEmpty": "目前没有排程。",
+    "thisChatListHint": "请点下方按钮查看细目或删除排程。",
+    "setupTaskPrompt": "📝 (1/4) 正在为 🦞 {name} (#{issueNumber}) 设定排程\n\n请告诉我你希望这只小龙虾定期执行的任务是什么？（给小龙虾的提示词）",
+    "editTaskPrompt": "✏️ (1/2) 请输入排程 {name} 的新任务内容（给小龙虾的提示词）",
+    "editTimePrompt": "🕒 (1/2) 请输入排程 {name} 的新执行时间\n\n例如：每 5 分钟、每小时整点、每天中午12点、每周一下午2点、星期一跟星期三的下午三点、每个工作日下午2点、每个假日早上9点、每天9:00、12:00、15:00、18:00、21:00、24:00执行一次",
+    "editPayloadPrompt": "📦 (1/2) 请设定排程 {name} 的 Payload 资料？(可选)\n\n目前值：{current}\n直接输入新的 Payload 内容，或点选「略过」清空。\n若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。"
   },
   "kb": {
     "confirmClose": "😭 确定关闭",
@@ -545,7 +573,13 @@
     "blank": "（空白）",
     "issueCommentUpdated": "Issue #{number} 留言已更新：{title}",
     "issueNewComment": "Issue #{number} 有新留言：{title}",
-    "contentTruncated": "[内容过长，已截断]"
+    "contentTruncated": "[内容过长，已截断]",
+    "queryWorkflowFailed": "❌ 查询 workflow 状态时发生错误。",
+    "inferWorkflowFailed": "❌ 推导 workflow `{name}` 参数时发生错误。",
+    "notSet": "（未设定）",
+    "lobsterHash": "小龙虾 #{issueNumber}",
+    "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
+    "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。"
   },
   "templates": {
     "name_default": "预设范本",

@@ -13142,25 +13142,18 @@ function kT(e) {
 function ET(e, t) {
   return `\u2139\uFE0F \u5C0F\u9F8D\u8766 ${bi(e)} \u5C1A\u672A\u5EFA\u7ACB workflow\uFF08${nn(t)} \u4E0D\u5B58\u5728\uFF09\u3002`;
 }
-function ST(e, t, r, n) {
-  return [
-    `\u{1F527} \u5C0F\u9F8D\u8766 ${bi(e)} \u7684 workflow \u72C0\u614B`,
-    "",
-    `\u{1F4C4} \u6A94\u6848\uFF1A${nn(t)}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${O(r)}`,
-    `\u{1F194} ID\uFF1A${n}`,
-  ].join(`
-`);
+function ST(e, file, r, n) {
+  return t("core.workflowStatusCard", { number: bi(e), name: nn(file), status: O(r), id: n }, glang());
 }
 function IT() {
-  return "\u274C \u67E5\u8A62 workflow \u72C0\u614B\u6642\u767C\u751F\u932F\u8AA4\u3002";
+  return t("core.queryWorkflowFailed", {}, glang());
 }
 function vT(e) {
-  return `\u274C \u63A8\u5C0E workflow \`${O(e)}\` \u53C3\u6578\u6642\u767C\u751F\u932F\u8AA4\u3002`;
+  return t("core.inferWorkflowFailed", { name: O(e) }, glang());
 }
-function Al(e, t) {
-  let r = O(t instanceof Error ? t.message : "\u672A\u77E5\u932F\u8AA4");
-  return `\u274C \u89F8\u767C workflow \`${O(e)}\` \u5931\u6557\uFF1A${r}`;
+function Al(e, err) {
+  let r = O(err instanceof Error ? err.message : t("core.unknownError", {}, glang()));
+  return t("core.triggerWorkflowFailed", { name: O(e), error: r }, glang());
 }
 function xl(e, t) {
   return e.inputs.some((r) => r.name === t);
@@ -13176,7 +13169,7 @@ function CT(e, t) {
   );
 }
 Fn.command("enable", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -13186,15 +13179,15 @@ Fn.command("enable", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((m) => m.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(Qm(l), He);
       return;
     }
-    (await t.actions.enableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
+    (await ok.actions.enableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
       await e.reply(
-        `\u2705 \u5DF2\u555F\u7528 workflow ${nn(l)}\uFF0C\u5C0F\u9F8D\u8766 ${bi(a)} \u5C07\u81EA\u52D5\u63A5\u53D7\u6D3E\u5DE5\u3002`,
+        t("core.workflowEnabledOk", { name: nn(l), number: bi(a) }, glang()),
         He,
       ));
   } catch (c) {
@@ -13202,7 +13195,7 @@ Fn.command("enable", async (e) => {
   }
 });
 Fn.command("disable", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -13212,15 +13205,15 @@ Fn.command("disable", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((m) => m.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(Qm(l), He);
       return;
     }
-    (await t.actions.disableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
+    (await ok.actions.disableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
       await e.reply(
-        `\u2705 \u5DF2\u505C\u7528 workflow ${nn(l)}\uFF0C\u5C0F\u9F8D\u8766 ${bi(a)} \u66AB\u6642\u4E0D\u63A5\u53D7\u6D3E\u5DE5\u3002`,
+        t("core.workflowDisabledOk", { name: nn(l), number: bi(a) }, glang()),
         He,
       ));
   } catch (c) {
@@ -13228,7 +13221,7 @@ Fn.command("disable", async (e) => {
   }
 });
 Fn.command("workflow", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -13238,7 +13231,7 @@ Fn.command("workflow", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((w) => w.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(ET(a, l), He);
@@ -13246,9 +13239,9 @@ Fn.command("workflow", async (e) => {
     }
     let m =
       d.state === "active"
-        ? "\u555F\u7528\u4E2D"
+        ? t("schedule.workflowStateActive", {}, glang())
         : d.state === "disabled_manually"
-          ? "\u5DF2\u624B\u52D5\u505C\u7528"
+          ? t("schedule.workflowStateDisabledManually", {}, glang())
           : d.state;
     await e.reply(ST(a, l, m, d.id), He);
   } catch (c) {
@@ -13362,110 +13355,79 @@ function $n(e) {
   return `${e.ruleType} | ${t}`;
 }
 function Vm(e) {
-  return e === "paused" ? "\u5DF2\u505C\u7528" : "\u555F\u7528\u4E2D";
+  return e === "paused" ? t("schedule.statusPaused", {}, glang()) : t("schedule.statusActive", {}, glang());
 }
 function Ln(e) {
-  return (typeof e == "string" ? e.trim() : "") || "\uFF08\u672A\u8A2D\u5B9A\uFF09";
+  return (typeof e == "string" ? e.trim() : "") || t("core.notSet", {}, glang());
 }
 function Ml(e) {
-  let t = e.issueTitle.trim();
-  return t ? `${t} (#${e.issueNumber})` : `\u5C0F\u9F8D\u8766 #${e.issueNumber}`;
+  let title = e.issueTitle.trim();
+  return title ? `${title} (#${e.issueNumber})` : t("core.lobsterHash", { issueNumber: e.issueNumber }, glang());
 }
-function Ol(e, t, r) {
-  let n = [`\u{1F5C2}\uFE0F \u{1F99E} ${e} (#${t}) \u7684\u6392\u7A0B\u5217\u8868`, ""];
+function Ol(e, issueNum, r) {
+  let n = [t("schedule.listTitle", { name: e, issueNumber: issueNum }, glang()), ""];
   return r.length === 0
-    ? (n.push("\u76EE\u524D\u9084\u6C92\u6709\u6392\u7A0B\u3002"),
-      n.join(`
-`))
+    ? (n.push(t("schedule.listEmpty", {}, glang())), n.join("\n"))
     : (r.forEach((s, o) => {
         (n.push(`${o + 1}. ${$n(s)}`),
-          n.push(`   \u{1F194} ${s.id}`),
-          n.push(`   \u23ED\uFE0F ${Bt(s.nextRunAt)}`));
+          n.push(`   🆔 ${s.id}`),
+          n.push(`   ⏭️ ${Bt(s.nextRunAt)}`));
       }),
-      n.push("", "\u8ACB\u9EDE\u4E0B\u65B9\u6309\u9215\u7BA1\u7406\u6307\u5B9A\u6392\u7A0B\u3002"),
-      n.join(`
-`));
+      n.push("", t("schedule.listManageHint", {}, glang())),
+      n.join("\n"));
 }
-function Nl(e, t, r) {
+function Nl(e, issueNum, r) {
   return [
-    `\u{1F5C2}\uFE0F \u{1F99E} ${e} (#${t}) \u6392\u7A0B\u8A73\u60C5`,
+    t("schedule.card.detailTitle", { name: e, issueNumber: issueNum }, glang()),
     "",
-    `\u{1F194} ${r.id}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${Vm(r.status)}`,
-    `\u{1F5D3}\uFE0F \u898F\u5247\uFF1A${br(r)}`,
-    `\u23ED\uFE0F \u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(r.nextRunAt)}`,
-    `\u{1F514} \u901A\u77E5\uFF1A${r.shouldNotify ? "\u958B\u555F" : "\u95DC\u9589"}`,
+    t("schedule.card.id", { id: r.id }, glang()),
+    t("schedule.card.status", { status: Vm(r.status) }, glang()),
+    t("schedule.card.rule", { rule: br(r) }, glang()),
+    t("schedule.card.nextRun", { nextRun: Bt(r.nextRunAt) }, glang()),
+    t("schedule.card.notify", { state: r.shouldNotify ? t("schedule.card.notifyOn", {}, glang()) : t("schedule.card.notifyOff", {}, glang()) }, glang()),
     "",
-    `\u{1F4DD} \u4EFB\u52D9\uFF1A${r.prompt}`,
-    `\u{1F4E6} Payload\uFF1A${Ln(r.eventData)}`,
-  ].join(`
-`);
+    t("schedule.card.task", { prompt: r.prompt }, glang()),
+    t("schedule.card.payload", { payload: Ln(r.eventData) }, glang()),
+  ].join("\n");
 }
-function Jm(e, t) {
-  return [
-    `\u{1F4DD} (1/4) \u6B63\u5728\u70BA \u{1F99E} ${e} (#${t}) \u8A2D\u5B9A\u6392\u7A0B`,
-    "",
-    "\u8ACB\u544A\u8A34\u6211\u4F60\u5E0C\u671B\u9019\u96BB\u5C0F\u9F8D\u8766\u5B9A\u671F\u57F7\u884C\u7684\u4EFB\u52D9\u662F\u4EC0\u9EBC\uFF1F\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09",
-  ].join(`
-`);
+function Jm(e, issueNum) {
+  return t("schedule.setupTaskPrompt", { name: e, issueNumber: issueNum }, glang());
 }
 function Ym(e) {
-  return `\u270F\uFE0F (1/2) \u8ACB\u8F38\u5165\u6392\u7A0B ${e} \u7684\u65B0\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09`;
+  return t("schedule.editTaskPrompt", { name: e }, glang());
 }
 function Xm(e) {
-  return [
-    `\u{1F552} (1/2) \u8ACB\u8F38\u5165\u6392\u7A0B ${e} \u7684\u65B0\u57F7\u884C\u6642\u9593`,
-    "",
-    "\u4F8B\u5982\uFF1A\u6BCF 5 \u5206\u9418\u3001\u6BCF\u5C0F\u6642\u6574\u9EDE\u3001\u6BCF\u5929\u4E2D\u534812\u9EDE\u3001\u6BCF\u9031\u4E00\u4E0B\u53482\u9EDE\u3001\u661F\u671F\u4E00\u8DDF\u661F\u671F\u4E09\u7684\u4E0B\u5348\u4E09\u9EDE\u3001\u6BCF\u500B\u5DE5\u4F5C\u65E5\u4E0B\u53482\u9EDE\u3001\u6BCF\u500B\u5047\u65E5\u65E9\u4E0A9\u9EDE\u3001\u6BCF\u59299:00\u300112:00\u300115:00\u300118:00\u300121:00\u300124:00\u57F7\u884C\u4E00\u6B21",
-  ].join(`
-`);
+  return t("schedule.editTimePrompt", { name: e }, glang());
 }
-function Zm(e, t) {
-  return [
-    `\u{1F4E6} (1/2) \u8ACB\u8A2D\u5B9A\u6392\u7A0B ${e} \u7684 Payload \u8CC7\u6599\uFF1F(\u53EF\u9078)`,
-    "",
-    `\u76EE\u524D\u503C\uFF1A${Ln(t)}`,
-    "\u76F4\u63A5\u8F38\u5165\u65B0\u7684 Payload \u5167\u5BB9\uFF0C\u6216\u9EDE\u9078\u300C\u7565\u904E\u300D\u6E05\u7A7A\u3002",
-    "\u82E5\u8F38\u5165\u7684\u662F JSON object\uFF0C\u6392\u7A0B\u89F8\u767C\u6642\u6703\u4FDD\u7559\u539F\u59CB event_data\uFF0C\u4E26\u984D\u5916\u5C55\u958B\u6210 workflow inputs\u3002",
-  ].join(`
-`);
+function Zm(e, cur) {
+  return t("schedule.editPayloadPrompt", { name: e, current: Ln(cur) }, glang());
 }
 function Dn(e) {
-  let t = [
-    "\u{1F5C2}\uFE0F \u9019\u500B\u804A\u5929\u76EE\u524D\u7684\u6392\u7A0B\u5217\u8868",
-    "",
-  ];
+  let lines = [t("schedule.thisChatListTitle", {}, glang()), ""];
   return e.length === 0
-    ? (t.push("\u76EE\u524D\u6C92\u6709\u6392\u7A0B\u3002"),
-      t.join(`
-`))
+    ? (lines.push(t("schedule.thisChatListEmpty", {}, glang())), lines.join("\n"))
     : (e.forEach((r, n) => {
-        (t.push(`${n + 1}. ${Ml(r)}\uFF5C${$n(r)}`),
-          t.push(`   \u{1F194} ${r.id}`),
-          t.push(`   \u23ED\uFE0F ${Bt(r.nextRunAt)}`));
+        (lines.push(`${n + 1}. ${Ml(r)}｜${$n(r)}`),
+          lines.push(`   🆔 ${r.id}`),
+          lines.push(`   ⏭️ ${Bt(r.nextRunAt)}`));
       }),
-      t.push(
-        "",
-        "\u8ACB\u9EDE\u4E0B\u65B9\u6309\u9215\u67E5\u770B\u7D30\u7BC0\u6216\u522A\u9664\u6392\u7A0B\u3002",
-      ),
-      t.join(`
-`));
+      lines.push("", t("schedule.thisChatListHint", {}, glang())),
+      lines.join("\n"));
 }
 function Ds(e) {
   return [
-    `\u{1F5C2}\uFE0F ${Ml(e)} \u7684\u6392\u7A0B\u8A73\u60C5`,
+    t("schedule.card.standaloneDetailTitle", { label: Ml(e) }, glang()),
     "",
-    `\u{1F194} ${e.id}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${Vm(e.status)}`,
-    `\u{1F5D3}\uFE0F \u898F\u5247\uFF1A${br(e)}`,
-    `\u23ED\uFE0F \u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(e.nextRunAt)}`,
+    t("schedule.card.id", { id: e.id }, glang()),
+    t("schedule.card.status", { status: Vm(e.status) }, glang()),
+    t("schedule.card.rule", { rule: br(e) }, glang()),
+    t("schedule.card.nextRun", { nextRun: Bt(e.nextRunAt) }, glang()),
     "",
-    `\u{1F4DD} \u4EFB\u52D9\uFF1A${e.prompt}`,
-    `\u{1F4E6} Payload\uFF1A${Ln(e.eventData)}`,
+    t("schedule.card.task", { prompt: e.prompt }, glang()),
+    t("schedule.card.payload", { payload: Ln(e.eventData) }, glang()),
     "",
-    "\u5982\u679C\u9019\u7B46\u6392\u7A0B\u662F\u4E4B\u524D\u5DF2\u6536\u5DE5\u7684\u5C0F\u9F8D\u8766\u7559\u4E0B\u7684\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u5F9E\u9019\u88E1\u522A\u6389\u3002",
-  ].join(`
-`);
+    t("schedule.card.deleteHint", {}, glang()),
+  ].join("\n");
 }
 function _i(e) {
   return e.issueState === "closed";

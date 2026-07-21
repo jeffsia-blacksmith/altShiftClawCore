@@ -278,7 +278,35 @@
       "disabled": "Disabled",
       "running": "Enabled \\(running task {run}\\)",
       "idle": "Enabled \\(idle\\)"
-    }
+    },
+    "statusPaused": "Paused",
+    "statusActive": "Active",
+    "workflowStateActive": "Active",
+    "workflowStateDisabledManually": "Disabled (manual)",
+    "card": {
+      "detailTitle": "🗂️ 🦞 {name} (#{issueNumber}) schedule details",
+      "standaloneDetailTitle": "🗂️ {label} schedule details",
+      "id": "🆔 {id}",
+      "status": "📍 Status: {status}",
+      "rule": "🗓️ Rule: {rule}",
+      "nextRun": "⏭️ Next run: {nextRun}",
+      "notify": "🔔 Notify: {state}",
+      "notifyOn": "On",
+      "notifyOff": "Off",
+      "task": "📝 Task: {prompt}",
+      "payload": "📦 Payload: {payload}",
+      "deleteHint": "If this schedule was left by a previously dispatched lobster, you can also delete it directly from here."
+    },
+    "listTitle": "🗂️ 🦞 {name} (#{issueNumber}) schedule list",
+    "listEmpty": "No schedules yet.",
+    "listManageHint": "Click the button below to manage the specified schedule.",
+    "thisChatListTitle": "🗂️ Schedule list for this chat",
+    "thisChatListEmpty": "No schedules currently.",
+    "thisChatListHint": "Click the button below to view details or delete a schedule.",
+    "setupTaskPrompt": "📝 (1/4) Setting up a schedule for 🦞 {name} (#{issueNumber})\n\nTell me what task you'd like this lobster to run periodically. (Prompt for the lobster)",
+    "editTaskPrompt": "✏️ (1/2) Enter the new task content for schedule {name} (prompt for the lobster)",
+    "editTimePrompt": "🕒 (1/2) Enter the new run time for schedule {name}\n\nFor example: every 5 minutes, every hour on the dot, every day at 12 noon, every Monday at 2pm, Mon and Wed at 3pm, every weekday at 2pm, every holiday at 9am, or run once at 9:00, 12:00, 15:00, 18:00, 21:00, 24:00",
+    "editPayloadPrompt": "📦 (1/2) Set the Payload for schedule {name}? (optional)\n\nCurrent value: {current}\nType the new Payload content directly, or click \"Skip\" to clear.\nIf you enter a JSON object, the schedule will keep the original event_data when triggered and expand it into workflow inputs."
   },
   "kb": {
     "confirmClose": "😭 Confirm Close",
@@ -545,7 +573,13 @@
     "blank": "(blank)",
     "issueCommentUpdated": "Issue #{number} comment updated: {title}",
     "issueNewComment": "Issue #{number} has a new comment: {title}",
-    "contentTruncated": "[Content too long, truncated]"
+    "contentTruncated": "[Content too long, truncated]",
+    "queryWorkflowFailed": "❌ An error occurred while querying the workflow status.",
+    "inferWorkflowFailed": "❌ An error occurred while inferring the workflow `{name}` parameters.",
+    "notSet": "(not set)",
+    "lobsterHash": "Lobster #{issueNumber}",
+    "workflowEnabledOk": "✅ Workflow {name} enabled. Lobster {number} will auto-accept dispatches.",
+    "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches."
   },
   "templates": {
     "name_default": "Default Template",
