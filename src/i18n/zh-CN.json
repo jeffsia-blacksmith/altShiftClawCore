@@ -522,7 +522,10 @@
     "imageAttachedShort": "已附加",
     "imageClickLinkToOpen": "图片请点击链接打开：",
     "openImage": "开启图片",
-    "blank": "（空白）"
+    "blank": "（空白）",
+    "issueCommentUpdated": "Issue #{number} 留言已更新：{title}",
+    "issueNewComment": "Issue #{number} 有新留言：{title}",
+    "contentTruncated": "[内容过长，已截断]"
   },
   "templates": {
     "name_default": "预设范本",

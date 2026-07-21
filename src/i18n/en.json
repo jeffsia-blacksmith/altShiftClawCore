@@ -522,7 +522,10 @@
     "imageAttachedShort": "Attached",
     "imageClickLinkToOpen": "Click the link to open the image:",
     "openImage": "Open image",
-    "blank": "(blank)"
+    "blank": "(blank)",
+    "issueCommentUpdated": "Issue #{number} comment updated: {title}",
+    "issueNewComment": "Issue #{number} has a new comment: {title}",
+    "contentTruncated": "[Content too long, truncated]"
   },
   "templates": {
     "name_default": "Default Template",

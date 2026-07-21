@@ -18640,41 +18640,35 @@ function cu(e, t, r = {}) {
   console.log(`[altShiftClawCore] Telegram relay decision
 ${JSON.stringify({ issueNumber: e?.number ?? null, commentId: t?.id ?? null, ...r }, null, 2)}`);
 }
-function Zs(e, t, r, n = !1) {
-  let s = lr(t.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09";
+function Zs(e, comment, r, n = !1) {
+  let gLang = glang(),
+    s = lr(comment.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, gLang);
   if (n) return s;
   let o =
       r === "edited"
-        ? `Issue #${e.number} \u7559\u8A00\u5DF2\u66F4\u65B0\uFF1A${e.title}`
-        : `Issue #${e.number} \u6709\u65B0\u7559\u8A00\uFF1A${e.title}`,
-    i = t.html_url || "";
-  return [o, "", s, ...(i ? ["", i] : [])]
-    .join(
-      `
-`,
-    )
-    .trim();
+        ? t("core.issueCommentUpdated", { number: e.number, title: e.title }, gLang)
+        : t("core.issueNewComment", { number: e.number, title: e.title }, gLang),
+    i = comment.html_url || "";
+  return [o, "", s, ...(i ? ["", i] : [])].join("\n").trim();
 }
 function eo(e, t, r, n = !1) {
   let s = Zs(e, t, r, n);
   return { text: or(s), parseMode: "MarkdownV2" };
 }
-function Hf(e, t, r, n = !1) {
-  if (!n) return eo(e, t, r, !1);
-  let s = lr(t.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09";
+function Hf(e, comment, r, n = !1) {
+  if (!n) return eo(e, comment, r, !1);
+  let s = lr(comment.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, glang());
   return { text: or(s), parseMode: "MarkdownV2" };
 }
-function zf(e, t, r = "") {
+function zf(e, maxLen, r = "") {
   let n = String(e || "").trim();
-  if (!Number.isInteger(t) || t <= 0 || n.length <= t) return n;
-  let s = ["[\u5167\u5BB9\u904E\u9577\uFF0C\u5DF2\u622A\u65B7]"];
+  if (!Number.isInteger(maxLen) || maxLen <= 0 || n.length <= maxLen) return n;
+  let gLang = glang(),
+    s = [t("core.contentTruncated", {}, gLang)];
   r && s.push(r);
-  let o = `
-
-${s.join(`
-`)}`,
-    i = Math.max(0, t - o.length);
-  return `${n.slice(0, i).trimEnd()}${o}`.slice(0, t);
+  let o = "\n\n" + s.join("\n"),
+    i = Math.max(0, maxLen - o.length);
+  return `${n.slice(0, i).trimEnd()}${o}`.slice(0, maxLen);
 }
 function Ni(e, t, r, n, s, o = !1) {
   let i = n && typeof n.text == "string" ? n : { text: "" };
