@@ -779,6 +779,29 @@
       "workflowNameNotFound": "{file} 未找到小龙虾任务 workflow name 样式，workflow name 维持原样",
       "alreadyInSync": "{file} 已存在於 {repo} 且内容相同，略过同步",
       "done": "已在 {repo} 同步 {file}"
+    },
+    "editNew": {
+      "rebuildBranchReadTemplateFailed": "[/edit] 重建 issue 分支时读取模板失败",
+      "workflowSyncFailed": "[/edit] issue workflow 同步失败",
+      "preparingLobsterData": "[/new] 准备送出小龙虾资料",
+      "setWorkflowStateFailed": "[/edit] 设定 workflow 状态失败",
+      "issueUpdateOk": "[/edit] GitHub Issue 更新成功",
+      "templateResetOk": "[/edit] 模板重设成功",
+      "templateResetFailed": "[/edit] 模板重设失败",
+      "issueCreateOk": "[/new] GitHub Issue 建立成功",
+      "issueWriteFailed": "[/new] GitHub Issue 写入失败",
+      "sendStatusCardFailed": "[/new] 传送状态卡片失败",
+      "readTemplateListFailed": "[/{command}] 读取模板清单失败",
+      "finishNewFlowFailed": "[/{command}] finishNewFlow 失败",
+      "unexpectedTextInputStep": "[/{command}] 未预期的文字输入步骤",
+      "finishNewFlowReservedFieldFailed": "[/{command}] finishNewFlow 保留字段失败",
+      "revalidateTemplateListFailed": "[/{command}] 重新验证模板清单失败",
+      "finishNewFlowTemplateChoiceFailed": "[/{command}] finishNewFlow 模板选择失败",
+      "finishNewFlowWorkflowChoiceFailed": "[/{command}] finishNewFlow workflow 选择失败",
+      "finishNewFlowEnvSkipFailed": "[/{command}] finishNewFlow env skip 失败",
+      "readIssueFailed": "[/{command}] 读取 issue 失败",
+      "enteringNameStep": "[/{command}] 进入等待名称阶段",
+      "commandReceivedEnteringName": "[/{command}] 收到 /{command} 指令，进入等待名称阶段"
     }
   }
 }

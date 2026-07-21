@@ -7331,7 +7331,7 @@ async function nT(e, t, r, n, s, o) {
         );
       } catch (m) {
         console.warn(
-          "[/edit] \u91CD\u5EFA issue \u5206\u652F\u6642\u8B80\u53D6\u7BC4\u672C\u5931\u6557",
+          i18nT("log.editNew.rebuildBranchReadTemplateFailed", {}, glang()),
           { issueNumber: n, templateName: d, error: m instanceof Error ? m.message : String(m) },
         );
       }
@@ -7360,7 +7360,7 @@ async function sT(e, t, r, n, s) {
         return (await Sr(e, t, r, n, l), l);
       } catch (c) {
         ((i = c),
-          console.warn("[/edit] issue workflow \u540C\u6B65\u5931\u6557", {
+          console.warn(i18nT("log.editNew.workflowSyncFailed", {}, glang()), {
             issueNumber: n,
             templateName: l,
             error: c instanceof Error ? c.message : String(c),
@@ -7380,7 +7380,7 @@ async function Os(e, t) {
     y = Kp(t),
     _ = ci({ meta: d === "edit" ? (t.originalTelegramMeta ?? w) : w, agentProfile: y }),
     I = { title: t.name ?? "", body: _ };
-  console.log("[/new] \u6E96\u5099\u9001\u51FA\u5C0F\u9F8D\u8766\u8CC7\u6599", {
+  console.log(i18nT("log.editNew.preparingLobsterData", {}, glang()), {
     chatId: c,
     mode: d,
     targetIssueNumber: m,
@@ -7411,14 +7411,14 @@ async function Os(e, t) {
               ? await r.actions.enableWorkflow({ owner: i, repo: a, workflow_id: fe.id })
               : await r.actions.disableWorkflow({ owner: i, repo: a, workflow_id: fe.id }));
         } catch (ye) {
-          console.warn("[/edit] \u8A2D\u5B9A workflow \u72C0\u614B\u5931\u6557", {
+          console.warn(i18nT("log.editNew.setWorkflowStateFailed", {}, glang()), {
             issueNumber: m,
             error: ye instanceof Error ? ye.message : String(ye),
           });
         }
       }
       if (
-        (console.log("[/edit] GitHub Issue \u66F4\u65B0\u6210\u529F", {
+        (console.log(i18nT("log.editNew.issueUpdateOk", {}, glang()), {
           chatId: c,
           issueNumber: P.number,
         }),
@@ -7438,12 +7438,12 @@ async function Os(e, t) {
           ),
             await Sr(r, i, a, m, ve),
             (K = ve),
-            console.log("[/edit] \u7BC4\u672C\u91CD\u8A2D\u6210\u529F", {
+            console.log(i18nT("log.editNew.templateResetOk", {}, glang()), {
               issueNumber: m,
               templateName: ve,
             }));
         } catch (fe) {
-          console.warn("[/edit] \u7BC4\u672C\u91CD\u8A2D\u5931\u6557", {
+          console.warn(i18nT("log.editNew.templateResetFailed", {}, glang()), {
             issueNumber: m,
             error: fe instanceof Error ? fe.message : String(fe),
           });
@@ -7475,7 +7475,7 @@ async function Os(e, t) {
       ),
         await Sr(r, i, a, U.number, K),
         await Vr(s, { repo: l, issueNumber: U.number, template: K }),
-        console.log("[/new] GitHub Issue \u5EFA\u7ACB\u6210\u529F", {
+        console.log(i18nT("log.editNew.issueCreateOk", {}, glang()), {
           chatId: c,
           issueNumber: P.number,
           branch: he,
@@ -7485,7 +7485,7 @@ async function Os(e, t) {
     S && c && (await rr(n, S, c));
   } catch (S) {
     throw (
-      console.error("[/new] GitHub Issue \u5BEB\u5165\u5931\u6557", {
+      console.error(i18nT("log.editNew.issueWriteFailed", {}, glang()), {
         chatId: c,
         mode: d,
         issueNumber: m,
@@ -7505,7 +7505,7 @@ async function Ns(e, t, r) {
     try {
       await ks(e, s);
     } catch (o) {
-      console.error("[/new] \u50B3\u9001\u72C0\u614B\u5361\u7247\u5931\u6557", {
+      console.error(i18nT("log.editNew.sendStatusCardFailed", {}, glang()), {
         issueNumber: s,
         error: o instanceof Error ? o.message : String(o),
       });
@@ -7545,7 +7545,7 @@ async function wl(e) {
         try {
           P = await tn(r, s, o);
         } catch (K) {
-          console.warn("[/edit] 讀取範本清單失敗", {
+          console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "edit" }, glang()), {
             error: K instanceof Error ? K.message : String(K),
           });
         }
@@ -7572,7 +7572,7 @@ async function wl(e) {
       try {
         w = await tn(r, s, o);
       } catch (I) {
-        console.warn("[/new] 讀取範本清單失敗", {
+        console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "new" }, glang()), {
           error: I instanceof Error ? I.message : String(I),
         });
       }
@@ -7627,14 +7627,14 @@ async function wl(e) {
         let w = await Os(e, m);
         await Ns(e, w, "reply");
       } catch (w) {
-        (console.error("[/edit] finishNewFlow 失敗", w),
+        (console.error(i18nT("log.editNew.finishNewFlowFailed", { command: "edit" }, glang()), w),
           await e.reply(
             t("newFlow.updateErrorRetryEdit", {}, glang()),
           ));
       }
       return;
     }
-    (console.warn("[/new] 未預期的文字輸入步驟", {
+    (console.warn(i18nT("log.editNew.unexpectedTextInputStep", { command: "new" }, glang()), {
       chatId: i,
       step: a.step,
     }),
@@ -7686,7 +7686,7 @@ async function bl(e) {
     try {
       d = await tn(r, s, o);
     } catch (y) {
-      console.warn("[/edit] 讀取範本清單失敗", {
+      console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "edit" }, glang()), {
         error: y instanceof Error ? y.message : String(y),
       });
     }
@@ -7714,7 +7714,7 @@ async function bl(e) {
       let m = await Os(e, d);
       await Ns(e, m, "edit");
     } catch (m) {
-      (console.error("[/edit] finishNewFlow 保留欄位失敗", m),
+      (console.error(i18nT("log.editNew.finishNewFlowReservedFieldFailed", { command: "edit" }, glang()), m),
         await e.editMessageText(
           t("newFlow.updateErrorGeneric", {}, glang()),
         ));
@@ -7751,7 +7751,7 @@ async function yl(e) {
   try {
     w = await tn(r, s, o);
   } catch (y) {
-    (console.warn(`[/${d}] 重新驗證範本清單失敗`, {
+    (console.warn(i18nT("log.editNew.revalidateTemplateListFailed", { command: d }, glang()), {
       error: y instanceof Error ? y.message : String(y),
     }),
       await e.answerCallbackQuery(
@@ -7808,7 +7808,7 @@ ${y.text}`,
     let y = await Os(e, m);
     await Ns(e, y, "edit");
   } catch (y) {
-    (console.error("[/new] finishNewFlow 範本選擇失敗", y),
+    (console.error(i18nT("log.editNew.finishNewFlowTemplateChoiceFailed", { command: "new" }, glang()), y),
       await e.editMessageText(Cm(y)));
   }
 }
@@ -7846,7 +7846,7 @@ async function _l(e) {
     let a = await Os(e, i);
     await Ns(e, a, "edit");
   } catch (a) {
-    (console.error("[/edit] finishNewFlow workflow 選擇失敗", a),
+    (console.error(i18nT("log.editNew.finishNewFlowWorkflowChoiceFailed", { command: "edit" }, glang()), a),
       await e.editMessageText(
         t("newFlow.updateErrorGeneric", {}, glang()),
       ));
@@ -7976,7 +7976,7 @@ async function fi(e) {
       let o = await Os(e, s);
       await Ns(e, o, "edit");
     } catch (o) {
-      (console.error("[/new] finishNewFlow env skip 失敗", o),
+      (console.error(i18nT("log.editNew.finishNewFlowEnvSkipFailed", { command: "new" }, glang()), o),
         await e.editMessageText(Cm(o)));
     }
   }
@@ -8009,7 +8009,7 @@ async function Rm(e) {
     let { data: _ } = await ok.rest.issues.get({ owner: s, repo: o, issue_number: a });
     l = { number: _.number, title: _.title, body: _.body ?? null };
   } catch (_) {
-    (console.error("[/edit] \u8B80\u53D6 issue \u5931\u6557", {
+    (console.error(i18nT("log.editNew.readIssueFailed", { command: "edit" }, glang()), {
       chatId: i,
       activeIssueNumber: a,
       error: _ instanceof Error ? _.message : String(_),
@@ -8039,7 +8039,7 @@ async function Rm(e) {
     };
   (await Ut(r, i),
     await Be(r, i, w),
-    console.log("[/edit] \u9032\u5165\u7B49\u5F85\u540D\u7A31\u968E\u6BB5", {
+    console.log(i18nT("log.editNew.enteringNameStep", { command: "edit" }, glang()), {
       chatId: i,
       issueNumber: l.number,
     }));
@@ -8080,7 +8080,7 @@ var Gs,
         r = e.chat?.id;
       if (!r) return;
       (console.log(
-        "[/new] \u6536\u5230 /new \u6307\u4EE4\uFF0C\u9032\u5165\u7B49\u5F85\u540D\u7A31\u968E\u6BB5",
+        i18nT("log.editNew.commandReceivedEnteringName", { command: "new" }, glang()),
         { chatId: r },
       ),
         await Ut(t, r),

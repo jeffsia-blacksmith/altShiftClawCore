@@ -779,6 +779,29 @@
       "workflowNameNotFound": "{file} did not find the lobster task workflow name pattern, keeping workflow name unchanged",
       "alreadyInSync": "{file} already exists in {repo} with identical content, skip sync",
       "done": "Synced {file} to {repo}"
+    },
+    "editNew": {
+      "rebuildBranchReadTemplateFailed": "[/edit] Read template failed while rebuilding issue branch",
+      "workflowSyncFailed": "[/edit] issue workflow sync failed",
+      "preparingLobsterData": "[/new] Preparing to send lobster data",
+      "setWorkflowStateFailed": "[/edit] Set workflow state failed",
+      "issueUpdateOk": "[/edit] GitHub Issue updated successfully",
+      "templateResetOk": "[/edit] Template reset succeeded",
+      "templateResetFailed": "[/edit] Template reset failed",
+      "issueCreateOk": "[/new] GitHub Issue created successfully",
+      "issueWriteFailed": "[/new] GitHub Issue write failed",
+      "sendStatusCardFailed": "[/new] Send status card failed",
+      "readTemplateListFailed": "[/{command}] Read template list failed",
+      "finishNewFlowFailed": "[/{command}] finishNewFlow failed",
+      "unexpectedTextInputStep": "[/{command}] Unexpected text input step",
+      "finishNewFlowReservedFieldFailed": "[/{command}] finishNewFlow reserved field failed",
+      "revalidateTemplateListFailed": "[/{command}] Re-validate template list failed",
+      "finishNewFlowTemplateChoiceFailed": "[/{command}] finishNewFlow template choice failed",
+      "finishNewFlowWorkflowChoiceFailed": "[/{command}] finishNewFlow workflow choice failed",
+      "finishNewFlowEnvSkipFailed": "[/{command}] finishNewFlow env skip failed",
+      "readIssueFailed": "[/{command}] Read issue failed",
+      "enteringNameStep": "[/{command}] Entering wait-for-name step",
+      "commandReceivedEnteringName": "[/{command}] /{command} command received, entering wait-for-name step"
     }
   }
 }
