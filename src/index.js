@@ -4849,9 +4849,9 @@ var Kr,
       ($a = 8),
       (Gd = 36),
       (Fd = Object.freeze({
-        awaiting_name: "\u540D\u7A31",
-        awaiting_description: "\u63CF\u8FF0",
-        awaiting_template: "\u7BC4\u672C",
+        awaiting_name: "Name",
+        awaiting_description: "Description",
+        awaiting_template: "Template",
       })));
   });
 async function Ge(e, t) {
@@ -6168,7 +6168,7 @@ async function Zr(e, t, r, n, s, o) {
     a = `artifacts/${s}/user.md`,
     c = `${(typeof o == "string" ? o.trim() : "") || "(empty)"}
 `;
-  await Jy(e, t, r, i, a, c, `chore: \u66F4\u65B0 issue #${n} comment #${s} user artifact`);
+  await Jy(e, t, r, i, a, c, `chore: update issue #${n} comment #${s} user artifact`);
 }
 async function xn(e, t, r, n, s) {
   let o = `issue-${n}`,
@@ -6186,7 +6186,7 @@ ${l}`;
     owner: t,
     repo: r,
     path: i,
-    message: `chore: \u66F4\u65B0 issue #${n} \u5C0D\u8A71\u7D00\u9304`,
+    message: `chore: update issue #${n} conversation log`,
     content: hs(d),
     branch: o,
     ...(a.sha ? { sha: a.sha } : {}),
@@ -6940,7 +6940,7 @@ function wm(e) {
   return e instanceof Error ? e.message.includes("Not Found") || e.message.includes("404") : !1;
 }
 function Q_(e, t) {
-  let r = `\u{1F99E} \u57F7\u884C\u5C0F\u9F8D\u8766\u4EFB\u52D9 #${t}`;
+  let r = `\u{1F99E} Execute Lobster Task #${t}`;
   return String(e || "").replace(z_, `$1'${r}'$3`);
 }
 async function bm(e, owner, r, n, s) {
@@ -6993,7 +6993,7 @@ async function Sr(e, t, r, n, s = "default") {
     );
     return;
   }
-  (await V_(e, t, r, l, d, `chore: \u6E96\u5099 issue #${n} workflow`, o, m?.sha),
+  (await V_(e, t, r, l, d, `chore: prepare issue #${n} workflow`, o, m?.sha),
     console.log(`\u5DF2\u5728 ${o} \u540C\u6B65 ${l}`));
 }
 async function ym(e, t, r, n, s, o) {
@@ -7325,7 +7325,7 @@ async function nT(e, t, r, n, s, o) {
             r,
             i,
             w,
-            `chore: \u521D\u59CB\u5316 issue #${n} orphan \u5206\u652F\uFF08\u91CD\u5EFA\uFF0C\u7BC4\u672C\uFF1A${l}\uFF09`,
+            `chore: init issue #${n} orphan branch (rebuild, template: ${l})`,
           ),
           l
         );
@@ -7344,7 +7344,7 @@ async function nT(e, t, r, n, s, o) {
       r,
       i,
       [{ path: ".gitkeep", content: "" }],
-      `chore: \u521D\u59CB\u5316 issue #${n} orphan \u5206\u652F\uFF08\u7121\u7BC4\u672C\u56DE\u9000\uFF09`,
+      `chore: init issue #${n} orphan branch (no template fallback)`,
     ),
     l
   );
@@ -7434,7 +7434,7 @@ async function Os(e, t) {
             a,
             `issue-${m}`,
             fe.map((X) => ({ path: X.path, content: X.content })),
-            `chore: \u91CD\u8A2D issue #${m} \u7BC4\u672C\uFF08\u7BC4\u672C\uFF1A${ve}\uFF09`,
+            `chore: reset issue #${m} template (template: ${ve})`,
           ),
             await Sr(r, i, a, m, ve),
             (K = ve),
@@ -7471,7 +7471,7 @@ async function Os(e, t) {
         a,
         he,
         Y,
-        `chore: \u521D\u59CB\u5316 issue #${U.number} orphan \u5206\u652F\uFF08\u7BC4\u672C\uFF1A${K}\uFF09`,
+        `chore: init issue #${U.number} orphan branch (template: ${K})`,
       ),
         await Sr(r, i, a, U.number, K),
         await Vr(s, { repo: l, issueNumber: U.number, template: K }),
@@ -14472,7 +14472,7 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
       c,
       `issue-${n}`,
       w.map((_) => ({ path: _.path, content: _.content })),
-      `chore: \u91CD\u8A2D issue #${n} \u7BC4\u672C\uFF08\u7BC4\u672C\uFF1A${s}\uFF09`,
+      `chore: reset issue #${n} template (template: ${s})`,
     ),
       await Sr(o, l, c, n, s));
     let y = await Qr(i, d, n);
@@ -19368,7 +19368,7 @@ async function kE(e, chatId) {
       i,
       y,
       _,
-      `chore: \u521D\u59CB\u5316 issue #${m.number} orphan \u5206\u652F\uFF08\u7BC4\u672C\uFF1A${a}\uFF09`,
+      `chore: init issue #${m.number} orphan branch (template: ${a})`,
     ),
     await Sr(r, o, i, m.number, a),
     await Vr(e.d1, { repo: s.github.repoFullName, issueNumber: m.number, template: a }),
