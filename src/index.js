@@ -16226,23 +16226,23 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
     }));
 });
 Tt.callbackQuery(/^schedule_open:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = We(e.callbackQuery.data),
-    a = await gt(t, i);
+    a = await gt(db, i);
   if (!a) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let c = (await Ht(r, s, o)).find((d) => d.number === a.issueNumber);
   (await e.answerCallbackQuery(),
-    await e.reply(Nl(c?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", a.issueNumber, a), {
+    await e.reply(Nl(c?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), a.issueNumber, a), {
       reply_markup: jo(a.id, a.issueNumber, a.status !== "paused"),
     }));
 });
 Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payload):/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { store: r, d1: n, octokit: s, config: o } = e.services,
     { owner: i, repo: a } = o.github,
     l = e.callbackQuery.data,
@@ -16251,22 +16251,22 @@ Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payloa
     { scheduleId: m, source: w } = yi(We(l)),
     y = await gt(n, m);
   if (!y) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (w === "chat") {
     let _ = await Us(s, i, a, y);
     if (_i(_)) {
       (await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u9019\u7B46\u6392\u7A0B\u7684\u5C0F\u9F8D\u8766\u5DF2\u6536\u5DE5\uFF0C\u53EA\u80FD\u522A\u9664",
+        t("schedule.flow.lobsterClosedDeleteOnly", {}, glang()),
       ),
         await e.reply(Ds(_), { reply_markup: Bs(_) }));
       return;
     }
   }
-  (await Dt(r, t),
-    await Ye(r, t),
-    await Hr(r, t, {
+  (await Dt(r, cid),
+    await Ye(r, cid),
+    await Hr(r, cid, {
       step: c ? "awaiting_edit_prompt" : d ? "awaiting_edit_payload" : "awaiting_edit_time",
       scheduleId: y.id,
       issueNumber: y.issueNumber,
@@ -16278,37 +16278,35 @@ Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payloa
     }));
 });
 Tt.callbackQuery(/^schedule_flow_cancel:/, async (e) => {
-  let t = await V(e);
-  t &&
-    (await Ye(e.services.store, t),
-    await e.answerCallbackQuery("\u274C \u5DF2\u53D6\u6D88\u6392\u7A0B\u8A2D\u5B9A"),
-    await e.reply("\u53D6\u6D88\u8A2D\u5B9A\u6392\u7A0B\uFF01"));
+  let cid = await V(e);
+  cid &&
+    (await Ye(e.services.store, cid),
+    await e.answerCallbackQuery(t("schedule.flow.cancelSetupToast", {}, glang())),
+    await e.reply(t("schedule.flow.cancelSetupMessage", {}, glang())));
 });
 Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { store: r, d1: n, config: s } = e.services,
-    o = await sr(r, t);
+    o = await sr(r, cid);
   if (!o) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("schedule.flow.setupExpired", {}, glang()));
     return;
   }
   if (o.step === "awaiting_payload") {
     if (!o.prompt || !o.ruleType || !o.rulePayload || !o.timezone || !o.nextRunAt) {
-      (await Ye(r, t),
+      (await Ye(r, cid),
         await e.answerCallbackQuery(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931",
+          t("schedule.flow.stateLostShort", {}, glang()),
         ),
-        await e.reply(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931\uFF0C\u8ACB\u91CD\u65B0\u8A2D\u5B9A\u6392\u7A0B\u3002",
-        ));
+        await e.reply(t("schedule.flow.stateLost", {}, glang())));
       return;
     }
     let i = await Xo(n, {
       id: fs(),
       repo: s.github.repoFullName,
       issueNumber: o.issueNumber,
-      chatId: t,
+      chatId: cid,
       prompt: o.prompt,
       eventData: null,
       ruleType: o.ruleType,
@@ -16318,73 +16316,67 @@ Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
       shouldNotify: !0,
     });
     if (!i) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557"),
-        await e.reply(
-          "\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.createFailedShort", {}, glang())),
+        await e.reply(t("schedule.flow.createFailed", {}, glang())));
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
+    (await e.answerCallbackQuery(t("schedule.flow.payloadSkipped", {}, glang())),
       await on(e, i, "create"));
     return;
   }
   if (o.step === "awaiting_edit_payload") {
     if (!o.scheduleId) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B"),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang())),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
       return;
     }
     let i = await jt(n, o.scheduleId, { eventData: null }, { now: new Date() });
     if (!i) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B"),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang())),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
+    (await e.answerCallbackQuery(t("schedule.flow.payloadSkipped", {}, glang())),
       await on(e, i, "update"));
     return;
   }
   await e.answerCallbackQuery(
-    "\u26A0\uFE0F \u76EE\u524D\u4E0D\u5728 Payload \u8A2D\u5B9A\u6B65\u9A5F",
+    t("schedule.flow.notInPayloadStep", {}, glang()),
   );
 });
 Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     { scheduleId: i, source: a } = yi(We(e.callbackQuery.data));
   if (a === "chat") {
-    let y = await gt(t, i);
+    let y = await gt(db, i);
     if (!y) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+      await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
       return;
     }
     let _ = await Us(r, s, o, y);
     if (_i(_)) {
       (await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u9019\u7B46\u6392\u7A0B\u7684\u5C0F\u9F8D\u8766\u5DF2\u6536\u5DE5\uFF0C\u53EA\u80FD\u522A\u9664",
+        t("schedule.flow.lobsterClosedDeleteOnly", {}, glang()),
       ),
         await e.reply(Ds(_), { reply_markup: Bs(_) }));
       return;
     }
   }
-  let l = await gt(t, i);
+  let l = await gt(db, i);
   if (!l) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let c = new Date(),
     d =
       l.status === "active"
-        ? await jt(t, l.id, { status: "paused" }, { now: c })
+        ? await jt(db, l.id, { status: "paused" }, { now: c })
         : await jt(
-            t,
+            db,
             l.id,
             {
               status: "active",
@@ -16394,14 +16386,14 @@ Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
             { now: c },
           );
   if (!d) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (
     (await e.answerCallbackQuery(
       d.status === "paused"
-        ? "\u23F8\uFE0F \u5DF2\u505C\u7528\u6392\u7A0B"
-        : "\u25B6\uFE0F \u5DF2\u555F\u7528\u6392\u7A0B",
+        ? t("schedule.flow.pausedToast", {}, glang())
+        : t("schedule.flow.activatedToast", {}, glang()),
     ),
     a === "chat")
   ) {
@@ -16410,33 +16402,33 @@ Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
     return;
   }
   let w = (await Ht(r, s, o)).find((y) => y.number === d.issueNumber);
-  await e.reply(Nl(w?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", d.issueNumber, d), {
+  await e.reply(Nl(w?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), d.issueNumber, d), {
     reply_markup: jo(d.id, d.issueNumber, d.status !== "paused"),
   });
 });
 Tt.callbackQuery(/^schedule_delete:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { d1: r, octokit: n, config: s } = e.services,
     { owner: o, repo: i, repoFullName: a } = s.github,
     { scheduleId: l, source: c } = yi(We(e.callbackQuery.data)),
     d = await gt(r, l);
   if (!d) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (
     (await Xa(r, l),
-    await e.answerCallbackQuery("\u{1F5D1}\uFE0F \u5DF2\u522A\u9664\u6392\u7A0B"),
+    await e.answerCallbackQuery(t("schedule.flow.deletedToast", {}, glang())),
     c === "chat")
   ) {
-    let _ = await Un(r, n, o, i, a, t);
+    let _ = await Un(r, n, o, i, a, cid);
     await e.reply(Dn(_), { reply_markup: Bn(_) });
     return;
   }
   let w = (await Ht(n, o, i)).find((_) => _.number === d.issueNumber),
     y = await gs(r, a, d.issueNumber);
-  await e.reply(Ol(w?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", d.issueNumber, y), {
+  await e.reply(Ol(w?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), d.issueNumber, y), {
     reply_markup:
       y.length > 0
         ? ja(
@@ -16455,30 +16447,30 @@ Tt.callbackQuery(/^schedule_chat_list:/, async (e) => {
   (await e.answerCallbackQuery(), await e.reply(Dn(l), { reply_markup: Bn(l) }));
 });
 Tt.callbackQuery(/^schedule_chat_open:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = We(e.callbackQuery.data),
-    a = await gt(t, i);
+    a = await gt(db, i);
   if (!a) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let l = await Us(r, s, o, a);
   (await e.answerCallbackQuery(), await e.reply(Ds(l), { reply_markup: Bs(l) }));
 });
 Tt.callbackQuery(/^schedule_chat_delete:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { d1: r, octokit: n, config: s } = e.services,
     { owner: o, repo: i, repoFullName: a } = s.github,
     l = We(e.callbackQuery.data);
   if (!(await gt(r, l))) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   await Xa(r, l);
-  let d = await Un(r, n, o, i, a, t);
-  (await e.answerCallbackQuery("\u{1F5D1}\uFE0F \u5DF2\u522A\u9664\u6392\u7A0B"),
+  let d = await Un(r, n, o, i, a, cid);
+  (await e.answerCallbackQuery(t("schedule.flow.deletedToast", {}, glang())),
     await e.reply(Dn(d), { reply_markup: Bn(d) }));
 });
 Ie();

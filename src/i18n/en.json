@@ -331,7 +331,20 @@
       "ambiguousClarify": "Please state the schedule time you want once more.",
       "ambiguousReply": "Please reply with a complete time description, for example: {examples}",
       "failedUnderstand": "I didn't understand this schedule time.",
-      "failedReply": "Please rephrase more clearly and enter again, for example: {examples}"
+      "failedReply": "Please rephrase more clearly and enter again, for example: {examples}",
+      "scheduleNotFoundShort": "⚠️ Schedule not found",
+      "lobsterClosedDeleteOnly": "⚠️ This schedule's lobster has closed; it can only be deleted.",
+      "fallbackIssueTitle": "Scheduled lobster",
+      "cancelSetupToast": "❌ Schedule setup cancelled",
+      "cancelSetupMessage": "Schedule setup cancelled!",
+      "setupExpired": "⚠️ Schedule setup expired",
+      "stateLostShort": "⚠️ Schedule setup state lost",
+      "createFailedShort": "❌ Failed to create schedule",
+      "payloadSkipped": "⏭️ Payload skipped",
+      "notInPayloadStep": "⚠️ Not currently in the Payload setup step",
+      "pausedToast": "⏸️ Schedule paused",
+      "activatedToast": "▶️ Schedule activated",
+      "deletedToast": "🗑️ Schedule deleted"
     }
   },
   "kb": {

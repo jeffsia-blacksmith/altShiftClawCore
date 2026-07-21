@@ -331,7 +331,20 @@
       "ambiguousClarify": "请再说一次你要的排程时间。",
       "ambiguousReply": "请直接回覆完整时间叙述，例如：{examples}",
       "failedUnderstand": "我这次没看懂这个排程时间。",
-      "failedReply": "请换一种更清楚的说法重新输入，例如：{examples}"
+      "failedReply": "请换一种更清楚的说法重新输入，例如：{examples}",
+      "scheduleNotFoundShort": "⚠️ 找不到这笔排程",
+      "lobsterClosedDeleteOnly": "⚠️ 这笔排程的小龙虾已收工，只能删除",
+      "fallbackIssueTitle": "排程小龙虾",
+      "cancelSetupToast": "❌ 已取消排程设定",
+      "cancelSetupMessage": "取消设定排程！",
+      "setupExpired": "⚠️ 排程设定已过期",
+      "stateLostShort": "⚠️ 排程设定状态遗失",
+      "createFailedShort": "❌ 建立排程失败",
+      "payloadSkipped": "⏭️ 已略过 Payload",
+      "notInPayloadStep": "⚠️ 目前不在 Payload 设定步骤",
+      "pausedToast": "⏸️ 已停用排程",
+      "activatedToast": "▶️ 已启用排程",
+      "deletedToast": "🗑️ 已删除排程"
     }
   },
   "kb": {
