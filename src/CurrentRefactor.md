@@ -11,10 +11,11 @@
 ### 起点
 `altShiftClawCore/src/index.js` 是别人 repo（`thenghui/th_claw_core`，又源自 `duotify/GitHubClaw`）的 esbuild bundle 格式化版，原 ~22,805 行混淆代码。**核心痛点**：改一点坏一片——所有东西在同一个闭包里共享混淆变量名，一个 rename 就连锁崩，且早期无护栏检测回归。
 
-### 总体策略（两阶段，独立进行）
-1. **阶段 A — 模组抽离 / vendor 替换**（已部分完成，路线图见 §5）：用 shim + 命名导出手法把 vendor 库换回 npm、把业务模组抽到 `src/modules/`，缩小维护面。
-2. **阶段 B — i18n 完整化**（进行中，详见 §3）：保留当前可运作的 bundle，把所有剩余 unicode-traditional-Chinese 字串迁移成 zh-CN / English i18n（含 AI prompt 与 console 日志）。产物 = 完全 i18n 化的稳定基线。
-3. **后阶段 — 从头重写**：基于锁定的行为基线，独立用干净源码重写 worker（与 A/B 解耦）。
+### 总体策略（两条主线，独立进行）
+1. **阶段 B — i18n 完整化**（进行中，详见 §3）：保留当前可运作的 bundle，把所有剩余 unicode-traditional-Chinese 字串迁移成 zh-CN / English i18n（含 AI prompt 与 console 日志）；其中 commit 讯息、英文 AI prompt、非 Telegram 路径 console 直接固定/落为英文。产物 = 完全 i18n 化、行为不变的稳定基线。
+2. **后阶段 — 从头重写**：基于锁定的行为基线，独立用干净源码重写 worker（与 i18n 化解耦）。
+
+> **阶段 A 续（模组抽离 / vendor 替换）已暂缓**：用户决定大概率不再做（反正要 from-scratch 重写，边际价值低）。已完成的 `kc`/`df`/`Sa` 抽离保留；剩余 keyboard builders / grammY 替换 / `Am`/`Pc` 抽离路线图见 §5 仅作存档参考，不排进度。**现役工作只有 i18n（阶段 B）→ from-scratch（后阶段）两条线。**
 
 **产品语言目标：简体中文 + 英文**（非繁体）。所有繁体字串须转简体或英文。
 **执行原则：先护栏后迁移、最低风险先做、每步可独立交付。** i18n 调用约定：`t("namespace.key", { param: value }, glang())`；两份 JSON（zh-CN / en）并行加 key 保持 leaf-key 对等。
@@ -37,7 +38,7 @@
 | **Phase 2c** | Pc AI/octokit（含 error-code 重构） | ⬜ 待开始（最大、最高风险、多 session） | — |
 | **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ⬜ 待开始（机械式） | — |
 | **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ⬜ 待开始 | — |
-| **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⬜ 待开始（见 §5 路线图） | — |
+| **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
 
 **量化（最新）：** `src/index.js` 22,805 → **20,303 行**（-2,502 / -11%）；bundle 605,818 → **610,511 bytes**（i18n t() 调用 + key 占用）；i18n key 对等 533 → **585**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
 
@@ -86,7 +87,9 @@
 
 ---
 
-## 5. 模组抽离 / 重写路线图（阶段 A 续，按 ROI 排序）
+## 5. 模组抽离 / 重写路线图（阶段 A 续 — ⏸️ 暂缓 / 存档，大概率不做）
+
+> 用户决定大概率跳过此线（反正要 from-scratch 重写）。下列内容仅作存档参考，**不排进度、不优先**。如未来改主意可重启。现役主线是 i18n（§3）→ from-scratch。
 
 ### 重大修正：`Et` (grammY) 区块的真实构成
 之前 MODULE_MAP 把 ~117..4863 整块标为「grammY VENDOR」，实际**标注错误**：
