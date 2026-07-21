@@ -496,7 +496,8 @@
     "workflowEnabledMessage": "✅ Workflow {name} has been enabled. Lobster {number} will now automatically accept dispatches.",
     "workflowDisabledMessage": "✅ Workflow {name} has been disabled. Lobster {number} will not accept dispatches for now.",
     "workflow_state_active": "active",
-    "workflow_state_disabled_manually": "disabled manually"
+    "workflow_state_disabled_manually": "disabled manually",
+    "unfilled": "(unfilled)"
   },
   "templates": {
     "name_default": "Default Template",
@@ -514,7 +515,10 @@
     "cancelled_message": "⚠️ Template *{name}* deployment has been cancelled",
     "failed_message": "❌ Template *{name}* deployment failed, please check the workflow run log",
     "ended_message": "ℹ️ Template *{name}* deployment ended. Result: {result}",
-    "sync_complete_ask_line": "✅ Template *{name}* has been installed successfully!\n\n🤖 Would you like to continue configuring LINE Bot deployment?"
+    "sync_complete_ask_line": "✅ Template *{name}* has been installed successfully!\n\n🤖 Would you like to continue configuring LINE Bot deployment?",
+    "fileBinary": "Template file {path} is binary, cannot be read",
+    "nestedTooDeep": "Template directory {path}/ nesting too deep for a single query",
+    "unknownGraphqlError": "Unknown GraphQL error"
   },
   "line": {
     "setup_failed": "❌ Setup failed: {error}",
@@ -555,5 +559,15 @@
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* deployment has been cancelled",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* deployment failed, please check the workflow run log",
     "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* deployment ended. Result: {result}"
+  },
+  "api": {
+    "rateLimit": {
+      "minutes": "API rate limit reached, resets in about {minutes} min",
+      "soon": "API rate limit reached, resetting soon",
+      "bare": "API rate limit reached"
+    }
+  },
+  "errors": {
+    "notAFile": "{name} is not a file"
   }
 }

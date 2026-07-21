@@ -5783,10 +5783,10 @@ function yr(e) {
 function Rn(e) {
   return Number.isInteger(e) && e > 0 ? `issue-${e}` : "main";
 }
-async function Zo(e, t, r, n, s) {
-  let i = (await e.repos.getContent({ owner: t, repo: r, path: n, ref: s })).data;
+async function Zo(e, owner, r, n, s) {
+  let i = (await e.repos.getContent({ owner, repo: r, path: n, ref: s })).data;
   if (Array.isArray(i) || i.type !== "file")
-    throw new Error(`${n} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+    throw new Error(t("errors.notAFile", { name: n }, glang()));
   return i.encoding === "base64" ? St(i.content) : i.content;
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
@@ -5809,16 +5809,18 @@ function Ly(e) {
   return e.status === 403 && e.headers.get("x-ratelimit-remaining") === "0";
 }
 function Dy(e) {
-  let t = e.headers.get("x-ratelimit-remaining"),
-    r = e.headers.get("x-ratelimit-reset");
-  if (t !== "0") return "";
-  let n = r ? Number(r) : 0;
-  if (n > 0) {
-    let s = Math.max(0, n - Math.floor(Date.now() / 1e3)),
-      o = Math.ceil(s / 60);
-    return ` (\u5DF2\u9054 API \u901F\u7387\u4E0A\u9650\uFF0C${o > 0 ? `\u7D04 ${o} \u5206\u9418` : "\u5373\u5C07"}\u5F8C\u91CD\u7F6E)`;
+  let rem = e.headers.get("x-ratelimit-remaining"),
+    reset = e.headers.get("x-ratelimit-reset");
+  if (rem !== "0") return "";
+  let resetNum = reset ? Number(reset) : 0;
+  if (resetNum > 0) {
+    let secs = Math.max(0, resetNum - Math.floor(Date.now() / 1e3)),
+      mins = Math.ceil(secs / 60);
+    return mins > 0
+      ? " (" + t("api.rateLimit.minutes", { minutes: mins }, glang()) + ")"
+      : " (" + t("api.rateLimit.soon", {}, glang()) + ")";
   }
-  return " (\u5DF2\u9054 API \u901F\u7387\u4E0A\u9650)";
+  return " (" + t("api.rateLimit.bare", {}, glang()) + ")";
 }
 async function An(e, t) {
   let r = $y(t),
@@ -5984,24 +5986,24 @@ var Op,
     Yr();
     ((Op = []),
       (Uy = {
-        "audio-transcriber": "\u8A9E\u97F3\u8F49\u6587\u5B57",
-        "call-agent-via-issue": "Issue \u4EE3\u7406\u59D4\u6D3E",
-        "deep-researcher": "\u6DF1\u5EA6\u7814\u7A76",
-        "felo-search": "Felo \u5373\u6642\u641C\u5C0B",
-        "felo-slides": "Felo \u7C21\u5831\u751F\u6210",
-        "felo-web-fetch": "Felo \u7DB2\u9801\u64F7\u53D6",
-        "felo-x-search": "Felo X \u641C\u5C0B",
-        "find-skills": "\u6280\u80FD\u63A2\u7D22",
-        "google-stitch": "Google Stitch \u8A2D\u8A08\u751F\u6210",
-        "image-describer": "\u5716\u7247\u63CF\u8FF0\u8207\u8FA8\u8B58",
-        "meeting-note-formatter": "\u6703\u8B70\u7B46\u8A18\u6574\u7406",
-        "gemini-nanobanana": "Nano Banana \u5716\u50CF\u751F\u6210",
-        "playwright-cli": "\u7DB2\u9801\u81EA\u52D5\u5316\u6E2C\u8A66",
-        sendgrid: "SendGrid \u90F5\u4EF6\u767C\u9001",
-        "skill-creator": "\u6280\u80FD\u5EFA\u7ACB\u8207\u512A\u5316",
-        summary: "\u5167\u5BB9\u6458\u8981\uFF08\u7DB2\u9801/PDF/\u5F71\u7247\uFF09",
-        "telegram-notify": "Telegram \u901A\u77E5",
-        "tools-package-builder": "Tools \u5957\u4EF6\u5EFA\u7ACB\u5668",
+        "audio-transcriber": 1,
+        "call-agent-via-issue": 1,
+        "deep-researcher": 1,
+        "felo-search": 1,
+        "felo-slides": 1,
+        "felo-web-fetch": 1,
+        "felo-x-search": 1,
+        "find-skills": 1,
+        "google-stitch": 1,
+        "image-describer": 1,
+        "meeting-note-formatter": 1,
+        "gemini-nanobanana": 1,
+        "playwright-cli": 1,
+        sendgrid: 1,
+        "skill-creator": 1,
+        summary: 1,
+        "telegram-notify": 1,
+        "tools-package-builder": 1,
       }),
       (By = ["tools-package-builder", "skill-creator"]),
       (jy = new Map(Op.map((e) => [e.key, e]))));
@@ -6133,11 +6135,11 @@ async function jp(e, t, r, n) {
   let s = await Ts(e, t, r, n);
   return s.workflowExists && s.workflowEnabled;
 }
-async function Wp(e, t, r, n, s) {
+async function Wp(e, owner, r, n, s) {
   try {
-    let i = (await e.repos.getContent({ owner: t, repo: r, path: s, ref: n })).data;
+    let i = (await e.repos.getContent({ owner, repo: r, path: s, ref: n })).data;
     if (Array.isArray(i) || i.type !== "file")
-      throw new Error(`${s} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+      throw new Error(t("errors.notAFile", { name: s }, glang()));
     return { content: i.encoding === "base64" ? St(i.content) : i.content, sha: i.sha };
   } catch (o) {
     if (yr(o)) return { content: "" };
@@ -6778,14 +6780,14 @@ function K_(e, t) {
 function gm(e) {
   return e instanceof Error && e.message.startsWith("\u8B80\u53D6\u7BC4\u672C ");
 }
-function hm(e, t, r) {
+function hm(e, pfx, r) {
   if (!e?.length) return [];
   let n = [];
   for (let s of e) {
-    let o = t ? `${t}/${s.name}` : s.name;
+    let o = pfx ? `${pfx}/${s.name}` : s.name;
     if (s.type === "blob" && s.object?.__typename === "Blob") {
       if (s.object.isBinary)
-        throw new Error(`template \u6A94\u6848 ${o} \u70BA binary\uFF0C\u7121\u6CD5\u8B80\u53D6`);
+        throw new Error(t("templates.fileBinary", { path: o }, glang()));
       if (/^\.github\/workflows\//i.test(o)) continue;
       n.push({ path: o, content: W_(s.object.text ?? "", r) });
       continue;
@@ -6793,21 +6795,21 @@ function hm(e, t, r) {
     if (s.type === "tree" && s.object?.__typename === "Tree") {
       if (!Array.isArray(s.object.entries))
         throw new Error(
-          `template \u76EE\u9304 ${o}/ \u5DE2\u72C0\u6DF1\u5EA6\u8D85\u904E\u55AE\u6B21\u67E5\u8A62\u652F\u63F4\u7BC4\u570D`,
+          t("templates.nestedTooDeep", { path: o }, glang()),
         );
       n.push(...hm(s.object.entries, o, r));
     }
   }
   return n;
 }
-async function H_(e, t, r, n) {
+async function H_(e, owner, r, n) {
   let s = await e.request("POST /graphql", {
       query: j_,
-      variables: { owner: t, repo: r, expression: `main:templates/${n}` },
+      variables: { owner, repo: r, expression: `main:templates/${n}` },
     }),
     o = Array.isArray(s.data?.errors) ? s.data.errors : [];
   if (o.length > 0) {
-    let a = o[0]?.message?.trim() || "\u672A\u77E5 GraphQL \u932F\u8AA4";
+    let a = o[0]?.message?.trim() || t("templates.unknownGraphqlError", {}, glang());
     throw new Error(K_(n, a));
   }
   let i = s.data?.data?.repository?.object;
@@ -6938,10 +6940,10 @@ function Q_(e, t) {
   let r = `\u{1F99E} \u57F7\u884C\u5C0F\u9F8D\u8766\u4EFB\u52D9 #${t}`;
   return String(e || "").replace(z_, `$1'${r}'$3`);
 }
-async function bm(e, t, r, n, s) {
-  let i = (await e.repos.getContent({ owner: t, repo: r, path: n, ref: s })).data;
+async function bm(e, owner, r, n, s) {
+  let i = (await e.repos.getContent({ owner, repo: r, path: n, ref: s })).data;
   if (Array.isArray(i) || i.type !== "file")
-    throw new Error(`${n} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+    throw new Error(t("errors.notAFile", { name: n }, glang()));
   return { content: i.encoding === "base64" ? St(i.content) : i.content, sha: i.sha };
 }
 async function V_(e, t, r, n, s, o, i, a) {
@@ -7043,8 +7045,8 @@ function It(e) {
 }
 function Mn(e) {
   return typeof e != "string"
-    ? "(\u672A\u586B\u5BEB)"
-    : e.replace(/\s+/g, " ").trim() || "(\u672A\u586B\u5BEB)";
+    ? t("core.unfilled", {}, glang())
+    : e.replace(/\s+/g, " ").trim() || t("core.unfilled", {}, glang());
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Ms] new-flow state (part 1)  —  BUSINESS

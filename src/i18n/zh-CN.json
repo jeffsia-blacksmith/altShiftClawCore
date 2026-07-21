@@ -496,7 +496,8 @@
     "workflowEnabledMessage": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
     "workflowDisabledMessage": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
     "workflow_state_active": "启用中",
-    "workflow_state_disabled_manually": "已手动停用"
+    "workflow_state_disabled_manually": "已手动停用",
+    "unfilled": "（未填）"
   },
   "templates": {
     "name_default": "预设范本",
@@ -514,7 +515,10 @@
     "cancelled_message": "⚠️ 范本 *{name}* 部署已取消",
     "failed_message": "❌ 范本 *{name}* 部署失败，请查看 workflow run log",
     "ended_message": "ℹ️ 范本 *{name}* 部署结束，结果：{result}",
-    "sync_complete_ask_line": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？"
+    "sync_complete_ask_line": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？",
+    "fileBinary": "模板文件 {path} 为二进制，无法读取",
+    "nestedTooDeep": "模板目录 {path}/ 嵌套深度超过单次查询支持范围",
+    "unknownGraphqlError": "未知 GraphQL 错误"
   },
   "line": {
     "setup_failed": "❌ 设定失败：{error}",
@@ -555,5 +559,15 @@
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* 部署已取消",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* 部署失败，请查看 workflow run log",
     "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}"
+  },
+  "api": {
+    "rateLimit": {
+      "minutes": "已达 API 速率上限，约 {minutes} 分钟后重置",
+      "soon": "已达 API 速率上限，即将重置",
+      "bare": "已达 API 速率上限"
+    }
+  },
+  "errors": {
+    "notAFile": "{name} 不是文件"
   }
 }
