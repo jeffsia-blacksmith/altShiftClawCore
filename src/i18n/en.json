@@ -3,7 +3,8 @@
     "processing": "💬 Processing message...",
     "error_start": "❌ Error executing /start, please try again later.",
     "no_active_issue": "There is no active Issue currently. Please use /new to create one.",
-    "source_name": "Lobster"
+    "source_name": "Lobster",
+    "defaultLobsterDescription": "{name}'s default Lobster"
   },
   "menu": {
     "active_lobster": "🦞 Current Lobster",
@@ -63,7 +64,8 @@
     "failed_message": "❌ Skill *{name}* {action} failed, please check the workflow run log",
     "ended_message": "ℹ️ Skill *{name}* {action} ended. Result: {result}",
     "target_lobster_fallback": "Target Lobster",
-    "issue_comment_completed": "🛠️ Skill **{name}** has been {action}ed."
+    "issue_comment_completed": "🛠️ Skill **{name}** has been {action}ed.",
+    "targetLobsterFallback": "🦞 Target Lobster"
   },
   "schedule": {
     "workflow_defined_label": "Defined by Workflow",

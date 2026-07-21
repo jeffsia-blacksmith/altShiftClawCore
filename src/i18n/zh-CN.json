@@ -3,7 +3,8 @@
     "processing": "💬 正在处理消息...",
     "error_start": "❌ 执行 /start 时发生错误，请稍后再试。",
     "no_active_issue": "目前没有作用中的 Issue，请先用 /new 建立一个。",
-    "source_name": "小龙虾"
+    "source_name": "小龙虾",
+    "defaultLobsterDescription": "{name} 的预设小龙虾"
   },
   "menu": {
     "active_lobster": "🦞 目前的小龙虾",
@@ -63,7 +64,8 @@
     "failed_message": "❌ 技能 *{name}* {action}失败，请查看 workflow run log",
     "ended_message": "ℹ️ 技能 *{name}* {action}结束，结果：{result}",
     "target_lobster_fallback": "目标小龙虾",
-    "issue_comment_completed": "🛠️ 技能 **{name}** 已{action}完成。"
+    "issue_comment_completed": "🛠️ 技能 **{name}** 已{action}完成。",
+    "targetLobsterFallback": "🦞 目标小龙虾"
   },
   "schedule": {
     "workflow_defined_label": "由 Workflow 定义",

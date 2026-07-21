@@ -19483,14 +19483,14 @@ function TE(e) {
   return `\u{1F389} \u592A\u597D\u4E86\uFF01${e.config.profileName} \u5DF2\u7D93\u6E96\u5099\u597D\u56C9\uFF01
 \u{1F99E} \u4F60\u7684\u5C0F\u9F8D\u8766\u5728\u9019\u88E1\u7B49\u4F60 \u2192 ${t}`;
 }
-async function kE(e, t) {
+async function kE(e, chatId) {
   let { octokit: r, store: n, config: s } = e,
     { owner: o, repo: i } = s.github,
     a = "default",
     l = i,
-    c = `${i} \u7684\u9810\u8A2D\u5C0F\u9F8D\u8766`,
+    c = t("system.defaultLobsterDescription", { name: i }, glang()),
     d = ci({
-      meta: { source: "auto-init", chat_id: t, ts: new Date().toISOString() },
+      meta: { source: "auto-init", chat_id: chatId, ts: new Date().toISOString() },
       agentProfile: { name: l, description: c },
     }),
     { data: m } = await r.rest.issues.create({ owner: o, repo: i, title: l, body: d }),
@@ -19508,7 +19508,7 @@ async function kE(e, t) {
     ),
     await Sr(r, o, i, m.number, a),
     await Vr(e.d1, { repo: s.github.repoFullName, issueNumber: m.number, template: a }),
-    await rr(n, m.number, t),
+    await rr(n, m.number, chatId),
     console.log("[auto-init] \u5DF2\u81EA\u52D5\u5EFA\u7ACB\u7B2C\u4E00\u96BB\u5C0F\u9F8D\u8766", {
       issueNumber: m.number,
       title: l,
@@ -19669,30 +19669,35 @@ function vE(e) {
     return null;
   }
 }
-function CE(e, t, r, n, s, o) {
-  let i = O(e),
+function CE(e, issueNum, r, n, s, o) {
+  let gLang = glang(),
+    i = O(e),
     a =
-      t && r
-        ? `\u{1F99E} ${O(r)} \\#${t}`
-        : t
-          ? `\u{1F99E} \\#${t}`
-          : "\u{1F99E} \u76EE\u6A19\u5C0F\u9F8D\u8766",
+      issueNum && r
+        ? `\u{1F99E} ${O(r)} \\#${issueNum}`
+        : issueNum
+          ? `\u{1F99E} \\#${issueNum}`
+          : t("skills.targetLobsterFallback", {}, gLang),
     l = o === "skill_remove",
-    d = l ? "\u79FB\u9664" : o === "skill_update" ? "\u66F4\u65B0" : "\u5B89\u88DD";
+    d = l
+      ? t("skills.action_remove", {}, gLang)
+      : o === "skill_update"
+        ? t("skills.action_update", {}, gLang)
+        : t("skills.action_install", {}, gLang);
   switch (n) {
     case "success":
       return l
-        ? `\u2705 \u5DF2\u5F9E ${a} \u79FB\u9664\u6280\u80FD *${i}*`
-        : `\u2705 \u6280\u80FD *${i}* \u5DF2${d}\u5230 ${a}`;
+        ? t("skills.removed_message", { name: i, target: a }, gLang)
+        : t("skills.installed_message", { name: i, action: d, target: a }, gLang);
     case "cancelled":
-      return `\u26A0\uFE0F \u6280\u80FD *${i}* ${d}\u5DF2\u53D6\u6D88`;
+      return t("skills.cancelled_message", { name: i, action: d }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C \u6280\u80FD *${i}* ${d}\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("skills.failed_message", { name: i, action: d }, gLang);
     default:
-      return `\u2139\uFE0F \u6280\u80FD *${i}* ${d}\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(n || s || "unknown")}`;
+      return t("skills.ended_message", { name: i, action: d, result: O(n || s || "unknown") }, gLang);
   }
 }
 async function wg(e, t) {
@@ -19702,9 +19707,9 @@ async function bg(e, t) {
   let r = await Xt(t.d1, e);
   return r ? { requestId: r.requestId } : null;
 }
-async function RE(e, t, r) {
+async function RE(e, requestId, r) {
   let n = e.workflow_run,
-    s = await At(r.d1, t);
+    s = await At(r.d1, requestId);
   if (!s || s.channel !== "telegram" || !s.chatId) return;
   let o = Number.parseInt(s.chatId, 10);
   if (!Number.isInteger(o) || o <= 0) return;
@@ -19721,23 +19726,24 @@ async function RE(e, t, r) {
       });
       c = w.title;
     } catch {}
-  let d = CE(a, l, c, n.conclusion, n.status, s.sourceType ?? null),
+  let gLang = glang(),
+    d = CE(a, l, c, n.conclusion, n.status, s.sourceType ?? null),
     m = new it(r.config.telegram.botToken, { apiRoot: r.config.telegram.apiBaseUrl || void 0 });
   try {
     if (
       (i && Number.isInteger(i) && i > 0
         ? await m.editMessageText(o, i, d, { parse_mode: "MarkdownV2" })
         : await m.sendMessage(o, d, { parse_mode: "MarkdownV2" }),
-      await Ne(r.d1, t, { status: "notified", notifiedAt: new Date().toISOString() }),
+      await Ne(r.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() }),
       l && n.conclusion === "success")
     ) {
       let w =
           s.sourceType === "skill_update"
-            ? "\u66F4\u65B0"
+            ? t("skills.action_update", {}, gLang)
             : s.sourceType === "skill_remove"
-              ? "\u79FB\u9664"
-              : "\u5B89\u88DD",
-        y = `\u{1F6E0} \u6280\u80FD **${a}** \u5DF2${w}\u5B8C\u6210\u3002`;
+              ? t("skills.action_remove", {}, gLang)
+              : t("skills.action_install", {}, gLang),
+        y = t("skills.issue_comment_completed", { name: a, action: w }, gLang);
       try {
         await r.octokit.rest.issues.createComment({
           owner: r.config.github.owner,
@@ -19751,7 +19757,7 @@ async function RE(e, t, r) {
     }
   } catch (w) {
     throw (
-      await Ne(r.d1, t, {
+      await Ne(r.d1, requestId, {
         status: "failed_to_notify",
         errorMessage: w instanceof Error ? w.message : String(w),
       }),
