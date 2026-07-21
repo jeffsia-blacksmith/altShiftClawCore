@@ -4882,7 +4882,7 @@ async function Ke(e, t) {
     if (!r) return null;
     let n = JSON.parse(r);
     return (
-      console.log("[Telegram new-flow] \u8B80\u53D6\u6D41\u7A0B\u72C0\u614B\u6210\u529F", {
+      console.log(i18nT("log.newFlow.readSuccess", {}, glang()), {
         chatId: t,
         state: n,
       }),
@@ -4890,7 +4890,7 @@ async function Ke(e, t) {
     );
   } catch {
     return (
-      console.warn("[Telegram new-flow] \u8B80\u53D6\u6D41\u7A0B\u72C0\u614B\u5931\u6557", {
+      console.warn(i18nT("log.newFlow.readFailed", {}, glang()), {
         chatId: t,
       }),
       null
@@ -4899,7 +4899,7 @@ async function Ke(e, t) {
 }
 async function Be(e, t, r) {
   nr(t) &&
-    (console.log("[Telegram new-flow] \u5BEB\u5165\u6D41\u7A0B\u72C0\u614B", {
+    (console.log(i18nT("log.newFlow.write", {}, glang()), {
       chatId: t,
       state: r,
       ttlSeconds: "infinity",
@@ -4908,7 +4908,7 @@ async function Be(e, t, r) {
 }
 async function Dt(e, t) {
   nr(t) &&
-    (console.log("[Telegram new-flow] \u6E05\u9664\u6D41\u7A0B\u72C0\u614B", { chatId: t }),
+    (console.log(i18nT("log.newFlow.clear", {}, glang()), { chatId: t }),
     await e.delete(`${qa}${t}`));
 }
 async function sr(e, t) {
@@ -6098,7 +6098,7 @@ async function tl(e, t, r, n) {
   } catch (_) {
     yr(_)
       ? (l = !1)
-      : console.warn("[workspace] \u8B80\u53D6 issue \u5206\u652F\u72C0\u614B\u5931\u6557", {
+      : console.warn(i18nT("log.workspace.readIssueBranchFailed", {}, glang()), {
           issueNumber: s,
           error: _ instanceof Error ? _.message : String(_),
         });
@@ -6120,7 +6120,7 @@ async function tl(e, t, r, n) {
   } catch (_) {
     yr(_)
       ? ((c = !1), (d = !1))
-      : console.warn("[workspace] \u8B80\u53D6 workflow \u72C0\u614B\u5931\u6557", {
+      : console.warn(i18nT("log.workspace.readWorkflowFailed", {}, glang()), {
           issueNumber: s,
           error: _ instanceof Error ? _.message : String(_),
         });
@@ -6267,7 +6267,7 @@ async function Zy(e, t, r, n) {
     };
   } catch (s) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6 issue \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readIssueFailed", {}, glang()), {
         issueNumber: n,
         error: s instanceof Error ? s.message : String(s),
       }),
@@ -6280,7 +6280,7 @@ async function e_(e, t, r) {
     return await gs(e, t, r);
   } catch (n) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6\u6392\u7A0B\u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readScheduleFailed", {}, glang()), {
         issueNumber: r,
         error: n instanceof Error ? n.message : String(n),
       }),
@@ -6293,7 +6293,7 @@ async function t_(e, t, r) {
     return (await Qr(e, t, r))?.template ?? null;
   } catch (n) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6\u7BC4\u672C metadata \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readTemplateMetaFailed", {}, glang()), {
         issueNumber: r,
         error: n instanceof Error ? n.message : String(n),
       }),
@@ -6321,7 +6321,7 @@ async function n_(e, t, r, n, s) {
   } catch (o) {
     return (
       yr(o) ||
-        console.warn("[issue-status] \u8B80\u53D6\u5206\u652F\u6A94\u6848\u5931\u6557", {
+        console.warn(i18nT("log.issueStatus.readBranchFileFailed", {}, glang()), {
           branch: n,
           path: s,
           error: o instanceof Error ? o.message : String(o),
@@ -6374,7 +6374,7 @@ async function o_(e, t, r, n) {
     }));
   } catch (s) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6 workflow runs \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readWorkflowRunsFailed", {}, glang()), {
         workflowId: n,
         error: s instanceof Error ? s.message : String(s),
       }),
@@ -6437,7 +6437,7 @@ async function Es(e, t, r = "issue-status") {
   try {
     await ks(e, t);
   } catch (n) {
-    console.error(`[${r}] \u50B3\u9001 issue \u72C0\u614B\u8A0A\u606F\u5931\u6557`, n);
+    console.error(i18nT("log.issueStatus.sendMessageFailed", { tag: r }, glang()), n);
   }
 }
 function u_(e) {
@@ -6729,13 +6729,13 @@ async function Pn(e, t, r, n, s, o) {
   } catch (l) {
     if (B_(l))
       return (
-        console.log(`\u5206\u652F ${n} \u5DF2\u5B58\u5728\uFF0C\u7565\u904E\u5EFA\u7ACB`),
+        console.log(i18nT("log.branch.existsSkip", { branch: n }, glang())),
         { ok: !0, branch: n }
       );
     throw l;
   }
   return (
-    console.log(`\u5DF2\u5EFA\u7ACB orphan \u5206\u652F ${n}\uFF08${a.sha}\uFF09`),
+    console.log(i18nT("log.branch.orphanCreated", { branch: n, sha: a.sha }, glang())),
     { ok: !0, branch: n, commitSha: a.sha }
   );
 }
@@ -6756,7 +6756,7 @@ async function ai(e, t, r, n, s, o) {
   return (
     await e.rest.git.updateRef({ owner: t, repo: r, ref: `heads/${n}`, sha: m.sha }),
     console.log(
-      `\u5DF2\u91CD\u8A2D\u5206\u652F ${n} \u7684\u7BC4\u672C\u6A94\u6848\uFF08${m.sha}\uFF09`,
+      i18nT("log.branch.templateReset", { branch: n, sha: m.sha }, glang()),
     ),
     { ok: !0, branch: n, commitSha: m.sha }
   );
@@ -6977,9 +6977,9 @@ async function Sr(e, t, r, n, s = "default") {
   }
   let d = Q_(c.content, n);
   d !== c.content
-    ? console.log(`\u5DF2\u5C07 ${l} \u7684 workflow name \u6539\u70BA issue #${n}`)
+    ? console.log(i18nT("log.sync.workflowRenamed", { file: l, issue: n }, glang()))
     : console.log(
-        `${l} \u672A\u627E\u5230 "name: \u57F7\u884C\u5C0F\u9F8D\u8766\u4EFB\u52D9" \u6A23\u5F0F\uFF0Cworkflow name \u7DAD\u6301\u539F\u6A23`,
+        i18nT("log.sync.workflowNameNotFound", { file: l }, glang()),
       );
   let m;
   try {
@@ -6989,12 +6989,12 @@ async function Sr(e, t, r, n, s = "default") {
   }
   if (m?.content === d) {
     console.log(
-      `${l} \u5DF2\u5B58\u5728\u65BC ${o} \u4E14\u5167\u5BB9\u76F8\u540C\uFF0C\u7565\u904E\u540C\u6B65`,
+      i18nT("log.sync.alreadyInSync", { file: l, repo: o }, glang()),
     );
     return;
   }
   (await V_(e, t, r, l, d, `chore: prepare issue #${n} workflow`, o, m?.sha),
-    console.log(`\u5DF2\u5728 ${o} \u540C\u6B65 ${l}`));
+    console.log(i18nT("log.sync.done", { repo: o, file: l }, glang())));
 }
 async function ym(e, t, r, n, s, o) {
   let i = await Ge(t, o);

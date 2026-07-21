@@ -749,5 +749,36 @@
     "document": "📄 Document",
     "voice": "🎙️ Voice",
     "media": "📁 Media"
+  },
+  "log": {
+    "newFlow": {
+      "readSuccess": "[Telegram new-flow] Read flow state succeeded",
+      "readFailed": "[Telegram new-flow] Read flow state failed",
+      "write": "[Telegram new-flow] Write flow state",
+      "clear": "[Telegram new-flow] Clear flow state"
+    },
+    "workspace": {
+      "readIssueBranchFailed": "[workspace] Read issue branch state failed",
+      "readWorkflowFailed": "[workspace] Read workflow state failed"
+    },
+    "issueStatus": {
+      "readIssueFailed": "[issue-status] Read issue failed",
+      "readScheduleFailed": "[issue-status] Read schedule failed",
+      "readTemplateMetaFailed": "[issue-status] Read template metadata failed",
+      "readBranchFileFailed": "[issue-status] Read branch file failed",
+      "readWorkflowRunsFailed": "[issue-status] Read workflow runs failed",
+      "sendMessageFailed": "[{tag}] Send issue status message failed"
+    },
+    "branch": {
+      "existsSkip": "Branch {branch} already exists, skip creation",
+      "orphanCreated": "Created orphan branch {branch} ({sha})",
+      "templateReset": "Reset template file for branch {branch} ({sha})"
+    },
+    "sync": {
+      "workflowRenamed": "Renamed workflow name of {file} to issue #{issue}",
+      "workflowNameNotFound": "{file} did not find the lobster task workflow name pattern, keeping workflow name unchanged",
+      "alreadyInSync": "{file} already exists in {repo} with identical content, skip sync",
+      "done": "Synced {file} to {repo}"
+    }
   }
 }

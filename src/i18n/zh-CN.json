@@ -749,5 +749,36 @@
     "document": "📄 文件",
     "voice": "🎙️ 语音",
     "media": "📁 媒体"
+  },
+  "log": {
+    "newFlow": {
+      "readSuccess": "[Telegram new-flow] 读取流程状态成功",
+      "readFailed": "[Telegram new-flow] 读取流程状态失败",
+      "write": "[Telegram new-flow] 写入流程状态",
+      "clear": "[Telegram new-flow] 清除流程状态"
+    },
+    "workspace": {
+      "readIssueBranchFailed": "[workspace] 读取 issue 分支状态失败",
+      "readWorkflowFailed": "[workspace] 读取 workflow 状态失败"
+    },
+    "issueStatus": {
+      "readIssueFailed": "[issue-status] 读取 issue 失败",
+      "readScheduleFailed": "[issue-status] 读取排程失败",
+      "readTemplateMetaFailed": "[issue-status] 读取模板 metadata 失败",
+      "readBranchFileFailed": "[issue-status] 读取分支文件失败",
+      "readWorkflowRunsFailed": "[issue-status] 读取 workflow runs 失败",
+      "sendMessageFailed": "[{tag}] 传送 issue 状态消息失败"
+    },
+    "branch": {
+      "existsSkip": "分支 {branch} 已存在，略过建立",
+      "orphanCreated": "已建立 orphan 分支 {branch}（{sha}）",
+      "templateReset": "已重设分支 {branch} 的模板文件（{sha}）"
+    },
+    "sync": {
+      "workflowRenamed": "已将 {file} 的 workflow name 改为 issue #{issue}",
+      "workflowNameNotFound": "{file} 未找到小龙虾任务 workflow name 样式，workflow name 维持原样",
+      "alreadyInSync": "{file} 已存在於 {repo} 且内容相同，略过同步",
+      "done": "已在 {repo} 同步 {file}"
+    }
   }
 }
