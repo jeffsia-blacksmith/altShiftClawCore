@@ -12282,7 +12282,7 @@ function ni(e) {
     }
   }
   throw new Error(
-    "Workers AI \u672A\u56DE\u50B3\u53EF\u89E3\u6790\u7684 workflow inputs \u7D50\u679C\u3002",
+    "Workers AI did not return parseable workflow inputs.",
   );
 }
 function c_(e) {
@@ -12339,7 +12339,7 @@ function si(e) {
       return i;
     } catch {}
   throw new Error(
-    "AI \u56DE\u50B3\u5167\u5BB9\u4E0D\u662F\u6709\u6548\u7684 JSON \u7269\u4EF6\u3002",
+    "AI response is not a valid JSON object.",
   );
 }
 var p_ =
@@ -12362,7 +12362,7 @@ function Xp(e) {
 }
 function g_(e) {
   return !Array.isArray(e.inputs) || e.inputs.length === 0
-    ? "- \u9019\u500B workflow \u6C92\u6709\u5B9A\u7FA9\u4EFB\u4F55 workflow_dispatch inputs\u3002"
+    ? t("aiPrompt.parser.noInputs", {}, glang())
     : e.inputs.map((t) =>
         [
           `- ${t.name}`,
@@ -13776,16 +13776,16 @@ function BT(e) {
     '- Use timezone "Asia/Taipei" for resolved results.',
     "- Interpret 24:00 as next-day 00:00.",
     "- If a recurring schedule has multiple times and one cron can express it, combine them into one cron.",
-    '- If the input is ambiguous, return status "ambiguous" with a short Traditional Chinese message and Traditional Chinese candidate rewrites.',
-    '- If the input cannot be represented as one canonical rule, return status "unknown" with a short Traditional Chinese message.',
+    '- If the input is ambiguous, return status "ambiguous" with a short Simplified Chinese message and Simplified Chinese candidate rewrites.',
+    '- If the input cannot be represented as one canonical rule, return status "unknown" with a short Simplified Chinese message.',
     "",
     "Examples:",
     '{"status":"resolved","ruleType":"once","rulePayload":{"run_at":"2026-04-08T10:00:00.000Z"},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"interval","rulePayload":{"minutes":5},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 12 * * *"},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 0,9,12,15,18,21 * * *"},"timezone":"Asia/Taipei"}',
-    '{"status":"ambiguous","message":"\u6211\u6709\u9EDE\u4E0D\u78BA\u5B9A\u4F60\u7684\u610F\u601D\uFF0C\u8ACB\u518D\u8AAA\u6E05\u695A\u4E00\u9EDE\u3002","candidates":["\u4ECA\u5929\u665A\u4E0A6\u9EDE\u57F7\u884C\u4E00\u6B21","\u6BCF\u5929\u665A\u4E0A6\u9EDE\u57F7\u884C\u4E00\u6B21"]}',
-    '{"status":"unknown","message":"\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u91CD\u65B0\u8F38\u5165\u3002"}',
+    '{"status":"ambiguous","message":"\u6211\u6709\u70B9\u4E0D\u786E\u5B9A\u4F60\u7684\u610F\u601D\uFF0C\u8BF7\u518D\u8BF4\u6E05\u695A\u4E00\u70B9\u3002","candidates":["\u4ECA\u5929\u665A\u4E0A6\u70B9\u6267\u884C\u4E00\u6B21","\u6BCF\u5929\u665A\u4E0A6\u70B9\u6267\u884C\u4E00\u6B21"]}',
+    '{"status":"unknown","message":"\u8BF7\u6362\u4E00\u79CD\u66F4\u6E05\u695A\u7684\u8BF4\u6CD5\u91CD\u65B0\u8F93\u5165\u3002"}',
     "",
     `Current time: ${e.toISOString()}`,
   ].join(`

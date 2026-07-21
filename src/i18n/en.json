@@ -734,7 +734,8 @@
       "rule2": "Only accept workflow-defined input names as keys",
       "paramDescription": "workflow parameter: {name}",
       "inputsDescription": "The workflow_dispatch parameters inferred from the user message",
-      "missingRequiredDescription": "Names of required workflow parameters that still cannot be safely inferred"
+      "missingRequiredDescription": "Names of required workflow parameters that still cannot be safely inferred",
+      "noInputs": "- This workflow has no workflow_dispatch inputs defined."
     }
   },
   "errors": {

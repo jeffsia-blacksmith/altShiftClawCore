@@ -734,7 +734,8 @@
       "rule2": "仅接受 workflow 已定义的 input 名称作为 key",
       "paramDescription": "workflow 参数：{name}",
       "inputsDescription": "根据用户消息推断出的 workflow_dispatch 参数",
-      "missingRequiredDescription": "仍然无法安全推断的必填 workflow 参数名称"
+      "missingRequiredDescription": "仍然无法安全推断的必填 workflow 参数名称",
+      "noInputs": "- 这个 workflow 没有定义任何 workflow_dispatch inputs。"
     }
   },
   "errors": {
