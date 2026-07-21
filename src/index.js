@@ -16665,7 +16665,7 @@ async function Rk(e, t, r, n) {
       branch: t,
     });
   } catch (i) {
-    console.warn(`\u522A\u9664\u66AB\u5B58\u5A92\u9AD4 ${r} \u5931\u6557`, {
+    console.warn(i18nT("log.media.deleteTempFailed", { key: r }, glang()), {
       branch: t,
       error: i instanceof Error ? i.message : String(i),
     });
@@ -18536,12 +18536,12 @@ function Ni(e, t, r, n, s, o = !1) {
   if (a.text.length <= s)
     return (
       console.warn(
-        `Issue #${e.number} \u7684 Telegram \u8A0A\u606F\u904E\u9577\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u8F49\u9001`,
+        i18nT("log.relay.tooLongPlainText", { issue: e.number }, glang()),
       ),
       a
     );
   console.warn(
-    `Issue #${e.number} \u7684 Telegram \u8A0A\u606F\u904E\u9577\uFF0C\u5C07\u622A\u65B7\u539F\u6587\u5F8C\u91CD\u65B0\u8F49\u63DB MarkdownV2`,
+    i18nT("log.relay.tooLongTruncate", { issue: e.number }, glang()),
   );
   let l = Zs(e, t, r, o),
     c = zf(l, s, t.html_url || ""),
@@ -18552,7 +18552,7 @@ function Qf(e, t, r) {
   let n = t && typeof t.text == "string" ? t : { text: "" };
   if (n.text.length <= r) return n;
   console.warn(
-    "Telegram progress relay \u8A0A\u606F\u904E\u9577\uFF0C\u5C07\u622A\u65B7\u539F\u6587\u5F8C\u91CD\u65B0\u8F49\u63DB MarkdownV2",
+    i18nT("log.relay.progressTooLongTruncate", {}, glang()),
   );
   let s = lr(e.body || "", { stripToolRunStatusPrefix: !0 }).trim() || i18nT("core.blank", {}, glang()),
     o = zf(s, r, e.html_url || ""),
@@ -18776,21 +18776,21 @@ async function du(e, t, r) {
 function Zk(e, t) {
   if (!e || !t)
     return (
-      console.warn("issue_comment payload \u7F3A\u5C11 issue \u6216 comment \u6B04\u4F4D"),
+      console.warn(i18nT("log.relay.payloadMissingFields", {}, glang())),
       !0
     );
   if (kr(t.body)) return !0;
   if (lm(t.body))
     return (
       console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1ALine \u4F86\u6E90\u7559\u8A00\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipLineSource", { issue: e.number }, glang()),
       ),
       !0
     );
   if (en(t.body, "schedule-flow"))
     return (
       console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1A\u6392\u7A0B\u8A2D\u5B9A\u6D41\u7A0B\u7559\u8A00\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipScheduleSetup", { issue: e.number }, glang()),
       ),
       !0
     );
@@ -18799,7 +18799,7 @@ function Zk(e, t) {
     s = !!(Cs(t.body) || ll(t.body));
   return !n && !r && !s
     ? (console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1Acomment \u7F3A\u5C11 telegram metadata\uFF0C\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipMissingMeta", { issue: e.number }, glang()),
       ),
       !0)
     : !1;
@@ -18816,12 +18816,12 @@ async function eE(e, t) {
     m = d?.chatId ?? a?.chat_id ?? l?.chat_id;
   if (
     (console.log(
-      `\u6B63\u5728\u8655\u7406 Issue #${n.number} \u7684\u65B0\u7559\u8A00\uFF0Cissue telegram-meta=${JSON.stringify(l)} request telegram-meta=${JSON.stringify(a)}`,
+      i18nT("log.relay.processingNewComment", { issue: n.number, issueMeta: JSON.stringify(l), requestMeta: JSON.stringify(a) }, glang()),
     ),
     !m)
   )
     return (
-      console.log(`\u7565\u904E Issue #${n.number}\uFF1A\u6C92\u6709\u53EF\u7528\u7684 chat_id`),
+      console.log(i18nT("log.relay.skipNoChatId", { issue: n.number }, glang())),
       null
     );
   let w =
@@ -18923,7 +18923,7 @@ async function rE(e, t, r, n, s) {
         }
       } catch (ye) {
         (console.warn(
-          `Issue #${o.number} \u7684 Telegram \u5716\u7247\u8F49\u9001\u5931\u6557\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u8F49\u9001\uFF1A${ye instanceof Error ? ye.message : String(ye)}`,
+          i18nT("log.relay.imageRelayFailedPlainText", { issue: o.number, error: ye instanceof Error ? ye.message : String(ye) }, glang()),
         ),
           (S = U),
           (he = !!Y && !I));
@@ -18962,7 +18962,7 @@ async function rE(e, t, r, n, s) {
     ))
       throw he;
     console.warn(
-      `Issue #${o.number} \u7684 Telegram \u683C\u5F0F\u89E3\u6790\u5931\u6557\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u91CD\u9001\uFF1A${he.message}`,
+      i18nT("log.relay.formatParseFailedResend", { issue: o.number, error: he.message }, glang()),
     );
     let ye = Zs(o, i, a, Re);
     ((S = Ni(o, i, a, { text: ye }, l.telegram.maxMessageLength)),
@@ -19150,7 +19150,7 @@ async function gE(e, t, r, n) {
     return sg(s)
       ? !1
       : (console.warn(
-          "[coding-agent] \u8B80\u53D6 issue workflow \u6E05\u55AE\u5931\u6557\uFF0C\u6539\u7531 dispatch \u6D41\u7A0B\u8655\u7406",
+          i18nT("log.codingAgent.readWorkflowListFailed", {}, glang()),
           { issueNumber: n, error: s instanceof Error ? s.message : String(s) },
         ),
         null);
@@ -19164,7 +19164,7 @@ async function hE(e, t, r, n) {
     return sg(o)
       ? !1
       : (console.warn(
-          "[coding-agent] \u8B80\u53D6 issue branch \u6E05\u55AE\u5931\u6557\uFF0C\u6539\u7531\u6D3E\u5DE5\u6D41\u7A0B\u8655\u7406",
+          i18nT("log.codingAgent.readBranchListFailed", {}, glang()),
           { issueNumber: n, error: o instanceof Error ? o.message : String(o) },
         ),
         null);
@@ -19205,14 +19205,14 @@ async function ig(e, t, r, n, s = "") {
   if ((await hE(o, a, l, t)) === !1)
     return (
       console.log(
-        `[coding-agent] \u7565\u904E Issue #${t} \u6D3E\u5DE5\uFF1Aissue \u5206\u652F\u4E0D\u5B58\u5728`,
+        i18nT("log.codingAgent.skipNoBranch", { issue: t }, glang()),
       ),
       { issueNumber: t, progressCommentId: null }
     );
   if ((await gE(o, a, l, t)) === !1)
     return (
       console.log(
-        `[coding-agent] \u7565\u904E Issue #${t} \u6D3E\u5DE5\uFF1Aissue workflow \u4E0D\u5B58\u5728`,
+        i18nT("log.codingAgent.skipNoWorkflow", { issue: t }, glang()),
       ),
       { issueNumber: t, progressCommentId: null }
     );
@@ -19262,43 +19262,43 @@ async function fu(e, t) {
   let r = e.issue?.number ?? "unknown";
   if (!e.issue || !e.comment) {
     console.warn(
-      `issue_comment.${e.action} payload \u7F3A\u5C11 issue \u6216 comment \u6B04\u4F4D\uFF0C\u7565\u904E\u5C0F\u9F8D\u8766\u6D3E\u5DE5`,
+      i18nT("log.codingAgent.payloadMissingSkip", { action: e.action }, glang()),
     );
     return;
   }
   let n = e.comment.body;
   if (il(n)) {
-    console.log(`\u7565\u904E Issue #${r} \u7684\u7CFB\u7D71\u7559\u8A00\u6D3E\u5DE5`);
+    console.log(i18nT("log.codingAgent.skipSystemComment", { issue: r }, glang()));
     return;
   }
   if (en(n, "schedule-flow")) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u6392\u7A0B\u8A2D\u5B9A\u7D00\u9304\u7559\u8A00\u6D3E\u5DE5`,
+      i18nT("log.codingAgent.skipScheduleRecord", { issue: r }, glang()),
     );
     return;
   }
   if (!al(n)) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1Acomment \u7F3A\u5C11 telegram metadata`,
+      i18nT("log.codingAgent.skipMissingMeta", { issue: r }, glang()),
     );
     return;
   }
   if (e.action === "created" && Rs(n, "pending")) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A\u5A92\u9AD4\u7559\u8A00\u5C1A\u672A finalized`,
+      i18nT("log.codingAgent.skipMediaNotFinalized", { issue: r }, glang()),
     );
     return;
   }
   if (e.action === "edited" && !As(n, e.changes?.body?.from ?? null)) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1Aedited \u4E8B\u4EF6\u4E0D\u662F\u5A92\u9AD4 finalized transition`,
+      i18nT("log.codingAgent.skipEditedNotFinalized", { issue: r }, glang()),
     );
     return;
   }
   let s = mu(n);
   if (!s) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A\u4F7F\u7528\u8005\u8A0A\u606F\u70BA\u7A7A`,
+      i18nT("log.codingAgent.skipEmptyUserMessage", { issue: r }, glang()),
     );
     return;
   }
@@ -19309,7 +19309,7 @@ async function fu(e, t) {
       !a.branchExists || !a.workflowExists
         ? "\u7F3A\u5C11 issue \u5206\u652F\u6216 workflow\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F"
         : "workflow disabled\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F";
-    console.log(`\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A${l}`);
+    console.log(i18nT("log.codingAgent.skipOther", { issue: r, reason: l }, glang()));
     return;
   }
   await ig(
@@ -19367,7 +19367,7 @@ async function kE(e, chatId) {
     await Sr(r, o, i, m.number, a),
     await Vr(e.d1, { repo: s.github.repoFullName, issueNumber: m.number, template: a }),
     await rr(n, m.number, chatId),
-    console.log("[auto-init] \u5DF2\u81EA\u52D5\u5EFA\u7ACB\u7B2C\u4E00\u96BB\u5C0F\u9F8D\u8766", {
+    console.log(i18nT("log.autoInit.firstLobsterCreated", {}, glang()), {
       issueNumber: m.number,
       title: l,
     }),
@@ -19380,9 +19380,9 @@ async function EE(e) {
   await r.put(lg, "true");
   try {
     (await Ci(t, s, o, "INIT_GITHUB_CLAW", "false"),
-      console.log("[auto-init] \u5DF2\u5C07 INIT_GITHUB_CLAW repo variable \u8A2D\u70BA false"));
+      console.log(i18nT("log.autoInit.variableSetFalse", {}, glang())));
   } catch (i) {
-    console.warn("[auto-init] \u7121\u6CD5\u66F4\u65B0 INIT_GITHUB_CLAW repo variable", i);
+    console.warn(i18nT("log.autoInit.variableUpdateFailed", {}, glang()), i);
   }
 }
 async function ug(e, env) {
@@ -19401,7 +19401,7 @@ async function ug(e, env) {
   let n = new it(env.config.telegram.botToken, { apiRoot: env.config.telegram.apiBaseUrl || void 0 });
   if ((await n.sendMessage(r, TE(env)), env.config.initGitHubClaw)) {
     if ((await env.store.get(lg)) === "true") {
-      console.log("[auto-init] 已執行過初始化，跳過");
+      console.log(i18nT("log.autoInit.alreadyInitialized", {}, glang()));
       return;
     }
     try {
@@ -19412,7 +19412,7 @@ async function ug(e, env) {
           t("system.autoInitCreated", { title: o.title, number: o.number }, glang()),
         ));
     } catch (o) {
-      (console.error("[auto-init] 自動建立小龍蝦失敗", o),
+      (console.error(i18nT("log.autoInit.createFailed", {}, glang()), o),
         await n.sendMessage(
           r,
           t("system.autoInitFailed", {}, glang()),
@@ -19938,7 +19938,7 @@ function Og(e, t) {
         i = Rs(n.comment.body, "pending"),
         a = pu(n, t).catch((c) => {
           throw (
-            console.error("\u8F49\u9001 Issue \u7559\u8A00\u5230 Telegram \u5931\u6557", c),
+            console.error(i18nT("log.webhook.relayToTelegramFailed", {}, glang()), c),
             c
           );
         });
@@ -19952,7 +19952,7 @@ function Og(e, t) {
       }
       let l = fu(n, t).catch((c) => {
         throw (
-          console.error("\u6D3E\u9001 Issue \u7559\u8A00\u5230 coding-agent \u5931\u6557", c),
+          console.error(i18nT("log.webhook.dispatchToCodingAgentFailed", {}, glang()), c),
           c
         );
       });
@@ -19963,7 +19963,7 @@ function Og(e, t) {
         o = As(n.comment.body, n.changes?.body?.from ?? null),
         i = pu(n, t).catch((l) => {
           console.error(
-            "\u8F49\u9001\u5DF2\u7DE8\u8F2F Issue \u7559\u8A00\u5230 Telegram \u5931\u6557",
+            i18nT("log.webhook.relayEditedToTelegramFailed", {}, glang()),
             l,
           );
         });
@@ -19974,7 +19974,7 @@ function Og(e, t) {
       let a = ag(n)
         ? fu(n, t).catch((l) => {
             console.error(
-              "\u6D3E\u9001\u5DF2\u7DE8\u8F2F Issue \u7559\u8A00\u5230 coding-agent \u5931\u6557",
+              i18nT("log.webhook.dispatchEditedToCodingAgentFailed", {}, glang()),
               l,
             );
           })
@@ -19989,7 +19989,7 @@ function Og(e, t) {
         await ug(n, t);
       } catch (s) {
         console.error(
-          "GitHub App \u5B89\u88DD\u5B8C\u6210\u6B61\u8FCE\u8A0A\u606F\u767C\u9001\u5931\u6557",
+          i18nT("log.webhook.installWelcomeFailed", {}, glang()),
           s,
         );
       }
@@ -19998,21 +19998,21 @@ function Og(e, t) {
       try {
         (await pg(n, t), await vg(n, t), await yg(n, t), await xg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.requested \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "requested" }, glang()), s);
       }
     }),
     r.on("workflow_run.in_progress", async ({ payload: n }) => {
       try {
         (await mg(n, t), await Cg(n, t), await _g(n, t), await Pg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.in_progress \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "in_progress" }, glang()), s);
       }
     }),
     r.on("workflow_run.completed", async ({ payload: n }) => {
       try {
         (await fg(n, t), await Rg(n, t), await Tg(n, t), await Mg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.completed \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "completed" }, glang()), s);
       }
     }),
     r
@@ -20032,7 +20032,7 @@ bu.post("/github/webhook", async (e) => {
   } catch (l) {
     let c = l instanceof Error ? l.message : String(l);
     return (
-      console.error("GitHub webhook \u8655\u7406\u5931\u6557:", c),
+      console.error(i18nT("log.webhook.handleFailed", {}, glang()), c),
       e.json({ ok: !1, error: c }, 400)
     );
   }

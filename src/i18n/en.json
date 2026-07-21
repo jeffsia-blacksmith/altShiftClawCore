@@ -837,6 +837,52 @@
     "templateReset": {
       "readListFailed": "[template_reset] Read template list failed",
       "resetFailed": "[template_reset] Reset failed"
+    },
+    "media": {
+      "deleteTempFailed": "Delete temp media {key} failed"
+    },
+    "relay": {
+      "tooLongPlainText": "Issue #{issue} Telegram message too long, relaying as plain text",
+      "tooLongTruncate": "Issue #{issue} Telegram message too long, truncating original then re-converting MarkdownV2",
+      "progressTooLongTruncate": "Telegram progress relay message too long, truncating original then re-converting MarkdownV2",
+      "payloadMissingFields": "issue_comment payload missing issue or comment field",
+      "skipLineSource": "Skip Issue #{issue}: Line source comment not relayed to Telegram",
+      "skipScheduleSetup": "Skip Issue #{issue}: schedule-setup comment not relayed to Telegram",
+      "skipMissingMeta": "Skip Issue #{issue}: comment missing telegram metadata, not relayed to Telegram",
+      "processingNewComment": "Processing new comment on Issue #{issue}, issue telegram-meta={issueMeta} request telegram-meta={requestMeta}",
+      "skipNoChatId": "Skip Issue #{issue}: no available chat_id",
+      "imageRelayFailedPlainText": "Issue #{issue} Telegram image relay failed, relaying as plain text: {error}",
+      "formatParseFailedResend": "Issue #{issue} Telegram format parse failed, resending as plain text: {error}"
+    },
+    "codingAgent": {
+      "readWorkflowListFailed": "[coding-agent] Read issue workflow list failed, falling back to dispatch flow",
+      "readBranchListFailed": "[coding-agent] Read issue branch list failed, falling back to dispatch flow",
+      "skipNoBranch": "[coding-agent] Skip Issue #{issue} dispatch: issue branch does not exist",
+      "skipNoWorkflow": "[coding-agent] Skip Issue #{issue} dispatch: issue workflow does not exist",
+      "payloadMissingSkip": "issue_comment.{action} payload missing issue or comment field, skip lobster dispatch",
+      "skipSystemComment": "Skip Issue #{issue} system comment dispatch",
+      "skipScheduleRecord": "Skip Issue #{issue} schedule-setup record comment dispatch",
+      "skipMissingMeta": "Skip Issue #{issue} lobster dispatch: comment missing telegram metadata",
+      "skipMediaNotFinalized": "Skip Issue #{issue} lobster dispatch: media comment not yet finalized",
+      "skipEditedNotFinalized": "Skip Issue #{issue} lobster dispatch: edited event is not a media finalized transition",
+      "skipEmptyUserMessage": "Skip Issue #{issue} lobster dispatch: user message is empty",
+      "skipOther": "Skip Issue #{issue} lobster dispatch: {reason}"
+    },
+    "autoInit": {
+      "firstLobsterCreated": "[auto-init] Auto-created the first lobster",
+      "variableSetFalse": "[auto-init] Set INIT_GITHUB_CLAW repo variable to false",
+      "variableUpdateFailed": "[auto-init] Failed to update INIT_GITHUB_CLAW repo variable",
+      "alreadyInitialized": "[auto-init] Already initialized, skip",
+      "createFailed": "[auto-init] Auto-create lobster failed"
+    },
+    "webhook": {
+      "relayToTelegramFailed": "Relay Issue comment to Telegram failed",
+      "dispatchToCodingAgentFailed": "Dispatch Issue comment to coding-agent failed",
+      "relayEditedToTelegramFailed": "Relay edited Issue comment to Telegram failed",
+      "dispatchEditedToCodingAgentFailed": "Dispatch edited Issue comment to coding-agent failed",
+      "installWelcomeFailed": "GitHub App install welcome message send failed",
+      "workflowRunFailed": "Handle workflow_run.{event} failed",
+      "handleFailed": "GitHub webhook handle failed:"
     }
   }
 }

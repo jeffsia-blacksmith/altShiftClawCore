@@ -837,6 +837,52 @@
     "templateReset": {
       "readListFailed": "[template_reset] 读取模板清单失败",
       "resetFailed": "[template_reset] 重置失败"
+    },
+    "media": {
+      "deleteTempFailed": "删除暂存媒体 {key} 失败"
+    },
+    "relay": {
+      "tooLongPlainText": "Issue #{issue} 的 Telegram 讯息过长，改用纯文字转送",
+      "tooLongTruncate": "Issue #{issue} 的 Telegram 讯息过长，将截断原文后重新转换 MarkdownV2",
+      "progressTooLongTruncate": "Telegram progress relay 讯息过长，将截断原文后重新转换 MarkdownV2",
+      "payloadMissingFields": "issue_comment payload 缺少 issue 或 comment 栏位",
+      "skipLineSource": "略过 Issue #{issue}：Line 来源留言不转送 Telegram",
+      "skipScheduleSetup": "略过 Issue #{issue}：排程设定流程留言不转送 Telegram",
+      "skipMissingMeta": "略过 Issue #{issue}：comment 缺少 telegram metadata，不转送 Telegram",
+      "processingNewComment": "正在处理 Issue #{issue} 的新留言，issue telegram-meta={issueMeta} request telegram-meta={requestMeta}",
+      "skipNoChatId": "略过 Issue #{issue}：没有可用的 chat_id",
+      "imageRelayFailedPlainText": "Issue #{issue} 的 Telegram 图片转送失败，改用纯文字转送：{error}",
+      "formatParseFailedResend": "Issue #{issue} 的 Telegram 格式解析失败，改用纯文字重送：{error}"
+    },
+    "codingAgent": {
+      "readWorkflowListFailed": "[coding-agent] 读取 issue workflow 清单失败，改由 dispatch 流程处理",
+      "readBranchListFailed": "[coding-agent] 读取 issue branch 清单失败，改由派工流程处理",
+      "skipNoBranch": "[coding-agent] 略过 Issue #{issue} 派工：issue 分支不存在",
+      "skipNoWorkflow": "[coding-agent] 略过 Issue #{issue} 派工：issue workflow 不存在",
+      "payloadMissingSkip": "issue_comment.{action} payload 缺少 issue 或 comment 栏位，略过小龙虾派工",
+      "skipSystemComment": "略过 Issue #{issue} 的系统留言派工",
+      "skipScheduleRecord": "略过 Issue #{issue} 的排程设定纪录留言派工",
+      "skipMissingMeta": "略过 Issue #{issue} 的小龙虾派工：comment 缺少 telegram metadata",
+      "skipMediaNotFinalized": "略过 Issue #{issue} 的小龙虾派工：媒体留言尚未 finalized",
+      "skipEditedNotFinalized": "略过 Issue #{issue} 的小龙虾派工：edited 事件不是媒体 finalized transition",
+      "skipEmptyUserMessage": "略过 Issue #{issue} 的小龙虾派工：使用者讯息为空",
+      "skipOther": "略过 Issue #{issue} 的小龙虾派工：{reason}"
+    },
+    "autoInit": {
+      "firstLobsterCreated": "[auto-init] 已自动建立第一只小龙虾",
+      "variableSetFalse": "[auto-init] 已将 INIT_GITHUB_CLAW repo variable 设为 false",
+      "variableUpdateFailed": "[auto-init] 无法更新 INIT_GITHUB_CLAW repo variable",
+      "alreadyInitialized": "[auto-init] 已执行过初始化，跳过",
+      "createFailed": "[auto-init] 自动建立小龙虾失败"
+    },
+    "webhook": {
+      "relayToTelegramFailed": "转送 Issue 留言到 Telegram 失败",
+      "dispatchToCodingAgentFailed": "派送 Issue 留言到 coding-agent 失败",
+      "relayEditedToTelegramFailed": "转送已编辑 Issue 留言到 Telegram 失败",
+      "dispatchEditedToCodingAgentFailed": "派送已编辑 Issue 留言到 coding-agent 失败",
+      "installWelcomeFailed": "GitHub App 安装完成欢迎讯息发送失败",
+      "workflowRunFailed": "处理 workflow_run.{event} 失败",
+      "handleFailed": "GitHub webhook 处理失败:"
     }
   }
 }
