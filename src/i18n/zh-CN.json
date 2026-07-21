@@ -616,6 +616,16 @@
       "bare": "已达 API 速率上限"
     }
   },
+  "aiPrompt": {
+    "parser": {
+      "systemPrompt": "你是 GitHub Actions workflow_dispatch 参数解析器。\n任务是根据 workflow input 定义与用户自然语言，输出可直接 dispatch 的 JSON。\n只能使用 workflow 已定义的 inputs 名称，不能捏造不存在的字段。\n若用户消息中出现 key=value 片段，且 key 恰好是 workflow 已定义的 input 名称，必须优先直接采用该值。\n对于 key=value 输入，不要翻译 key、不要改写 value、不要自行推断，除非值是空的。\n若同一字段同时出现在 key=value 与自然语言描述中，优先以 key=value 为准。\n若必填字段无法安全推断，请放入 missingRequired。\n若 workflow 有 default，且用户没有明确覆盖，可直接沿用 default。\n只输出单个 JSON 对象，格式如下：\n{\"inputs\":{\"input_name\":\"value\"},\"missingRequired\":[\"required_input\"]}",
+      "rule1": "若用户消息中出现 line_worker_name=foo 这类片段，请直接放入 inputs.line_worker_name = \"foo\"",
+      "rule2": "仅接受 workflow 已定义的 input 名称作为 key",
+      "paramDescription": "workflow 参数：{name}",
+      "inputsDescription": "根据用户消息推断出的 workflow_dispatch 参数",
+      "missingRequiredDescription": "仍然无法安全推断的必填 workflow 参数名称"
+    }
+  },
   "errors": {
     "notAFile": "{name} 不是文件",
     "getFileFailed": "取得 repo 档案 {path} 失败：{status}"

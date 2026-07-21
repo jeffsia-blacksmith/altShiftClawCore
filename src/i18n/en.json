@@ -616,6 +616,16 @@
       "bare": "API rate limit reached"
     }
   },
+  "aiPrompt": {
+    "parser": {
+      "systemPrompt": "You are a GitHub Actions workflow_dispatch parameter parser.\nYour task is to output JSON that can be dispatched directly, based on the workflow input definitions and the user's natural language.\nOnly use input names already defined by the workflow; do not fabricate non-existent fields.\nIf a key=value segment appears in the user message and the key matches a workflow-defined input name, you must prioritize using that value directly.\nFor key=value inputs, do not translate the key, do not rewrite the value, and do not infer on your own unless the value is empty.\nIf the same field appears in both a key=value segment and a natural-language description, prefer the key=value as authoritative.\nIf a required field cannot be safely inferred, place it in missingRequired.\nIf the workflow has a default and the user has not explicitly overridden it, you may use the default directly.\nOutput only a single JSON object, in the following format:\n{\"inputs\":{\"input_name\":\"value\"},\"missingRequired\":[\"required_input\"]}",
+      "rule1": "If a segment like line_worker_name=foo appears in the user message, place it directly into inputs.line_worker_name = \"foo\"",
+      "rule2": "Only accept workflow-defined input names as keys",
+      "paramDescription": "workflow parameter: {name}",
+      "inputsDescription": "The workflow_dispatch parameters inferred from the user message",
+      "missingRequiredDescription": "Names of required workflow parameters that still cannot be safely inferred"
+    }
+  },
   "errors": {
     "notAFile": "{name} is not a file",
     "getFileFailed": "Failed to get repo file {path}: {status}"

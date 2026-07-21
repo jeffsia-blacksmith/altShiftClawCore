@@ -12388,21 +12388,9 @@ async function b_(e) {
   !Number.isFinite(e) || e <= 0 || (await new Promise((t) => setTimeout(t, e)));
 }
 function y_() {
-  return [
-    "\u4F60\u662F GitHub Actions workflow_dispatch \u53C3\u6578\u89E3\u6790\u5668\u3002",
-    "\u4EFB\u52D9\u662F\u6839\u64DA workflow input \u5B9A\u7FA9\u8207\u4F7F\u7528\u8005\u81EA\u7136\u8A9E\u8A00\uFF0C\u8F38\u51FA\u53EF\u76F4\u63A5 dispatch \u7684 JSON\u3002",
-    "\u53EA\u80FD\u4F7F\u7528 workflow \u5DF2\u5B9A\u7FA9\u7684 inputs \u540D\u7A31\uFF0C\u4E0D\u80FD\u634F\u9020\u4E0D\u5B58\u5728\u7684\u6B04\u4F4D\u3002",
-    "\u82E5\u4F7F\u7528\u8005\u8A0A\u606F\u4E2D\u51FA\u73FE key=value \u7247\u6BB5\uFF0C\u4E14 key \u525B\u597D\u662F workflow \u5DF2\u5B9A\u7FA9\u7684 input \u540D\u7A31\uFF0C\u5FC5\u9808\u512A\u5148\u76F4\u63A5\u63A1\u7528\u8A72\u503C\u3002",
-    "\u5C0D\u65BC key=value \u8F38\u5165\uFF0C\u4E0D\u8981\u7FFB\u8B6F key\u3001\u4E0D\u8981\u6539\u5BEB value\u3001\u4E0D\u8981\u81EA\u884C\u88DC\u63A8\u8AD6\uFF0C\u9664\u975E\u503C\u662F\u7A7A\u7684\u3002",
-    "\u82E5\u540C\u4E00\u500B\u6B04\u4F4D\u540C\u6642\u51FA\u73FE\u5728 key=value \u8207\u81EA\u7136\u8A9E\u8A00\u6558\u8FF0\u4E2D\uFF0C\u512A\u5148\u4EE5 key=value \u70BA\u6E96\u3002",
-    "\u82E5\u5FC5\u586B\u6B04\u4F4D\u7121\u6CD5\u5B89\u5168\u63A8\u65B7\uFF0C\u8ACB\u653E\u9032 missingRequired\u3002",
-    "\u82E5 workflow \u6709 default\uFF0C\u4E14\u4F7F\u7528\u8005\u6C92\u6709\u660E\u78BA\u8986\u84CB\uFF0C\u53EF\u76F4\u63A5\u6CBF\u7528 default\u3002",
-    "\u53EA\u8F38\u51FA\u55AE\u4E00 JSON \u7269\u4EF6\uFF0C\u683C\u5F0F\u5982\u4E0B\uFF1A",
-    '{"inputs":{"input_name":"value"},"missingRequired":["required_input"]}',
-  ].join(`
-`);
+  return t("aiPrompt.parser.systemPrompt", {}, glang());
 }
-function __(e, t) {
+function __(e, msg) {
   let r = String(e.source || "").trim(),
     n = r
       ? r.length > Jp
@@ -12424,33 +12412,31 @@ function __(e, t) {
     n,
     "",
     "key=value rule:",
-    '- \u82E5 user message \u4E2D\u51FA\u73FE line_worker_name=foo \u9019\u985E\u7247\u6BB5\uFF0C\u8ACB\u76F4\u63A5\u653E\u9032 inputs.line_worker_name = "foo"',
-    "- \u50C5\u63A5\u53D7 workflow \u5DF2\u5B9A\u7FA9\u7684 input \u540D\u7A31\u4F5C\u70BA key",
+    "- " + t("aiPrompt.parser.rule1", {}, glang()),
+    "- " + t("aiPrompt.parser.rule2", {}, glang()),
     "",
     "user message:",
-    t || "(empty)",
+    msg || "(empty)",
   ].join(`
 `);
 }
 function T_(e) {
-  let t = {};
+  let props = {};
   for (let r of e.inputs) {
     let n = r.type === "boolean" ? "boolean" : "string";
-    t[r.name] = { type: n, description: r.description || `workflow \u53C3\u6578\uFF1A${r.name}` };
+    props[r.name] = { type: n, description: r.description || t("aiPrompt.parser.paramDescription", { name: r.name }, glang()) };
   }
   return {
     type: "object",
     properties: {
       inputs: {
         type: "object",
-        description:
-          "\u6839\u64DA\u4F7F\u7528\u8005\u8A0A\u606F\u63A8\u5C0E\u51FA\u7684 workflow_dispatch \u53C3\u6578",
-        properties: t,
+        description: t("aiPrompt.parser.inputsDescription", {}, glang()),
+        properties: props,
       },
       missingRequired: {
         type: "array",
-        description:
-          "\u4ECD\u7136\u7121\u6CD5\u5B89\u5168\u63A8\u65B7\u7684\u5FC5\u586B workflow \u53C3\u6578\u540D\u7A31",
+        description: t("aiPrompt.parser.missingRequiredDescription", {}, glang()),
         items: { type: "string", enum: e.inputs.map((r) => r.name) },
       },
     },
