@@ -14897,7 +14897,7 @@ wt.callbackQuery(/^skills_update_from_list:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -14913,16 +14913,14 @@ wt.callbackQuery(/^skills_remove_from_list:/, async (e) =>
       s = await at(n, t);
     if (!s) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
     (await ht(n, t, { ...s, step: "remove_confirm_from_list", skillName: r }),
       await e.answerCallbackQuery(),
       await e.editMessageText(
-        `\u{1F5D1} \u78BA\u5B9A\u8981\u5F9E ${Vt(s)} \u79FB\u9664\u6280\u80FD\u300C*${O(r)}*\u300D\u55CE\uFF1F
-
-\u79FB\u9664\u5F8C\u8A72\u6280\u80FD\u7684\u6240\u6709\u6A94\u6848\u5C07\u88AB\u522A\u9664\uFF0C\u5982\u9700\u8981\u53EF\u91CD\u65B0\u5B89\u88DD\u3002`,
+        e.t("skills.remove_confirm", { target: Vt(s), name: O(r) }),
         { parse_mode: "MarkdownV2", reply_markup: Xd(r) },
       ));
   }),
@@ -14937,7 +14935,7 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
       l = await at(n, t);
     if (!l) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -14957,7 +14955,7 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
       repo: o.github.repoFullName,
       workflowName: "remove-skill",
       workflowPath: ".github/workflows/remove-skill.yml",
-      title: `\u6280\u80FD\u79FB\u9664: ${r}`,
+      title: `Skill remove: ${r}`,
       channel: "telegram",
       chatId: t,
       messageId: c,
@@ -14967,9 +14965,9 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
     }),
       await Bp(s, i, a, { skillName: r, issueNumber: l.issueNumber, requestId: d }),
       await hi(n, t),
-      await e.answerCallbackQuery("\u23F3 \u79FB\u9664\u4E2D..."),
+      await e.answerCallbackQuery(e.t("skills.removing")),
       await e.editMessageText(
-        `\u23F3 \u6280\u80FD *${O(r)}* \u6B63\u5728\u5F9E ${Vt(l)} \u79FB\u9664\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("skills.removing_progress", { name: O(r), target: Vt(l) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -14983,7 +14981,7 @@ wt.callbackQuery(/^skills_remove_back:/, async (e) =>
       o = await at(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -14997,9 +14995,7 @@ wt.callbackQuery(/^skills_remove_back:/, async (e) =>
 ${O(i.description)}`
         : "";
     await e.editMessageText(
-      `\u{1F4E6} *${O(a)}* \u2705 \\(\u5DF2\u5B89\u88DD\\)${l}
-
-\u6B64\u6280\u80FD\u5DF2\u5B89\u88DD\u65BC ${Vt(o)}\uFF0C\u8ACB\u9078\u64C7\u64CD\u4F5C\uFF1A`,
+      e.t("skills.installed_preview", { skillName: O(a), description: l, target: Vt(o) }),
       { parse_mode: "MarkdownV2", reply_markup: Wa(r) },
     );
   }),
@@ -15012,7 +15008,7 @@ wt.callbackQuery(/^skills_existing_secret:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n || n.step !== "confirm_existing_secret") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -15034,7 +15030,7 @@ wt.callbackQuery(/^skills_existing_secret:/, async (e) =>
       await Tf(e, t, { ...n, requiredEnvs: [], collectedEnvs: {} });
       return;
     }
-    throw new Error(`\u672A\u77E5\u7684 Secret \u8655\u7406\u52D5\u4F5C\uFF1A${r}`);
+    throw new Error(`Unknown secret action: ${r}`);
   }),
 );
 wt.callbackQuery(/^skills_overwrite:/, async (e) =>
@@ -15045,7 +15041,7 @@ wt.callbackQuery(/^skills_overwrite:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -15062,7 +15058,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
       l = await at(n, t);
     if (!l) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -15070,7 +15066,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
     for (let [w, y] of Object.entries(c)) {
       let _ = w.trim().toUpperCase(),
         I = y.trim();
-      if (!_ || !I) throw new Error(`\u7F3A\u5C11\u6709\u6548\u7684 Secret \u503C\uFF1A${w}`);
+      if (!_ || !I) throw new Error(`Missing valid secret value: ${w}`);
       await vi(s, i, a, _, I);
     }
     let d = ur(e);
@@ -15089,7 +15085,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
       repo: o.github.repoFullName,
       workflowName: "skills",
       workflowPath: ".github/workflows/skills.yml",
-      title: `\u6280\u80FD\u5B89\u88DD: ${r}`,
+      title: `Skill install: ${r}`,
       channel: "telegram",
       chatId: t,
       messageId: d,
@@ -15099,9 +15095,9 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
     }),
       await Up(s, i, a, { skillName: r, issueNumber: l.issueNumber, requestId: m }),
       await hi(n, t),
-      await e.answerCallbackQuery("\u23F3 \u5B89\u88DD\u4E2D..."),
+      await e.answerCallbackQuery(e.t("skills.installing")),
       await e.editMessageText(
-        `\u23F3 \u6280\u80FD *${O(r)}* \u6B63\u5728\u5B89\u88DD\u5230 ${Vt(l)}\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("skills.installing_progress", { name: O(r), target: Vt(l) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -15111,8 +15107,8 @@ wt.callbackQuery(/^skills_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await hi(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u6280\u80FD\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("skills.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -15126,7 +15122,7 @@ wt.callbackQuery(/^skills_page:/, async (e) =>
       o = await at(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -15134,7 +15130,7 @@ wt.callbackQuery(/^skills_page:/, async (e) =>
     await e.answerCallbackQuery();
     let a = Array.isArray(o.installedSkills) ? new Set(o.installedSkills) : void 0;
     await e.editMessageText(
-      `\u{1F6E0} \u9078\u64C7\u8981\u5B89\u88DD\u7684\u6280\u80FD\u5230 ${Vt(o)}`,
+      e.t("skills.select_install", { target: Vt(o) }),
       { parse_mode: "MarkdownV2", reply_markup: as(i, r, a) },
     );
   }),
@@ -15218,11 +15214,10 @@ async function _t(e, t) {
 async function Qs(e, t, r) {
   await oe(e.services.store, t, { ...r, step: "confirm_install" });
   let n = r.selectedModel
-    ? `
-\u6A21\u578B\uFF1A\`${O(r.selectedModel)}\``
+    ? e.t("templates.model_line", { model: O(r.selectedModel) })
     : "";
   await e.editMessageText(
-    `\u78BA\u8A8D\u5B89\u88DD\u7BC4\u672C *${O(r.templateName)}* \u5230\u9F8D\u8766\u5821\uFF1F${n}`,
+    e.t("templates.confirm_install", { name: O(r.templateName), modelLine: n }),
     { parse_mode: "MarkdownV2", reply_markup: qo(r.templateName) },
   );
 }
@@ -15248,35 +15243,24 @@ async function Yl(e, t, r) {
       pendingEnvs: i.requiredEnvs,
     }),
       await e.editMessageText(
-        `\u2705 \u7BC4\u672C *${O(r.templateName)}* \u9700\u8981\u7684 Secrets \u7686\u5DF2\u8A2D\u5B9A\uFF1A
-
-${c.join(`
-`)}
-
-\u8981\u66F4\u63DB\u55CE\uFF1F`,
+        e.t("templates.secrets_all_set", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: np() },
       ));
   } else if (l) {
     let c = i.missingEnvs.map((d) => `\u{1F539} \`${O(d)}\``);
     (await oe(n, t, { ...(await be(n, t)), ...r, step: "env_warning", pendingEnvs: i.missingEnvs }),
       await e.editMessageText(
-        `\u26A0\uFE0F \u7BC4\u672C *${O(r.templateName)}* \u9700\u8981\u4EE5\u4E0B Secrets\uFF1A
-
-${c.join(`
-`)}`,
+        e.t("templates.secrets_missing", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: rp() },
       ));
   } else {
     let c = [
-      ...i.existingEnvs.map((d) => `\u2705 \`${O(d)}\`\uFF08\u5DF2\u8A2D\u5B9A\uFF09`),
-      ...i.missingEnvs.map((d) => `\u{1F539} \`${O(d)}\`\uFF08\u7F3A\u5C11\uFF09`),
+      ...i.existingEnvs.map((d) => e.t("templates.env_set", { env: O(d) })),
+      ...i.missingEnvs.map((d) => e.t("templates.env_missing", { env: O(d) })),
     ];
     (await oe(n, t, { ...(await be(n, t)), ...r, step: "env_warning", pendingEnvs: i.missingEnvs }),
       await e.editMessageText(
-        `\u26A0\uFE0F \u7BC4\u672C *${O(r.templateName)}* \u7684 Secrets \u72C0\u614B\uFF1A
-
-${c.join(`
-`)}`,
+        e.t("templates.secrets_status", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: sp() },
       ));
   }
@@ -15290,14 +15274,14 @@ dt.callbackQuery(/^templates_pick:/, async (e) =>
       o = await be(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     let i = await On(s.github),
       a = r != null ? (i[r]?.name ?? "") : "";
     if (!a) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u8A72\u7BC4\u672C");
+      await e.answerCallbackQuery(e.t("templates.not_found"));
       return;
     }
     (await oe(n, t, { ...o, step: "preview", templateName: a }), await e.answerCallbackQuery());
@@ -15309,9 +15293,7 @@ dt.callbackQuery(/^templates_pick:/, async (e) =>
 ${or(l.description)}`
         : "";
     await e.editMessageText(
-      `\u{1F4E6} *${O(c)}*${d}
-
-\u662F\u5426\u8981\u5B89\u88DD\u6B64\u7BC4\u672C\u5230\u9F8D\u8766\u5821\uFF1F`,
+      e.t("templates.install_prompt", { name: O(c), desc: d }),
       { parse_mode: "MarkdownV2", reply_markup: Zd(a) },
     );
   }),
@@ -15325,14 +15307,14 @@ dt.callbackQuery(/^templates_preview_confirm:/, async (e) =>
       i = typeof o?.templateName == "string" ? o.templateName.trim() : "";
     if (!o || !i) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     if ((await e.answerCallbackQuery(), await Nn(n, s.github.owner, s.github.repo, i))) {
       (await oe(r, t, { ...o, step: "confirm_overwrite", templateName: i }),
         await e.editMessageText(
-          `\u26A0\uFE0F \u7BC4\u672C *${O(i)}* \u5DF2\u5B58\u5728\u65BC\u9F8D\u8766\u5821\uFF0C\u662F\u5426\u8986\u84CB\uFF1F`,
+          e.t("templates.confirm_overwrite", { name: O(i) }),
           { parse_mode: "MarkdownV2", reply_markup: ep(i) },
         ));
       return;
@@ -15340,10 +15322,10 @@ dt.callbackQuery(/^templates_preview_confirm:/, async (e) =>
     let a = await rn(s.github, i);
     if (a?.needModel) {
       if (!a.modelVar || !a.models?.length)
-        throw new Error(`\u7BC4\u672C ${i} \u7F3A\u5C11 modelVar \u6216 models \u8A2D\u5B9A`);
+        throw new Error(`Template ${i} missing modelVar or models setting`);
       (await oe(r, t, { ...o, templateName: i, step: "select_model", modelVar: a.modelVar }),
         await e.editMessageText(
-          `\u{1F916} \u7BC4\u672C *${O(i)}* \u9700\u8981\u5148\u9078\u64C7\u6A21\u578B`,
+          e.t("templates.select_model_prompt", { name: O(i) }),
           { parse_mode: "MarkdownV2", reply_markup: Da(a.models) },
         ));
       return;
@@ -15363,7 +15345,7 @@ dt.callbackQuery(/^templates_preview_back:/, async (e) =>
       s = await be(r, t);
     if (!s) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15378,7 +15360,7 @@ dt.callbackQuery(/^templates_preview_back:/, async (e) =>
       ),
       l = new Set(a.filter((c) => c.installed).map((c) => c.name));
     await e.editMessageText(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      e.t("templates.selectInstallTo"),
       { reply_markup: us(o, 0, l) },
     );
   }),
@@ -15391,7 +15373,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
       n = typeof r?.templateName == "string" ? r.templateName.trim() : "";
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15399,7 +15381,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
     let s = await rn(e.services.config.github, n);
     if (s?.needModel) {
       if (!s.modelVar || !s.models?.length)
-        throw new Error(`\u7BC4\u672C ${n} \u7F3A\u5C11 modelVar \u6216 models \u8A2D\u5B9A`);
+        throw new Error(`Template ${n} missing modelVar or models setting`);
       (await oe(e.services.store, t, {
         ...r,
         templateName: n,
@@ -15407,7 +15389,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
         modelVar: s.modelVar,
       }),
         await e.editMessageText(
-          `\u{1F916} \u7BC4\u672C *${O(n)}* \u9700\u8981\u5148\u9078\u64C7\u6A21\u578B`,
+          e.t("templates.select_model_prompt", { name: O(n) }),
           { parse_mode: "MarkdownV2", reply_markup: Da(s.models) },
         ));
       return;
@@ -15421,7 +15403,7 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
     if (!t) return;
     let r = kf(e.callbackQuery.data);
     if (r == null) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6A21\u578B\u8CC7\u6599\u683C\u5F0F\u932F\u8AA4");
+      await e.answerCallbackQuery(e.t("templates.model_format_error"));
       return;
     }
     let { store: n, octokit: s, config: o } = e.services,
@@ -15429,7 +15411,7 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
       a = typeof i?.templateName == "string" ? i.templateName.trim() : "";
     if (!i || i.step !== "select_model" || !a) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15437,12 +15419,12 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
       c = l?.modelVar || (typeof i.modelVar == "string" ? i.modelVar : ""),
       d = l?.models?.[r],
       m = typeof d?.value == "string" ? d.value.trim() : "";
-    if (!c) throw new Error(`\u7BC4\u672C ${a} \u7F3A\u5C11 modelVar \u8A2D\u5B9A`);
+    if (!c) throw new Error(`Template ${a} missing modelVar setting`);
     if (!m) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u8A72\u6A21\u578B\u9078\u9805");
+      await e.answerCallbackQuery(e.t("templates.model_not_found"));
       return;
     }
-    (await e.answerCallbackQuery("\u23F3 \u5132\u5B58\u6A21\u578B\u4E2D..."),
+    (await e.answerCallbackQuery(e.t("templates.saving_model")),
       await Ci(s, o.github.owner, o.github.repo, c, m));
     let w = { templateName: a, selectedModel: m, modelVar: c };
     (await oe(n, t, { ...i, ...w }), await Yl(e, t, w));
@@ -15457,11 +15439,11 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       i = typeof o?.templateName == "string" ? o.templateName.trim() : "";
     if (!o || !i) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
-    await e.answerCallbackQuery("\u23F3 \u5B89\u88DD\u4E2D...");
+    await e.answerCallbackQuery(e.t("templates.installing"));
     let a = crypto.randomUUID(),
       l = ur(e);
     (await Gt(e.services.d1, {
@@ -15469,7 +15451,7 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       repo: s.github.repoFullName,
       workflowName: "templates",
       workflowPath: ".github/workflows/templates.yml",
-      title: `\u7BC4\u672C\u5B89\u88DD: ${i}`,
+      title: `Template install: ${i}`,
       channel: "telegram",
       chatId: t,
       messageId: l,
@@ -15480,7 +15462,7 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       await Dm(n, s.github.owner, s.github.repo, { templateName: i, requestId: a }),
       await Ir(r, t),
       await e.editMessageText(
-        `\u23F3 \u7BC4\u672C *${O(i)}* \u6B63\u5728\u5B89\u88DD\u5230\u9F8D\u8766\u5821\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("templates.installing_progress", { name: O(i) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -15490,8 +15472,8 @@ dt.callbackQuery(/^templates_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u7BC4\u672C\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("templates.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -15504,7 +15486,7 @@ dt.callbackQuery(/^templates_env_setup:/, async (e) =>
       n = await be(r, t);
     if (!n || n.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15522,9 +15504,7 @@ dt.callbackQuery(/^templates_env_setup:/, async (e) =>
         promptMessageId: ur(e),
       }),
       await e.editMessageText(
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(s[0])}* \u7684\u503C
-
-\uFF081/${s.length}\uFF09`,
+        e.t("templates.enter_env_value", { envName: O(s[0]), total: s.length }),
         { parse_mode: "MarkdownV2", reply_markup: hr() },
       ));
   }),
@@ -15536,12 +15516,12 @@ dt.callbackQuery(/^templates_env_skip:/, async (e) =>
     let r = await be(e.services.store, t);
     if (!r) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     (await e.answerCallbackQuery(
-      "\u23ED\uFE0F \u5DF2\u7565\u904E\u74B0\u5883\u8B8A\u6578\u8A2D\u5B9A",
+      e.t("templates.env_skipped"),
     ),
       await Qs(e, t, r));
   }),
@@ -15554,7 +15534,7 @@ dt.callbackQuery(/^templates_env_resetall:/, async (e) =>
       o = await be(r, t);
     if (!o || o.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15579,9 +15559,7 @@ dt.callbackQuery(/^templates_env_resetall:/, async (e) =>
         promptMessageId: ur(e),
       }),
       await e.editMessageText(
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(a[0])}* \u7684\u503C
-
-\uFF081/${a.length}\uFF09`,
+        e.t("templates.enter_env_value", { envName: O(a[0]), total: a.length }),
         { parse_mode: "MarkdownV2", reply_markup: hr() },
       ));
   }),
@@ -15593,11 +15571,11 @@ dt.callbackQuery(/^templates_env_keepall:/, async (e) =>
     let r = await be(e.services.store, t);
     if (!r || r.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u6CBF\u7528\u73FE\u6709\u8A2D\u5B9A"),
+    (await e.answerCallbackQuery(e.t("templates.env_keepall")),
       await Qs(e, t, r));
   }),
 );
@@ -15606,8 +15584,8 @@ dt.callbackQuery(/^templates_env_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u7BC4\u672C\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("templates.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -15620,7 +15598,7 @@ dt.callbackQuery(/^templates_page:/, async (e) =>
       { store: n, config: s } = e.services;
     if (!(await be(n, t))) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -15635,7 +15613,7 @@ dt.callbackQuery(/^templates_page:/, async (e) =>
       ),
       c = new Set(l.filter((d) => d.installed).map((d) => d.name));
     await e.editMessageText(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      e.t("templates.selectInstallTo"),
       { reply_markup: us(i, r, c) },
     );
   }),
@@ -15845,7 +15823,7 @@ Jt.callbackQuery(/^linebot_deploy_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
+      await e.answerCallbackQuery(e.t("core.cancelled")),
       await e.editMessageText("\u274C \u5DF2\u53D6\u6D88 LINE Bot \u90E8\u7F72", {
         reply_markup: new F(),
       }));

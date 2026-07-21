@@ -55,7 +55,7 @@
   },
   "skills": {
     "process_expired": "⚠️ Process expired, please run /skills again.",
-    "installed_preview": "📦 *{skillName}* ✅ (Installed){description}\n\nThis skill is installed on {target}, select action:",
+    "installed_preview": "📦 *{skillName}* ✅ \\(Installed\\){description}\n\nThis skill is installed on {target}, select action:",
     "preview": "📦 *{skillName}*{description}\n\nDo you want to install this skill on {target}?",
     "confirm_overwrite": "⚠️ Skill *{skillName}* is already installed on {target}, overwrite?",
     "select_install": "🛠 Select skill to install on {target}",
@@ -77,7 +77,13 @@
     "ended_message": "ℹ️ Skill *{name}* {action} ended. Result: {result}",
     "target_lobster_fallback": "Target Lobster",
     "issue_comment_completed": "🛠️ Skill **{name}** has been {action}ed.",
-    "targetLobsterFallback": "🦞 Target Lobster"
+    "targetLobsterFallback": "🦞 Target Lobster",
+    "installing": "⏳ Installing...",
+    "removing": "⏳ Removing...",
+    "installing_progress": "⏳ Installing skill *{name}* to {target}\\. You will be notified when done\\.",
+    "removing_progress": "⏳ Removing skill *{name}* from {target}\\. You will be notified when done\\.",
+    "remove_confirm": "🗑 Remove skill *{name}* from {target}?\n\nAll files of this skill will be deleted after removal\\. You can reinstall it if needed\\.",
+    "install_cancelled": "❌ Skill installation cancelled"
   },
   "schedule": {
     "workflow_defined_label": "Defined by Workflow",
@@ -625,7 +631,8 @@
     "lobsterLabelWithTitle": "Lobster #{number} \"{title}\"",
     "workflowEnabledOk": "✅ Workflow {name} enabled. Lobster {number} will auto-accept dispatches.",
     "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches.",
-    "buttonExpired": "⚠️ This button has expired. Please try again."
+    "buttonExpired": "⚠️ This button has expired. Please try again.",
+    "cancelled": "Cancelled"
   },
   "templates": {
     "name_default": "Default Template",
@@ -646,7 +653,28 @@
     "sync_complete_ask_line": "✅ Template *{name}* has been installed successfully!\n\n🤖 Would you like to continue configuring LINE Bot deployment?",
     "fileBinary": "Template file {path} is binary, cannot be read",
     "nestedTooDeep": "Template directory {path}/ nesting too deep for a single query",
-    "unknownGraphqlError": "Unknown GraphQL error"
+    "unknownGraphqlError": "Unknown GraphQL error",
+    "process_expired": "⚠️ Process expired, please run /templates again.",
+    "confirm_install": "Confirm installing template *{name}* into Lobster Castle?{modelLine}",
+    "model_line": "\nModel: `{model}`",
+    "secrets_all_set": "✅ All secrets required by template *{name}* are set:\n\n{list}\n\nReplace?",
+    "secrets_missing": "⚠️ Template *{name}* needs the following secrets:\n\n{list}",
+    "secrets_status": "⚠️ Secret status for template *{name}*:\n\n{list}",
+    "env_set": "✅ `{env}` \\(set\\)",
+    "env_missing": "🔵 `{env}` \\(missing\\)",
+    "not_found": "⚠️ Template not found",
+    "install_prompt": "📦 *{name}*{desc}\n\nInstall this template into Lobster Castle?",
+    "confirm_overwrite": "⚠️ Template *{name}* already exists in Lobster Castle, overwrite?",
+    "select_model_prompt": "🤖 Template *{name}* needs a model selected first",
+    "model_format_error": "⚠️ Invalid model data format",
+    "model_not_found": "⚠️ Model option not found",
+    "saving_model": "⏳ Saving model...",
+    "installing": "⏳ Installing...",
+    "installing_progress": "⏳ Installing template *{name}* into Lobster Castle\\. You will be notified when done\\.",
+    "install_cancelled": "❌ Template installation cancelled",
+    "enter_env_value": "🔑 Please enter the value for *{envName}*\n\n\\(1/{total}\\)",
+    "env_skipped": "⏭️ Skipped environment variable setup",
+    "env_keepall": "⏭️ Keeping existing settings"
   },
   "line": {
     "setup_failed": "❌ Setup failed: {error}",

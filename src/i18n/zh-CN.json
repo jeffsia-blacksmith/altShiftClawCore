@@ -55,7 +55,7 @@
   },
   "skills": {
     "process_expired": "⚠️ 流程已过期，请重新 /skills",
-    "installed_preview": "📦 *{skillName}* ✅ (已安装){description}\n\n此技能已安装于 {target}，请选择操作：",
+    "installed_preview": "📦 *{skillName}* ✅ \\(已安装\\){description}\n\n此技能已安装于 {target}，请选择操作：",
     "preview": "📦 *{skillName}*{description}\n\n是否要安装此技能到 {target}？",
     "confirm_overwrite": "⚠️ 技能 *{skillName}* 已安装在 {target}，是否覆盖？",
     "select_install": "🛠 选择要安装的技能到 {target}",
@@ -77,7 +77,13 @@
     "ended_message": "ℹ️ 技能 *{name}* {action}结束，结果：{result}",
     "target_lobster_fallback": "目标小龙虾",
     "issue_comment_completed": "🛠️ 技能 **{name}** 已{action}完成。",
-    "targetLobsterFallback": "🦞 目标小龙虾"
+    "targetLobsterFallback": "🦞 目标小龙虾",
+    "installing": "⏳ 安装中...",
+    "removing": "⏳ 移除中...",
+    "installing_progress": "⏳ 技能 *{name}* 正在安装到 {target}，完成后会通知你",
+    "removing_progress": "⏳ 技能 *{name}* 正在从 {target} 移除，完成后会通知你",
+    "remove_confirm": "🗑 确定要从 {target} 移除技能「*{name}*」吗？\n\n移除后该技能的所有文件将被删除，如需要可重新安装。",
+    "install_cancelled": "❌ 已取消技能安装"
   },
   "schedule": {
     "workflow_defined_label": "由 Workflow 定义",
@@ -625,7 +631,8 @@
     "lobsterLabelWithTitle": "小龙虾 #{number}「{title}」",
     "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
     "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
-    "buttonExpired": "⚠️ 按钮已过期，请重新操作"
+    "buttonExpired": "⚠️ 按钮已过期，请重新操作",
+    "cancelled": "已取消"
   },
   "templates": {
     "name_default": "预设范本",
@@ -646,7 +653,28 @@
     "sync_complete_ask_line": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？",
     "fileBinary": "模板文件 {path} 为二进制，无法读取",
     "nestedTooDeep": "模板目录 {path}/ 嵌套深度超过单次查询支持范围",
-    "unknownGraphqlError": "未知 GraphQL 错误"
+    "unknownGraphqlError": "未知 GraphQL 错误",
+    "process_expired": "⚠️ 流程已过期，请重新 /templates",
+    "confirm_install": "确认安装范本 *{name}* 到龙虾堡？{modelLine}",
+    "model_line": "\n模型：`{model}`",
+    "secrets_all_set": "✅ 范本 *{name}* 需要的 Secrets 皆已设定：\n\n{list}\n\n要更换吗？",
+    "secrets_missing": "⚠️ 范本 *{name}* 需要以下 Secrets：\n\n{list}",
+    "secrets_status": "⚠️ 范本 *{name}* 的 Secrets 状态：\n\n{list}",
+    "env_set": "✅ `{env}`（已设定）",
+    "env_missing": "🔵 `{env}`（缺少）",
+    "not_found": "⚠️ 找不到该范本",
+    "install_prompt": "📦 *{name}*{desc}\n\n是否要安装此范本到龙虾堡？",
+    "confirm_overwrite": "⚠️ 范本 *{name}* 已存在于龙虾堡，是否覆盖？",
+    "select_model_prompt": "🤖 范本 *{name}* 需要先选择模型",
+    "model_format_error": "⚠️ 模型数据格式错误",
+    "model_not_found": "⚠️ 找不到该模型选项",
+    "saving_model": "⏳ 储存模型中...",
+    "installing": "⏳ 安装中...",
+    "installing_progress": "⏳ 范本 *{name}* 正在安装到龙虾堡，完成后会通知你",
+    "install_cancelled": "❌ 已取消范本安装",
+    "enter_env_value": "🔑 请输入 *{envName}* 的值\n\n（1/{total}）",
+    "env_skipped": "⏭️ 已略过环境变数设定",
+    "env_keepall": "⏭️ 沿用现有设定"
   },
   "line": {
     "setup_failed": "❌ 设定失败：{error}",
