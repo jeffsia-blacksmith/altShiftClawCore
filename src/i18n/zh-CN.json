@@ -680,7 +680,7 @@
     "setup_failed": "❌ 设定失败：{error}",
     "ask_bot_id": "📝 请输入 *LINE Bot ID*（必填）",
     "skipped_alert": "⏭️ 已略过",
-    "skipped_install_message": "✅ 范本 *line-bot* 已安装完成！\n\n之后可以手动触发 `install-line-bot` workflow 来部署。",
+    "skipped_install_message": "✅ 范本 *line\\-bot* 已安装完成！\n\n之后可以手动触发 `install-line-bot` workflow 来部署。",
     "ask_issue_number": "📝 请输入 *小龙虾编号（Issue Number）*（跳过则自动建立）",
     "ask_utc_offset": "🕒 请输入时区（例如 `+08:00`，跳过就用预设）",
     "missing_required": "⚠️ 缺少必填栏位",
@@ -697,11 +697,11 @@
     "edit_ask_issue_number": "📝 请输入新的 *小龙虾编号（Issue Number）*（跳过则自动建立）",
     "edit_ask_utc_offset": "🕒 请输入新的时区（例如 `+08:00`，跳过则保留目前设定）",
     "confirm_deploy_title": "确认部署 LINE Bot？",
-    "confirm_reply_msg": "- 预设回应：{value}",
+    "confirm_reply_msg": "\\- 预设回应：{value}",
     "none_label": "（无）",
-    "confirm_lobster": "- 小龙虾：{value}",
+    "confirm_lobster": "\\- 小龙虾：{value}",
     "auto_create_label": "自动建立",
-    "confirm_timezone": "- 时区：`{value}`",
+    "confirm_timezone": "\\- 时区：`{value}`",
     "error_bot_id_required": "⚠️ LINE Bot ID 为必填栏位，请输入",
     "error_bot_id_format": "⚠️ LINE Bot ID 格式不正确，应为 `@` 开头（例如 `@mybot`），请重新输入",
     "ask_channel_id": "📝 请输入 *LINE Bot Channel ID*（必填，纯数字）",
@@ -715,7 +715,8 @@
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* 部署已取消",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* 部署失败，请查看 workflow run log",
     "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}",
-    "postInstallPrompt": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？"
+    "postInstallPrompt": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？",
+    "process_expired": "⚠️ 流程已过期"
   },
   "api": {
     "rateLimit": {

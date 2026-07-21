@@ -15677,7 +15677,7 @@ Jt.callbackQuery(/^linebot_setup_continue:/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n || n.step !== xe.POST_INSTALL_PROMPT) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     await e.answerCallbackQuery();
@@ -15685,7 +15685,7 @@ Jt.callbackQuery(/^linebot_setup_continue:/, async (e) =>
       e,
       t,
       n,
-      "\u{1F4DD} \u8ACB\u8F38\u5165 *LINE Bot ID*\uFF08\u5FC5\u586B\uFF09",
+      e.t("line.ask_bot_id"),
       { parse_mode: "MarkdownV2", reply_markup: wr() },
     );
     await oe(r, t, { ...n, step: xe.AWAITING_LINE_BOT_ID, promptMessageId: s });
@@ -15696,9 +15696,9 @@ Jt.callbackQuery(/^linebot_setup_skip:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E"),
+      await e.answerCallbackQuery(e.t("line.skipped_alert")),
       await e.editMessageText(
-        "\u2705 \u7BC4\u672C *line\\-bot* \u5DF2\u5B89\u88DD\u5B8C\u6210\uFF01\n\n\u4E4B\u5F8C\u53EF\u4EE5\u624B\u52D5\u89F8\u767C `install\\-line\\-bot` workflow \u4F86\u90E8\u7F72\u3002",
+        e.t("line.skipped_install_message"),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -15710,7 +15710,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     if ((await e.answerCallbackQuery(), n.step === xe.AWAITING_LINE_REPLY_MSG)) {
@@ -15722,7 +15722,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
         e,
         t,
         n,
-        "\u{1F4DD} \u8ACB\u8F38\u5165 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+        e.t("line.ask_issue_number"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       await oe(r, t, { ...n, step: xe.AWAITING_LINE_ISSUE_NUMBER, promptMessageId: s });
@@ -15737,7 +15737,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
         e,
         t,
         n,
-        "\u{1F552} \u8ACB\u8F38\u5165\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5C31\u7528\u9810\u8A2D\uFF09",
+        e.t("line.ask_utc_offset"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       await oe(r, t, { ...n, step: xe.AWAITING_LINE_UTC_OFFSET, promptMessageId: s });
@@ -15747,7 +15747,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
       await cr(e, t, n);
       return;
     }
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(e.t("line.process_expired"));
   }),
 );
 Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
@@ -15757,16 +15757,16 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
     let { store: r, octokit: n, config: s, d1: o } = e.services,
       i = await be(r, t);
     if (!i || i.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     let a = String(i.lineBotId ?? ""),
       l = String(i.lineChannelId ?? "");
     if (!a || !l) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u7F3A\u5C11\u5FC5\u586B\u6B04\u4F4D");
+      await e.answerCallbackQuery(e.t("line.missing_required"));
       return;
     }
-    await e.answerCallbackQuery("\u23F3 \u90E8\u7F72\u4E2D...");
+    await e.answerCallbackQuery(e.t("line.deploying_alert"));
     let c = String(i.lineReplyMsg ?? ""),
       d = String(i.lineIssueNumber ?? ""),
       m = Ef(i),
@@ -15777,7 +15777,7 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
       repo: s.github.repoFullName,
       workflowName: "install-line-bot",
       workflowPath: uk,
-      title: `LINE Bot \u90E8\u7F72: ${a}`,
+      title: `LINE Bot Deployment: ${a}`,
       channel: "telegram",
       chatId: t,
       messageId: y,
@@ -15811,9 +15811,7 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
     }
     (await Ir(r, t),
       await e.editMessageText(
-        `\u23F3 LINE Bot Worker \u6B63\u5728\u90E8\u7F72\u4E2D\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60
-
-\u{1F916} Bot ID: \`${O(a)}\``,
+        e.t("line.deploying_message", { id: O(a) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -15824,7 +15822,7 @@ Jt.callbackQuery(/^linebot_deploy_cancel:/, async (e) =>
     t &&
       (await Ir(e.services.store, t),
       await e.answerCallbackQuery(e.t("core.cancelled")),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88 LINE Bot \u90E8\u7F72", {
+      await e.editMessageText(e.t("line.deploy_cancelled_message"), {
         reply_markup: new F(),
       }));
   }),
@@ -15835,11 +15833,11 @@ Jt.callbackQuery(/^linebot_edit_params:/, async (e) =>
     if (!t) return;
     let r = await be(e.services.store, t);
     if (!r || r.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     await e.answerCallbackQuery();
-    let n = await et(e, t, r, "\u270F\uFE0F \u9078\u64C7\u8981\u4FEE\u6539\u7684\u6B04\u4F4D", {
+    let n = await et(e, t, r, e.t("line.edit_select_field"), {
       reply_markup: ap(),
     });
     await oe(e.services.store, t, { ...r, promptMessageId: n });
@@ -15852,7 +15850,7 @@ Jt.callbackQuery(/^linebot_edit:(.+)$/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n || n.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     let s = e.match?.[1];
@@ -15861,31 +15859,31 @@ Jt.callbackQuery(/^linebot_edit:(.+)$/, async (e) =>
     let i = {
       bot_id: {
         step: xe.AWAITING_LINE_BOT_ID,
-        prompt: "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *LINE Bot ID*\uFF08\u5FC5\u586B\uFF09",
+        prompt: e.t("line.edit_ask_bot_id"),
         required: !0,
       },
       channel_id: {
         step: xe.AWAITING_LINE_CHANNEL_ID,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *LINE Bot Channel ID*\uFF08\u5FC5\u586B\uFF09",
+          e.t("line.edit_ask_channel_id"),
         required: !0,
       },
       reply_msg: {
         step: xe.AWAITING_LINE_REPLY_MSG,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684\u9810\u8A2D\u56DE\u61C9\u8A0A\u606F\uFF08\u9078\u586B\uFF0C\u6309\u8DF3\u904E\u53EF\u7565\u904E\uFF09",
+          e.t("line.edit_ask_reply_msg"),
         required: !1,
       },
       issue_number: {
         step: xe.AWAITING_LINE_ISSUE_NUMBER,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+          e.t("line.edit_ask_issue_number"),
         required: !1,
       },
       utc_offset: {
         step: xe.AWAITING_LINE_UTC_OFFSET,
         prompt:
-          "\u{1F552} \u8ACB\u8F38\u5165\u65B0\u7684\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5247\u4FDD\u7559\u76EE\u524D\u8A2D\u5B9A\uFF09",
+          e.t("line.edit_ask_utc_offset"),
         required: !1,
       },
     }[s];
@@ -15901,7 +15899,7 @@ Jt.callbackQuery(/^linebot_edit_back:/, async (e) =>
     if (!t) return;
     let r = await be(e.services.store, t);
     if (!r) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     (await e.answerCallbackQuery(), await cr(e, t, r));
@@ -15914,13 +15912,13 @@ async function cr(e, t, r) {
     i = String(r.lineIssueNumber ?? ""),
     a = Ef(r),
     l = [
-      "\u78BA\u8A8D\u90E8\u7F72 LINE Bot\uFF1F",
+      e.t("line.confirm_deploy_title"),
       "",
       `\\- LINE Bot ID: \`${O(n)}\``,
       `\\- Channel ID: \`${O(s)}\``,
-      `\\- \u9810\u8A2D\u56DE\u61C9\uFF1A${o ? O(o) : "\uFF08\u7121\uFF09"}`,
-      `\\- \u5C0F\u9F8D\u8766\uFF1A${i ? `\\#${O(i)}` : "\u81EA\u52D5\u5EFA\u7ACB"}`,
-      `\\- \u6642\u5340: \`${O(a)}\``,
+      e.t("line.confirm_reply_msg", { value: o ? O(o) : e.t("line.none_label") }),
+      e.t("line.confirm_lobster", { value: i ? `\\#${O(i)}` : e.t("line.auto_create_label") }),
+      e.t("line.confirm_timezone", { value: O(a) }),
     ],
     c = await et(
       e,
@@ -15967,7 +15965,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot ID \u70BA\u5FC5\u586B\u6B04\u4F4D\uFF0C\u8ACB\u8F38\u5165",
+          e.t("line.error_bot_id_required"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -15977,7 +15975,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot ID \u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u61C9\u70BA `@` \u958B\u982D\uFF08\u4F8B\u5982 `@mybot`\uFF09\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165",
+          e.t("line.error_bot_id_format"),
           { parse_mode: "MarkdownV2", reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -15991,7 +15989,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165 *LINE Bot Channel ID*\uFF08\u5FC5\u586B\uFF0C\u7D14\u6578\u5B57\uFF09",
+          e.t("line.ask_channel_id"),
           { parse_mode: "MarkdownV2", reply_markup: wr() },
         );
         await oe(r, t, {
@@ -16009,7 +16007,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot Channel ID \u70BA\u5FC5\u586B\u6B04\u4F4D\uFF0C\u8ACB\u8F38\u5165",
+          e.t("line.error_channel_id_required"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -16019,7 +16017,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F Channel ID \u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u61C9\u70BA\u7D14\u6578\u5B57\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165",
+          e.t("line.error_channel_id_format"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -16033,7 +16031,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u9810\u8A2D\u56DE\u61C9\u8A0A\u606F\uFF08\u9078\u586B\uFF0C\u6309\u8DF3\u904E\u53EF\u7565\u904E\uFF09",
+          e.t("line.ask_reply_msg"),
           { reply_markup: Lt() },
         );
         await oe(r, t, {
@@ -16060,7 +16058,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+          e.t("line.ask_issue_number"),
           { parse_mode: "MarkdownV2", reply_markup: Lt() },
         );
         await oe(r, t, {
@@ -16081,7 +16079,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            "\u26A0\uFE0F \u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09\u5FC5\u9808\u662F\u6B63\u6574\u6578\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165\u6216\u6309\u8DF3\u904E",
+            e.t("line.error_issue_number_format"),
             { reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: d }), !0);
@@ -16093,7 +16091,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            `\u26A0\uFE0F \u627E\u4E0D\u5230\u5C0F\u9F8D\u8766 #${c}\uFF0C\u8ACB\u78BA\u8A8D\u5F8C\u91CD\u65B0\u8F38\u5165\u6216\u6309\u8DF3\u904E`,
+            e.t("line.error_lobster_not_found", { number: c }),
             { reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: d }), !0);
@@ -16108,7 +16106,7 @@ async function Sf(e) {
         e,
         t,
         a,
-        "\u{1F552} \u8ACB\u8F38\u5165\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5C31\u7528\u9810\u8A2D\uFF09",
+        e.t("line.ask_utc_offset"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       return (await oe(r, t, { ...a, step: xe.AWAITING_LINE_UTC_OFFSET, promptMessageId: l }), !0);
@@ -16120,7 +16118,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            "\u26A0\uFE0F \u6642\u5340\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u8ACB\u8F38\u5165\u50CF `+08:00` \u6216 `-05:00`",
+            e.t("line.error_timezone_format"),
             { parse_mode: "MarkdownV2", reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: l }), !0);
@@ -16147,7 +16145,7 @@ Tt.callbackQuery(/^set_schedule:/, async (e) => {
   if (!t) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(e.t("core.invalidIssueNumber"));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
@@ -16155,7 +16153,7 @@ Tt.callbackQuery(/^set_schedule:/, async (e) => {
     c = (await Ht(s, i, a)).find((d) => d.number === r);
   if (!c) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u627E\u4E0D\u5230\u6B64 Issue \u6216\u5DF2\u95DC\u9589",
+      e.t("schedule.issueNotFoundOrClosed"),
     );
     return;
   }
@@ -16168,7 +16166,7 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
   if (!(await V(e))) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(e.t("core.invalidIssueNumber"));
     return;
   }
   let { d1: n, octokit: s, config: o } = e.services,
@@ -16176,7 +16174,7 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
     d = (await Ht(s, i, a)).find((w) => w.number === r);
   if (!d) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u627E\u4E0D\u5230\u6B64 Issue \u6216\u5DF2\u95DC\u9589",
+      e.t("schedule.issueNotFoundOrClosed"),
     );
     return;
   }
