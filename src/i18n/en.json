@@ -306,7 +306,33 @@
     "setupTaskPrompt": "📝 (1/4) Setting up a schedule for 🦞 {name} (#{issueNumber})\n\nTell me what task you'd like this lobster to run periodically. (Prompt for the lobster)",
     "editTaskPrompt": "✏️ (1/2) Enter the new task content for schedule {name} (prompt for the lobster)",
     "editTimePrompt": "🕒 (1/2) Enter the new run time for schedule {name}\n\nFor example: every 5 minutes, every hour on the dot, every day at 12 noon, every Monday at 2pm, Mon and Wed at 3pm, every weekday at 2pm, every holiday at 9am, or run once at 9:00, 12:00, 15:00, 18:00, 21:00, 24:00",
-    "editPayloadPrompt": "📦 (1/2) Set the Payload for schedule {name}? (optional)\n\nCurrent value: {current}\nType the new Payload content directly, or click \"Skip\" to clear.\nIf you enter a JSON object, the schedule will keep the original event_data when triggered and expand it into workflow inputs."
+    "editPayloadPrompt": "📦 (1/2) Set the Payload for schedule {name}? (optional)\n\nCurrent value: {current}\nType the new Payload content directly, or click \"Skip\" to clear.\nIf you enter a JSON object, the schedule will keep the original event_data when triggered and expand it into workflow inputs.",
+    "flow": {
+      "timeExamples": "Today 6pm, Tomorrow 8am, Every 5 minutes, Every hour on the dot, Every day at 12 noon, Every Monday at 2pm, Every weekday at 2pm, Every holiday at 9am, Daily at 9:00, 12:00, 18:00",
+      "timePromptQuestion": "Got it! When would you like it to run?",
+      "examplesLine": "For example: {examples}",
+      "payloadPromptLine1": "Please set the schedule's Payload data? (optional)",
+      "payloadPromptLine2": "Enter the Payload content directly, or select \"Skip\" to skip this step.",
+      "payloadPromptLine3": "If you enter a JSON object, the schedule keeps the original event_data when triggered and additionally expands it into workflow inputs.",
+      "actionCreate": "Created",
+      "actionUpdate": "Updated",
+      "configCardTitle": "✅ {badge} Schedule {action}",
+      "fieldId": "Schedule ID",
+      "fieldType": "Schedule type",
+      "fieldTime": "Schedule time",
+      "fieldNextRun": "Next run time",
+      "fieldPrompt": "Prompt for the lobster",
+      "fieldPayload": "Payload data",
+      "configCommentLog": "🗓️ Schedule {action} record\n\n🆔 {id}\n📝 {prompt}\n📦 {payload}",
+      "scheduleNotFound": "⚠️ The specified schedule was not found. Please reopen schedule management.",
+      "stateLost": "⚠️ Schedule setup state lost. Please set up the schedule again.",
+      "createFailed": "❌ Failed to create the schedule. Please try again later.",
+      "listFetchFailed": "❌ An error occurred while fetching the schedule list. Please try again later.",
+      "ambiguousClarify": "Please state the schedule time you want once more.",
+      "ambiguousReply": "Please reply with a complete time description, for example: {examples}",
+      "failedUnderstand": "I didn't understand this schedule time.",
+      "failedReply": "Please rephrase more clearly and enter again, for example: {examples}"
+    }
   },
   "kb": {
     "confirmClose": "😭 Confirm Close",
@@ -581,7 +607,8 @@
     "lobsterLabel": "Lobster #{number}",
     "lobsterLabelWithTitle": "Lobster #{number} \"{title}\"",
     "workflowEnabledOk": "✅ Workflow {name} enabled. Lobster {number} will auto-accept dispatches.",
-    "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches."
+    "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches.",
+    "buttonExpired": "⚠️ This button has expired. Please try again."
   },
   "templates": {
     "name_default": "Default Template",

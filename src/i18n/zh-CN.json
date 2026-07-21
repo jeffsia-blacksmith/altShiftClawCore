@@ -306,7 +306,33 @@
     "setupTaskPrompt": "📝 (1/4) 正在为 🦞 {name} (#{issueNumber}) 设定排程\n\n请告诉我你希望这只小龙虾定期执行的任务是什么？（给小龙虾的提示词）",
     "editTaskPrompt": "✏️ (1/2) 请输入排程 {name} 的新任务内容（给小龙虾的提示词）",
     "editTimePrompt": "🕒 (1/2) 请输入排程 {name} 的新执行时间\n\n例如：每 5 分钟、每小时整点、每天中午12点、每周一下午2点、星期一跟星期三的下午三点、每个工作日下午2点、每个假日早上9点、每天9:00、12:00、15:00、18:00、21:00、24:00执行一次",
-    "editPayloadPrompt": "📦 (1/2) 请设定排程 {name} 的 Payload 资料？(可选)\n\n目前值：{current}\n直接输入新的 Payload 内容，或点选「略过」清空。\n若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。"
+    "editPayloadPrompt": "📦 (1/2) 请设定排程 {name} 的 Payload 资料？(可选)\n\n目前值：{current}\n直接输入新的 Payload 内容，或点选「略过」清空。\n若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。",
+    "flow": {
+      "timeExamples": "今天晚上6点、明天早上8点、每 5 分钟、每小时整点、每天中午12点、每周一下午2点、每个工作日下午2点、每个假日早上9点、每天 9:00、12:00、18:00 执行",
+      "timePromptQuestion": "收到！你希望在什么时候执行？",
+      "examplesLine": "例如：{examples}",
+      "payloadPromptLine1": "请设定排程的 Payload 资料？(可选)",
+      "payloadPromptLine2": "直接输入 Payload 内容，或点选「略过」跳过此步骤。",
+      "payloadPromptLine3": "若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。",
+      "actionCreate": "建立",
+      "actionUpdate": "更新",
+      "configCardTitle": "✅ {badge} 已{action}排程",
+      "fieldId": "排程ID",
+      "fieldType": "排程类型",
+      "fieldTime": "排程时间",
+      "fieldNextRun": "下次执行时间",
+      "fieldPrompt": "给小龙虾的提示词",
+      "fieldPayload": "Payload 资料",
+      "configCommentLog": "🗓️ 已{action}排程设定纪录\n\n🆔 {id}\n📝 {prompt}\n📦 {payload}",
+      "scheduleNotFound": "⚠️ 找不到指定排程，请重新开启管理排程。",
+      "stateLost": "⚠️ 排程设定状态遗失，请重新设定排程。",
+      "createFailed": "❌ 建立排程失败，请稍后再试。",
+      "listFetchFailed": "❌ 取得排程列表时发生错误，请稍后再试。",
+      "ambiguousClarify": "请再说一次你要的排程时间。",
+      "ambiguousReply": "请直接回覆完整时间叙述，例如：{examples}",
+      "failedUnderstand": "我这次没看懂这个排程时间。",
+      "failedReply": "请换一种更清楚的说法重新输入，例如：{examples}"
+    }
   },
   "kb": {
     "confirmClose": "😭 确定关闭",
@@ -581,7 +607,8 @@
     "lobsterLabel": "小龙虾 #{number}",
     "lobsterLabelWithTitle": "小龙虾 #{number}「{title}」",
     "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
-    "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。"
+    "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
+    "buttonExpired": "⚠️ 按钮已过期，请重新操作"
   },
   "templates": {
     "name_default": "预设范本",

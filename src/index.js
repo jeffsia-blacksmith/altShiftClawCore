@@ -13913,18 +13913,10 @@ async function Ul(e, t) {
 }
 var qs = 4,
   Ks = 2,
-  QT = new Set(["\u7565\u904E", "skip"]),
-  Bl = [
-    "\u4ECA\u5929\u665A\u4E0A6\u9EDE",
-    "\u660E\u5929\u65E9\u4E0A8\u9EDE",
-    "\u6BCF 5 \u5206\u9418",
-    "\u6BCF\u5C0F\u6642\u6574\u9EDE",
-    "\u6BCF\u5929\u4E2D\u534812\u9EDE",
-    "\u6BCF\u9031\u4E00\u4E0B\u53482\u9EDE",
-    "\u6BCF\u500B\u5DE5\u4F5C\u65E5\u4E0B\u53482\u9EDE",
-    "\u6BCF\u500B\u5047\u65E5\u65E9\u4E0A9\u9EDE",
-    "\u6BCF\u5929 9:00\u300112:00\u300118:00 \u57F7\u884C",
-  ].join("\u3001");
+  QT = new Set(["略過", "skip"]);
+function Bl() {
+  return t("schedule.flow.timeExamples", {}, glang());
+}
 function jl(e, t) {
   return `(${e}/${t})`;
 }
@@ -13942,20 +13934,20 @@ function VT(e) {
   return e === "edit_payload" ? { step: 1, total: Ks } : { step: 3, total: qs };
 }
 function JT() {
-  let { step: e, total: t } = Wl("create");
-  return qn("\u23F0", e, t, [
-    "\u6536\u5230\uFF01\u4F60\u5E0C\u671B\u5728\u4EC0\u9EBC\u6642\u5019\u57F7\u884C\uFF1F",
+  let { step: e, total } = Wl("create");
+  return qn("⏰", e, total, [
+    t("schedule.flow.timePromptQuestion", {}, glang()),
     "",
-    `\u4F8B\u5982\uFF1A${Bl}`,
+    t("schedule.flow.examplesLine", { examples: Bl() }, glang()),
   ]);
 }
 function YT() {
-  let { step: e, total: t } = VT("create");
-  return qn("\u{1F4E6}", e, t, [
-    "\u8ACB\u8A2D\u5B9A\u6392\u7A0B\u7684 Payload \u8CC7\u6599\uFF1F(\u53EF\u9078)",
+  let { step: e, total } = VT("create");
+  return qn("📦", e, total, [
+    t("schedule.flow.payloadPromptLine1", {}, glang()),
     "",
-    "\u76F4\u63A5\u8F38\u5165 Payload \u5167\u5BB9\uFF0C\u6216\u9EDE\u9078\u300C\u7565\u904E\u300D\u8DF3\u904E\u6B64\u6B65\u9A5F\u3002",
-    "\u82E5\u8F38\u5165\u7684\u662F JSON object\uFF0C\u6392\u7A0B\u89F8\u767C\u6642\u6703\u4FDD\u7559\u539F\u59CB event_data\uFF0C\u4E26\u984D\u5916\u5C55\u958B\u6210 workflow inputs\u3002",
+    t("schedule.flow.payloadPromptLine2", {}, glang()),
+    t("schedule.flow.payloadPromptLine3", {}, glang()),
   ]);
 }
 function XT(e) {
@@ -13966,24 +13958,34 @@ function lf(e) {
   let t = It(e);
   return t === "" || XT(t) ? null : t;
 }
-function ZT(e, t) {
-  let r = t === "\u5EFA\u7ACB" ? jl(qs, qs) : jl(Ks, Ks),
+function ZT(e, action) {
+  let r = action === "create" ? jl(qs, qs) : jl(Ks, Ks),
     n = [
-      ["\u{1F194}", "\u6392\u7A0BID", e.id],
-      ["\u{1F4CB}", "\u6392\u7A0B\u985E\u578B", cs(e)],
-      ["\u{1F5D3}\uFE0F", "\u6392\u7A0B\u6642\u9593", br(e)],
-      ["\u23ED\uFE0F", "\u4E0B\u6B21\u57F7\u884C\u6642\u9593", Bt(e.nextRunAt)],
-      ["\u{1F4DD}", "\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E", e.prompt],
-      ["\u{1F4E6}", "Payload \u8CC7\u6599", Ln(e.eventData)],
+      ["🆔", t("schedule.flow.fieldId", {}, glang()), e.id],
+      ["📋", t("schedule.flow.fieldType", {}, glang()), cs(e)],
+      ["🗓️", t("schedule.flow.fieldTime", {}, glang()), br(e)],
+      ["⏭️", t("schedule.flow.fieldNextRun", {}, glang()), Bt(e.nextRunAt)],
+      ["📝", t("schedule.flow.fieldPrompt", {}, glang()), e.prompt],
+      ["📦", t("schedule.flow.fieldPayload", {}, glang()), Ln(e.eventData)],
     ];
   return [
-    `\u2705 ${r} \u5DF2${t}\u6392\u7A0B`,
+    t(
+      "schedule.flow.configCardTitle",
+      {
+        badge: r,
+        action:
+          action === "create"
+            ? t("schedule.flow.actionCreate", {}, glang())
+            : t("schedule.flow.actionUpdate", {}, glang()),
+      },
+      glang(),
+    ),
     "",
     ...n.flatMap(([s, o, i], a) => [`${s} ${o}`, i, ...(a === n.length - 1 ? [] : [""])]),
   ].join(`
 `);
 }
-async function on(e, t, r) {
+async function on(e, sched, action) {
   let { store: n, octokit: s, config: o } = e.services,
     i = e.chat?.id;
   if (i) {
@@ -13992,28 +13994,24 @@ async function on(e, t, r) {
       await s.rest.issues.createComment({
         owner: o.github.owner,
         repo: o.github.repo,
-        issue_number: t.issueNumber,
-        body: `<!-- telegram-meta: {"source":"schedule-flow","schedule_id":"${t.id}","action":"${r === "\u5EFA\u7ACB" ? "created" : "updated"}"} -->
-\u{1F5D3}\uFE0F \u5DF2${r}\u6392\u7A0B\u8A2D\u5B9A\u7D00\u9304
-
-\u{1F194} ${t.id}
-\u{1F4DD} ${t.prompt}
-\u{1F4E6} ${Ln(t.eventData)}`,
+        issue_number: sched.issueNumber,
+        body: `<!-- telegram-meta: {"source":"schedule-flow","schedule_id":"${sched.id}","action":"${action === "create" ? "created" : "updated"}"} -->
+` + t("schedule.flow.configCommentLog", { action: action === "create" ? t("schedule.flow.actionCreate", {}, glang()) : t("schedule.flow.actionUpdate", {}, glang()), id: sched.id, prompt: sched.prompt, payload: Ln(sched.eventData) }, glang()),
       });
     } catch (a) {
-      console.warn("[\u6392\u7A0B] \u5EFA\u7ACB issue comment \u5931\u6557", a);
+      console.warn("[排程] 建立 issue comment 失敗", a);
     }
-    (await e.reply(ZT(t, r)), await Es(e, t.issueNumber, "schedule_configuration"));
+    (await e.reply(ZT(sched, action)), await Es(e, sched.issueNumber, "schedule_configuration"));
   }
 }
-async function uf(e, t, r, n, s) {
+async function uf(e, flow, r, n, s) {
   let { store: o, d1: i, config: a } = e.services,
     l = e.chat?.id;
   if (!l) return;
   if (n.status === "resolved") {
     if (s === "create") {
       (await Hr(o, l, {
-        ...t,
+        ...flow,
         step: "awaiting_payload",
         ruleType: n.ruleType ?? "unknown",
         rulePayload: n.rulePayload ?? {},
@@ -14023,18 +14021,16 @@ async function uf(e, t, r, n, s) {
         await e.reply(YT(), { reply_markup: Bo() }));
       return;
     }
-    if (t.scheduleId) {
-      let m = await gt(i, t.scheduleId);
+    if (flow.scheduleId) {
+      let m = await gt(i, flow.scheduleId);
       if (!m) {
         (await Ye(o, l),
-          await e.reply(
-            "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-          ));
+          await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
         return;
       }
       let w = await jt(
         i,
-        t.scheduleId,
+        flow.scheduleId,
         {
           ruleType: n.ruleType ?? "unknown",
           rulePayload: n.rulePayload ?? {},
@@ -14046,18 +14042,16 @@ async function uf(e, t, r, n, s) {
       );
       if (!w) {
         (await Ye(o, l),
-          await e.reply(
-            "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-          ));
+          await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
         return;
       }
-      await on(e, w, "\u66F4\u65B0");
+      await on(e, w, "update");
     }
     return;
   }
   if (n.status === "ambiguous") {
     let m = {
-      ...t,
+      ...flow,
       step: s === "edit_time" ? "awaiting_edit_time" : "awaiting_time",
       clarificationFor: s,
       clarificationContext: {
@@ -14070,14 +14064,13 @@ async function uf(e, t, r, n, s) {
     let { step: w, total: y } = Wl(s),
       _ =
         n.candidates && n.candidates.length > 0
-          ? `\u4F8B\u5982\uFF1A${n.candidates.join("\u3001")}`
-          : `\u4F8B\u5982\uFF1A${Bl}`;
+          ? t("schedule.flow.examplesLine", { examples: n.candidates.join("、") }, glang())
+          : t("schedule.flow.examplesLine", { examples: Bl() }, glang());
     await e.reply(
-      qn("\u2753", w, y, [
-        n.message ||
-          "\u8ACB\u518D\u8AAA\u660E\u4E00\u6B21\u4F60\u8981\u7684\u6392\u7A0B\u6642\u9593\u3002",
+      qn("❓", w, y, [
+        n.message || t("schedule.flow.ambiguousClarify", {}, glang()),
         "",
-        `\u8ACB\u76F4\u63A5\u56DE\u8986\u5B8C\u6574\u6642\u9593\u6558\u8FF0\uFF0C${_}`,
+        t("schedule.flow.ambiguousReply", { examples: _ }, glang()),
       ]),
       { reply_markup: tr() },
     );
@@ -14085,23 +14078,23 @@ async function uf(e, t, r, n, s) {
   }
   let { step: c, total: d } = Wl(s);
   await e.reply(
-    qn("\u26A0\uFE0F", c, d, [
-      n.message || "\u6211\u9019\u6B21\u6C92\u770B\u61C2\u9019\u500B\u6392\u7A0B\u6642\u9593\u3002",
+    qn("⚠️", c, d, [
+      n.message || t("schedule.flow.failedUnderstand", {}, glang()),
       "",
-      `\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u91CD\u65B0\u8F38\u5165\uFF0C\u4F8B\u5982\uFF1A${Bl}`,
+      t("schedule.flow.failedReply", { examples: Bl() }, glang()),
     ]),
     { reply_markup: tr() },
   );
 }
 async function ql(e) {
-  let { store: t, d1: r, config: n } = e.services,
+  let { store: st, d1: r, config: n } = e.services,
     s = e.chat?.id;
   if (!s) return !1;
   let o = (e.message?.text ?? "").trim(),
-    i = await sr(t, s);
+    i = await sr(st, s);
   if (!i) return !1;
   if (
-    (console.log("[\u6392\u7A0B flow] handling input", {
+    (console.log("[排程 flow] handling input", {
       chatId: s,
       step: i.step,
       text: o.substring(0, 50),
@@ -14113,8 +14106,8 @@ async function ql(e) {
       let { step: l, total: c } = af("create");
       return (
         await e.reply(
-          qn("\u26A0\uFE0F", l, c, [
-            "\u6392\u7A0B\u4EFB\u52D9\u4E0D\u80FD\u7559\u767D\uFF0C\u8ACB\u76F4\u63A5\u8F38\u5165\u60F3\u8B93\u5C0F\u9F8D\u8766\u57F7\u884C\u7684\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09\u3002",
+          qn("⚠️", l, c, [
+            t("schedule.prompt_cannot_be_empty", {}, glang()),
           ]),
           { reply_markup: tr() },
         ),
@@ -14122,7 +14115,7 @@ async function ql(e) {
       );
     }
     return (
-      await Hr(t, s, { ...i, step: "awaiting_time", prompt: a }),
+      await Hr(st, s, { ...i, step: "awaiting_time", prompt: a }),
       await e.reply(JT(), { reply_markup: tr() }),
       !0
     );
@@ -14137,10 +14130,8 @@ async function ql(e) {
   if (i.step === "awaiting_payload") {
     if (!i.prompt || !i.ruleType || !i.rulePayload || !i.timezone || !i.nextRunAt)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931\uFF0C\u8ACB\u91CD\u65B0\u8A2D\u5B9A\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.stateLost", {}, glang())),
         !0
       );
     let a = await Xo(r, {
@@ -14157,11 +14148,9 @@ async function ql(e) {
       shouldNotify: !0,
     });
     return a
-      ? (await on(e, a, "\u5EFA\u7ACB"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ),
+      ? (await on(e, a, "create"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.createFailed", {}, glang())),
         !0);
   }
   if (i.step === "awaiting_edit_prompt") {
@@ -14170,8 +14159,8 @@ async function ql(e) {
       let { step: c, total: d } = af("edit_prompt");
       return (
         await e.reply(
-          qn("\u26A0\uFE0F", c, d, [
-            "\u6392\u7A0B\u4EFB\u52D9\u4E0D\u80FD\u7559\u767D\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165\u65B0\u7684\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09\u3002",
+          qn("⚠️", c, d, [
+            t("schedule.prompt_cannot_be_empty", {}, glang()),
           ]),
           { reply_markup: tr() },
         ),
@@ -14180,19 +14169,15 @@ async function ql(e) {
     }
     if (!i.scheduleId)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0
       );
     let l = await jt(r, i.scheduleId, { prompt: a }, { now: new Date() });
     return l
-      ? (await on(e, l, "\u66F4\u65B0"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+      ? (await on(e, l, "update"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0);
   }
   if (i.step === "awaiting_edit_time") {
@@ -14205,37 +14190,31 @@ async function ql(e) {
   if (i.step === "awaiting_edit_payload") {
     if (!i.scheduleId)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0
       );
     let a = await jt(r, i.scheduleId, { eventData: lf(o) }, { now: new Date() });
     return a
-      ? (await on(e, a, "\u66F4\u65B0"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+      ? (await on(e, a, "update"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0);
   }
-  return (console.warn("[\u6392\u7A0B flow] unknown step", { step: i.step }), !1);
+  return (console.warn("[排程 flow] unknown step", { step: i.step }), !1);
 }
 var Kl = new se();
 Kl.command("schedules", async (e) => {
-  let { octokit: t, d1: r, config: n } = e.services,
+  let { octokit: ok, d1: r, config: n } = e.services,
     { owner: s, repo: o, repoFullName: i } = n.github,
     a = e.chat?.id;
   if (a)
     try {
-      let l = await Un(r, t, s, o, i, a);
+      let l = await Un(r, ok, s, o, i, a);
       await e.reply(Dn(l), { reply_markup: Bn(l) });
     } catch (l) {
-      (console.error("[/schedules] \u57F7\u884C\u5931\u6557", l),
-        await e.reply(
-          "\u274C \u53D6\u5F97\u6392\u7A0B\u5217\u8868\u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ));
+      (console.error("[/schedules] 執行失敗", l),
+        await e.reply(t("schedule.flow.listFetchFailed", {}, glang())));
     }
 });
 Ie();
@@ -14250,12 +14229,10 @@ xs();
 Ps();
 ft();
 async function V(e) {
-  let t = e.callbackQuery?.message?.chat.id;
+  let cid = e.callbackQuery?.message?.chat.id;
   return (
-    t ||
-    (await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
-    ),
+    cid ||
+    (await e.answerCallbackQuery(t("core.buttonExpired", {}, glang())),
     null)
   );
 }
@@ -16349,7 +16326,7 @@ Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
       return;
     }
     (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
-      await on(e, i, "\u5EFA\u7ACB"));
+      await on(e, i, "create"));
     return;
   }
   if (o.step === "awaiting_edit_payload") {
@@ -16371,7 +16348,7 @@ Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
       return;
     }
     (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
-      await on(e, i, "\u66F4\u65B0"));
+      await on(e, i, "update"));
     return;
   }
   await e.answerCallbackQuery(

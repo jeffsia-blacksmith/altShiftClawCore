@@ -35,12 +35,12 @@
 | **Phase 1.3** | 护栏全绿 + check + commit | ✅ 完成 | — |
 | **Phase 2a** | Et 尾 + 业务 helper + router 字串 | ✅ 完成 | `c4096b9` `4f58fff` `d6ca852` `8034a73` `1f0d129` `b8f8307` `40478db` `8dee9b1` |
 | **Phase 2b** | Hl Telegram 装设/安装流程 | ✅ 完成 | `5715c96` |
-| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | 🔄 进行中（2c-i/2c-ii/2c-iii 核心已完成；close-confirm/reset-template 待续） | `3253c2a` `bd1f075` `0b0e309` |
+| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | 🔄 进行中（2c-i/ii/iii + close/reset/switch + schedule-flow 模组已完成；剩 16300 band + scattered inline） | `3253c2a` `bd1f075` `0b0e309` `a13d456` |
 | **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ⬜ 待开始（机械式） | — |
 | **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ⬜ 待开始 | — |
 | **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
 
-**量化（最新）：** `src/index.js` 22,805 → **20,234 行**；bundle 605,818 → **614,336 bytes**（i18n t() 调用 + key 占用，多数既有键已接故 bundle 反而缩小）；i18n key 对等 533 → **627**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
+**量化（最新）：** `src/index.js` 22,805 → **20,212 行**；bundle 605,818 → **617,018 bytes**（i18n t() 调用 + key 占用，多数既有键已接故 bundle 反而缩小）；i18n key 对等 533 → **652**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
 
 ---
 
@@ -67,7 +67,8 @@
 - ✅ **2c-iii 核心回复建构器**（commit `0b0e309`）：`ST`(workflow card→`core.workflowStatusCard`)、`IT`/`vT`/`Al`(error builders→`core.query/infer/triggerWorkflowFailed`)、`Vm`/`Ln`/`Ml`(status/notSet/lobsterHash)、`Ol`/`Nl`/`Ds`/`Dn`(schedule list/card builders→`schedule.card.*`/`schedule.list*`/`schedule.thisChatList*`)、`Jm`/`Ym`/`Xm`/`Zm`(setup/edit prompts→`schedule.setup/edit*`)；enable/disable/workflow 命令 handler 接 `core.workflowEnabledOk/DisabledOk`+`schedule.workflowStateActive/DisabledManually`，重命名遮蔽 `t`(octokit→`ok`、file/msg/issueNum/cur/props/lines)。分支情形（paused/active、active/disabled_manually、notify on/off）拆 key 在调用点选取。
 - ⬜ **2c-iii 剩余**：close-confirm handlers（~L14380-14470）、reset-template handler（~L14480-14540）、`throw new Error("排程格式不正確")`（L13514）、其余 Pc 内 scattered inline（Pc 区共 ~372 business CJK 行待迁，多为 inline handler 字串含 octokit `t` 遮蔽，需逐 handler 分析）。
 - ✅ **2c-iii 续（commit `a13d456`）**：switch/close_issue_prompt/cancel/confirm、current_template_reset、template_reset_select/cancel、current_edit callback handlers 全接既有 `core.*` 键；`Ei()` lobster-label helper 也 i18n（`core.lobsterLabel/lobsterLabelWithTitle`）。重命名遮蔽 `t`（switch/confirm/edit 的 guard）。
-- ⬜ **2c-iii 仍剩**：Pc 区 ~329 business CJK 行，集中於 schedule-flow 模组（`ZT` config card、`on` issue-comment 记录、`uf`/`ql` flow handler、`Bl` 时间范例阵列、`JT`/`YT` setup prompts，~13900-14260）及 16300 band（~18 行）等。多为新建键 + 逐 handler `t` 遮蔽重命名（`ZT`/`on`/`uf`/`ql` 均遮蔽 `t`）。需独立一轮。
+- ✅ **2c-iii schedule-flow 模组**（commit 待提）：`Bl` 范例阵列 → `Bl()` 函式返 `schedule.flow.timeExamples`；`JT`/`YT` setup prompts → `schedule.flow.timePromptQuestion`/`examplesLine`/`payloadPromptLine1-3`；`ZT` config card → `schedule.flow.configCardTitle`+`fieldId/Type/Time/NextRun/Prompt/Payload`；`on` issue-comment 记录 → `schedule.flow.configCommentLog`（HTML meta 注解保留字面）；`uf`/`ql` flow handler → `scheduleNotFound`/`stateLost`/`createFailed`/`ambiguousClarify/Reply`/`failedUnderstand/Reply`；`Kl.command("schedules")` → `listFetchFailed`；`V()` 按钮过期 → `core.buttonExpired`。**action 判别子**（"建立"/"更新"）改为中性 "create"/"update"（解耦显示与判别），经 `on`→`ZT` 传导；显示 label 走 `schedule.flow.actionCreate/Update`。重命名遮蔽 `t`：`JT`/`YT`→`total`、`ZT`→`action`、`on`→`sched`/`action`、`uf`→`flow`、`ql`→`st`、`Kl`→`ok`、`V`→`cid`。复用既有 `schedule.prompt_cannot_be_empty`。递延 2d：`on`/`ql`/`Kl` 4 条 console.* + `QT`(`略過` skip token，业务逻辑保留)。
+- ⬜ **2c-iii 仍剩**：16300 band（~18 行）+ 其他 scattered inline Pc 字串（`throw new Error("排程格式不正確")` L13514 等）。多为既有键接线 + 逐 handler `t` 遮蔽重命名。
 - **留为业务逻辑**：`零一二三` 中文数字 map（parse 用）、`QT` 跳过 token set（`略過`/`skip`，匹配用户输入）、解析 regex、`｜`（U+FF5C 全宽分隔符，display）。
 - **递延到 2d**：Pc 区 24 条 `console.*` + 1 条 `chore:` commit msg。
 
