@@ -866,7 +866,9 @@
       "skipMediaNotFinalized": "略过 Issue #{issue} 的小龙虾派工：媒体留言尚未 finalized",
       "skipEditedNotFinalized": "略过 Issue #{issue} 的小龙虾派工：edited 事件不是媒体 finalized transition",
       "skipEmptyUserMessage": "略过 Issue #{issue} 的小龙虾派工：使用者讯息为空",
-      "skipOther": "略过 Issue #{issue} 的小龙虾派工：{reason}"
+      "skipOther": "略过 Issue #{issue} 的小龙虾派工：{reason}",
+      "reasonMissingBranchOrWorkflow": "缺少 issue 分支或 workflow，改为记事本模式",
+      "reasonWorkflowDisabled": "workflow disabled，改为记事本模式"
     },
     "autoInit": {
       "firstLobsterCreated": "[auto-init] 已自动建立第一只小龙虾",

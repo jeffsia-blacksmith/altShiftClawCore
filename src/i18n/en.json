@@ -866,7 +866,9 @@
       "skipMediaNotFinalized": "Skip Issue #{issue} lobster dispatch: media comment not yet finalized",
       "skipEditedNotFinalized": "Skip Issue #{issue} lobster dispatch: edited event is not a media finalized transition",
       "skipEmptyUserMessage": "Skip Issue #{issue} lobster dispatch: user message is empty",
-      "skipOther": "Skip Issue #{issue} lobster dispatch: {reason}"
+      "skipOther": "Skip Issue #{issue} lobster dispatch: {reason}",
+      "reasonMissingBranchOrWorkflow": "missing issue branch or workflow, switch to notepad mode",
+      "reasonWorkflowDisabled": "workflow disabled, switch to notepad mode"
     },
     "autoInit": {
       "firstLobsterCreated": "[auto-init] Auto-created the first lobster",

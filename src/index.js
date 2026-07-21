@@ -19307,8 +19307,8 @@ async function fu(e, t) {
   if (!a.acceptsDispatch) {
     let l =
       !a.branchExists || !a.workflowExists
-        ? "\u7F3A\u5C11 issue \u5206\u652F\u6216 workflow\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F"
-        : "workflow disabled\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F";
+        ? i18nT("log.codingAgent.reasonMissingBranchOrWorkflow", {}, glang())
+        : i18nT("log.codingAgent.reasonWorkflowDisabled", {}, glang());
     console.log(i18nT("log.codingAgent.skipOther", { issue: r, reason: l }, glang()));
     return;
   }
