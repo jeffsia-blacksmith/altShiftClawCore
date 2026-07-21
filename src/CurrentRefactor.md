@@ -35,12 +35,12 @@
 | **Phase 1.3** | 护栏全绿 + check + commit | ✅ 完成 | — |
 | **Phase 2a** | Et 尾 + 业务 helper + router 字串 | ✅ 完成 | `c4096b9` `4f58fff` `d6ca852` `8034a73` `1f0d129` `b8f8307` `40478db` `8dee9b1` |
 | **Phase 2b** | Hl Telegram 装设/安装流程 | ✅ 完成 | `5715c96` |
-| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | ⬜ 待开始（最大、最高风险、多 session） | — |
+| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | 🔄 进行中（2c-i/2c-ii/2c-iii 核心已完成；close-confirm/reset-template 待续） | `3253c2a` `bd1f075` `0b0e309` |
 | **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ⬜ 待开始（机械式） | — |
 | **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ⬜ 待开始 | — |
 | **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
 
-**量化（最新）：** `src/index.js` 22,805 → **20,303 行**（-2,502 / -11%）；bundle 605,818 → **610,511 bytes**（i18n t() 调用 + key 占用）；i18n key 对等 533 → **585**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
+**量化（最新）：** `src/index.js` 22,805 → **~20,290 行**；bundle 605,818 → **616,696 bytes**（i18n t() 调用 + key 占用）；i18n key 对等 533 → **625**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
 
 ---
 
@@ -60,12 +60,14 @@
 **新增 key（两份 JSON 并行）：** `mediaLabel.{photo,voice,video,audio,document}`、`templates.{envValueRequired,setEnvFailed,envsSet,confirmInstallTo}`、`system.{welcomeReady1,welcomeReady2,autoInitCreated,autoInitFailed}`。
 **递延到 Phase 2d（保留为 CJK）：** ug 两行 `console.*` + kE/EE 的 console/commit 行 —— audit/log 字串、非用户面向显示。
 
-### 2c — Pc AI/octokit（待开始，最大/最高风险，多 session）
+### 2c — Pc AI/octokit（进行中，最大/最高风险，多 session）
 **范围（~440 行，12xxx-16xxx）：**
-- **AI prompts**（用户已决定全 i18n zh-CN+en）：`y_()` system prompt 阵列、`__()` CJK 指令行 → 新 `aiPrompt.parser.*` 命名空间；schedule-parser prompt `BT()` 已是英文 —— 建议保持英文并记录。
-- **回复建构器**（`ST()` workflow card、`Nl()` schedule details、`Jm()` schedule setup、close-confirm、reset-template）→ 沿用 `fy()` join 模式；分支情形（L13411 open/close、L13379 paused/active、L12576 trigger-failed）→ 拆成两个 key 在调用点选取。
-- **error-code 重构（2 耦合对，必须先做）：** `q_`/`fm`（L6768/6772）与 `K_`/`gm`（L6776/6779）目前 sniff CJK 子字串（`e.message.includes("尚未安裝到龍蝦堡")`、`startsWith("讀取範本 ")`）。**先**给抛出的 error 附 `err.code = "TEMPLATE_NOT_INSTALLED"` / `"TEMPLATE_READ_FAILED"`，改 sniff `e.code`，**再** i18n 讯息 —— 否则 sniffer 会静默失效。
-- 7 个 branch-split 案例。
+- ✅ **2c-i error-code 重构**（commit `3253c2a`）：`q_`/`fm` 与 `K_`/`gm` 抛出 error 附 `err.code = "TEMPLATE_NOT_INSTALLED"` / `"TEMPLATE_READ_FAILED"`，sniffer 改读 `e.code`；`templates.notInstalled` / `templates.readFailed` 接 i18n。**必须在 i18n 讯息前做**，否则 sniffer 静默失效。
+- ✅ **2c-ii AI prompts**（commit `bd1f075`）：`y_()` system prompt 阵列、`__()` key=value rule 行、`T_()` json_schema descriptions → `aiPrompt.parser.*` 命名空间；重命名遮蔽 `t`（`__`→`msg`、`T_`→`props`）。`BT()` schedule-parser 已是英文 —— 保持英文。
+- ✅ **2c-iii 核心回复建构器**（commit `0b0e309`）：`ST`(workflow card→`core.workflowStatusCard`)、`IT`/`vT`/`Al`(error builders→`core.query/infer/triggerWorkflowFailed`)、`Vm`/`Ln`/`Ml`(status/notSet/lobsterHash)、`Ol`/`Nl`/`Ds`/`Dn`(schedule list/card builders→`schedule.card.*`/`schedule.list*`/`schedule.thisChatList*`)、`Jm`/`Ym`/`Xm`/`Zm`(setup/edit prompts→`schedule.setup/edit*`)；enable/disable/workflow 命令 handler 接 `core.workflowEnabledOk/DisabledOk`+`schedule.workflowStateActive/DisabledManually`，重命名遮蔽 `t`(octokit→`ok`、file/msg/issueNum/cur/props/lines)。分支情形（paused/active、active/disabled_manually、notify on/off）拆 key 在调用点选取。
+- ⬜ **2c-iii 剩余**：close-confirm handlers（~L14380-14470）、reset-template handler（~L14480-14540）、`throw new Error("排程格式不正確")`（L13514）、其余 Pc 内 scattered inline（Pc 区共 ~372 business CJK 行待迁，多为 inline handler 字串含 octokit `t` 遮蔽，需逐 handler 分析）。
+- **留为业务逻辑**：`零一二三` 中文数字 map（parse 用）、解析 regex、`｜`（U+FF5C 全宽分隔符，display）。
+- **递延到 2d**：Pc 区 24 条 `console.*` + 1 条 `chore:` commit msg。
 
 ### 2d — console 日志 + commit msg（待开始，机械式）
 - **CJK console 日志**（~50+ 行，6xxx-8xxx、19xxx-20xxx）→ `t("log.*", {...}, glang())`。注意：非 Telegram 路径（cron、GitHub webhook）中 `globalThis.globalLanguage` 未设 → `glang()` 回传 `"en"`（可接受，需确认这些路径的日志语言）。
