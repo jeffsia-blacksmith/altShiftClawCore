@@ -5,7 +5,18 @@
     "no_active_issue": "There is no active Issue currently. Please use /new to create one.",
     "source_name": "Lobster",
     "defaultLobsterDescription": "{name}'s default Lobster",
-    "messageReceived": "💬 Message received!"
+    "messageReceived": "💬 Message received!",
+    "welcomeReady1": "🎉 Great! {profileName} is ready!",
+    "welcomeReady2": "🦞 Your lobster is waiting for you here → {url}",
+    "autoInitCreated": "🦞 Automatically created your first lobster [{title}] (#{number})!",
+    "autoInitFailed": "⚠️ Automatic lobster creation failed — please use /new to create one manually."
+  },
+  "mediaLabel": {
+    "photo": "📷 Photo",
+    "voice": "🎙️ Voice",
+    "video": "🎬 Video",
+    "audio": "🎵 Audio",
+    "document": "📄 Document"
   },
   "menu": {
     "active_lobster": "🦞 Current Lobster",
@@ -388,7 +399,11 @@
     "noTemplatesInstalled": "⚠️ No templates are installed in Lobster Castle yet — please install some with /templates first.",
     "errorTemplateNotInstalled": "❌ Template not installed in Lobster Castle",
     "errorTemplateReadFailed": "❌ Failed to read template",
-    "errorCreateFailed": "❌ An error occurred while creating the lobster."
+    "errorCreateFailed": "❌ An error occurred while creating the lobster.",
+    "envValueRequired": "⚠️ Please enter the value for the environment variable",
+    "setEnvFailed": "❌ Failed to set {name}: {error}",
+    "envsSet": "✅ Set {count} environment variables",
+    "confirmInstallTo": "Confirm installing template *{templateName}* to Lobster Castle?"
   },
   "skillCatalog": {
     "audio-transcriber": "Audio-to-Text Transcription",

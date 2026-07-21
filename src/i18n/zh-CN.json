@@ -5,7 +5,18 @@
     "no_active_issue": "目前没有作用中的 Issue，请先用 /new 建立一个。",
     "source_name": "小龙虾",
     "defaultLobsterDescription": "{name} 的预设小龙虾",
-    "messageReceived": "💬 已收到您的讯息！"
+    "messageReceived": "💬 已收到您的讯息！",
+    "welcomeReady1": "🎉 太好了！{profileName} 已经准备好啰！",
+    "welcomeReady2": "🦞 你的小龙虾在这里等你 → {url}",
+    "autoInitCreated": "🦞 已自动建立第一只小龙虾「{title}」(#{number})！",
+    "autoInitFailed": "⚠️ 自动建立小龙虾失败，请手动使用 /new 建立。"
+  },
+  "mediaLabel": {
+    "photo": "📷 照片",
+    "voice": "🎙️ 语音",
+    "video": "🎬 视频",
+    "audio": "🎵 音频",
+    "document": "📄 文件"
   },
   "menu": {
     "active_lobster": "🦞 目前的小龙虾",
@@ -388,7 +399,11 @@
     "noTemplatesInstalled": "⚠️ 目前龙虾堡尚未安装任何范本，请先用 /templates 安装。",
     "errorTemplateNotInstalled": "❌ 范本尚未安装到龙虾堡",
     "errorTemplateReadFailed": "❌ 读取范本失败",
-    "errorCreateFailed": "❌ 建立小龙虾时发生错误。"
+    "errorCreateFailed": "❌ 建立小龙虾时发生错误。",
+    "envValueRequired": "⚠️ 请输入环境变量的值",
+    "setEnvFailed": "❌ 设定 {name} 失败：{error}",
+    "envsSet": "✅ 已设定 {count} 个环境变量",
+    "confirmInstallTo": "确认安装范本 *{templateName}* 到龙虾堡？"
   },
   "skillCatalog": {
     "audio-transcriber": "语音转文字",

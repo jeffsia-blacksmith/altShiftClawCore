@@ -17016,7 +17016,7 @@ async function Ys(e, t_msg) {
       };
     (await xn(n, s.github.owner, s.github.repo, l, {
       role: "user",
-      source: "\u5C0F\u9F8D\u8766",
+      source: t("system.source_name", {}, glang()),
       issue_number: l,
       comment_id: X.data.id,
       github_comment_url: X.data.html_url ?? null,
@@ -17239,7 +17239,7 @@ async function Nk(e, t_file, r) {
   if (
     (await xn(s, o.github.owner, o.github.repo, d, {
       role: "user",
-      source: "\u5C0F\u9F8D\u8766",
+      source: t("system.source_name", {}, glang()),
       issue_number: d,
       comment_id: Me.data.id,
       github_comment_url: Me.data.html_url ?? null,
@@ -17269,12 +17269,12 @@ async function Nk(e, t_file, r) {
   w && (await e.reply(m.restingMessage));
 }
 ln.on("message:photo", async (e) => {
-  let t = e.message.photo,
+  let ph = e.message.photo,
     n = {
       field: "photo",
-      label: "\u{1F4F7} \u7167\u7247",
+      label: t("mediaLabel.photo", {}, glang()),
       ext: ".jpg",
-      fileId: t[t.length - 1].file_id,
+      fileId: ph[ph.length - 1].file_id,
       fileName: null,
       mimeType: null,
       duration: null,
@@ -17283,50 +17283,50 @@ ln.on("message:photo", async (e) => {
   s ? await Nk(e, n, s) : await Ys(e, n);
 });
 ln.on("message:voice", async (e) => {
-  let t = e.message.voice;
+  let vc = e.message.voice;
   await Ys(e, {
     field: "voice",
-    label: "\u{1F399}\uFE0F \u8A9E\u97F3",
+    label: t("mediaLabel.voice", {}, glang()),
     ext: ".ogg",
-    fileId: t.file_id,
+    fileId: vc.file_id,
     fileName: null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    mimeType: vc.mime_type ?? null,
+    duration: vc.duration ?? null,
   });
 });
 ln.on("message:video", async (e) => {
-  let t = e.message.video;
+  let vd = e.message.video;
   await Ys(e, {
     field: "video",
-    label: "\u{1F3AC} \u5F71\u7247",
+    label: t("mediaLabel.video", {}, glang()),
     ext: ".mp4",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    fileId: vd.file_id,
+    fileName: vd.file_name ?? null,
+    mimeType: vd.mime_type ?? null,
+    duration: vd.duration ?? null,
   });
 });
 ln.on("message:audio", async (e) => {
-  let t = e.message.audio;
+  let au = e.message.audio;
   await Ys(e, {
     field: "audio",
-    label: "\u{1F3B5} \u97F3\u8A0A",
+    label: t("mediaLabel.audio", {}, glang()),
     ext: "",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    fileId: au.file_id,
+    fileName: au.file_name ?? null,
+    mimeType: au.mime_type ?? null,
+    duration: au.duration ?? null,
   });
 });
 ln.on("message:document", async (e) => {
-  let t = e.message.document;
+  let doc = e.message.document;
   await Ys(e, {
     field: "document",
-    label: "\u{1F4C4} \u6587\u4EF6",
+    label: t("mediaLabel.document", {}, glang()),
     ext: "",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
+    fileId: doc.file_id,
+    fileName: doc.file_name ?? null,
+    mimeType: doc.mime_type ?? null,
     duration: null,
   });
 });
@@ -17347,17 +17347,17 @@ async function Pf(e) {
   let s = await Ke(t, r);
   return s && s.step === "awaiting_env_input" ? (s.mode === "edit" ? "edit" : "new") : null;
 }
-async function Mf(e, t) {
+async function Mf(e, flow) {
   let { store: r, octokit: n, config: s } = e.services,
     o = e.chat?.id;
   if (!o) return !1;
-  let i = t === "templates" ? "templates" : t === "edit" ? "edit_flow" : "new_flow",
+  let i = flow === "templates" ? "templates" : flow === "edit" ? "edit_flow" : "new_flow",
     a = (e.message?.text ?? "").trim(),
     l,
     c,
     d,
     m;
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     if (!S || S.step !== "awaiting_env") return !1;
     ((l = S.pendingEnvs ?? []),
@@ -17379,11 +17379,11 @@ async function Mf(e, t) {
       e,
       o,
       m,
-      "\u26A0\uFE0F \u8ACB\u8F38\u5165\u74B0\u5883\u8B8A\u6578\u7684\u503C",
+      t("templates.envValueRequired", {}, glang()),
       { reply_markup: hr(i) },
     );
     if (S && S !== m)
-      if (t === "templates") {
+      if (flow === "templates") {
         let U = await be(r, o);
         U && (await oe(r, o, { ...U, promptMessageId: S }));
       } else {
@@ -17400,12 +17400,10 @@ async function Mf(e, t) {
         e,
         o,
         m,
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(S)}* \u7684\u503C
-
-\uFF08${y + 1}/${l.length}\uFF09`,
+        t("templates.enterEnvValue", { name: O(S), current: y + 1, total: l.length }, glang()),
         { parse_mode: "MarkdownV2", reply_markup: hr(i) },
       );
-    if (t === "templates") {
+    if (flow === "templates") {
       let K = await be(r, o);
       K && (await oe(r, o, { ...K, collectedEnvs: c, currentEnvIndex: y, promptMessageId: U }));
     } else {
@@ -17422,10 +17420,10 @@ async function Mf(e, t) {
     } catch (K) {
       (console.error(`[template-env-collector] Failed to set secret ${S}:`, K),
         await e.reply(
-          `\u274C \u8A2D\u5B9A ${S} \u5931\u6557\uFF1A${K instanceof Error ? K.message : String(K)}`,
+          t("templates.setEnvFailed", { name: S, error: K instanceof Error ? K.message : String(K) }, glang()),
         ));
     }
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     S &&
       (await oe(r, o, {
@@ -17448,21 +17446,19 @@ async function Mf(e, t) {
         step: S.mode === "edit" ? "awaiting_workflow_enabled" : "awaiting_template",
       }));
   }
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     if (S) {
       let U = `${
         P.length > 0
-          ? `\u2705 \u5DF2\u8A2D\u5B9A ${P.length} \u500B\u74B0\u5883\u8B8A\u6578
-
-`
+          ? t("templates.envsSet", { count: P.length }, glang()) + "\n\n"
           : ""
-      }\u78BA\u8A8D\u5B89\u88DD\u7BC4\u672C *${O(S.templateName)}* \u5230\u9F8D\u8766\u5821\uFF1F`;
+      }${t("templates.confirmInstallTo", { templateName: O(S.templateName) }, glang())}`;
       await nu(e, o, m, U, { parse_mode: "MarkdownV2", reply_markup: qo(S.templateName) });
     }
   } else
     P.length > 0 &&
-      (await e.reply(`\u2705 \u5DF2\u8A2D\u5B9A ${P.length} \u500B\u74B0\u5883\u8B8A\u6578`));
+      (await e.reply(t("templates.envsSet", { count: P.length }, glang())));
   return !0;
 }
 async function Gk(e, t) {
@@ -19478,9 +19474,8 @@ function _E(e) {
   return e.config.telegram.defaultChatId ?? e.config.telegram.allowedChatId ?? null;
 }
 function TE(e) {
-  let t = `https://github.com/${e.config.github.owner}/${e.config.github.repo}`;
-  return `\u{1F389} \u592A\u597D\u4E86\uFF01${e.config.profileName} \u5DF2\u7D93\u6E96\u5099\u597D\u56C9\uFF01
-\u{1F99E} \u4F60\u7684\u5C0F\u9F8D\u8766\u5728\u9019\u88E1\u7B49\u4F60 \u2192 ${t}`;
+  let url = `https://github.com/${e.config.github.owner}/${e.config.github.repo}`;
+  return t("system.welcomeReady1", { profileName: e.config.profileName }, glang()) + "\n" + t("system.welcomeReady2", { url }, glang());
 }
 async function kE(e, chatId) {
   let { octokit: r, store: n, config: s } = e,
@@ -19526,37 +19521,37 @@ async function EE(e) {
     console.warn("[auto-init] \u7121\u6CD5\u66F4\u65B0 INIT_GITHUB_CLAW repo variable", i);
   }
 }
-async function ug(e, t) {
-  if (!yE(e, t)) {
+async function ug(e, env) {
+  if (!yE(e, env)) {
     console.log("[installation.created] skip unrelated installation event", {
-      configuredRepo: t.config.github.repoFullName,
+      configuredRepo: env.config.github.repoFullName,
       installationId: e.installation?.id ?? null,
     });
     return;
   }
-  let r = _E(t);
+  let r = _E(env);
   if (!r) {
     console.warn("[installation.created] telegram chat id is missing, skip welcome message");
     return;
   }
-  let n = new it(t.config.telegram.botToken, { apiRoot: t.config.telegram.apiBaseUrl || void 0 });
-  if ((await n.sendMessage(r, TE(t)), t.config.initGitHubClaw)) {
-    if ((await t.store.get(lg)) === "true") {
-      console.log("[auto-init] \u5DF2\u57F7\u884C\u904E\u521D\u59CB\u5316\uFF0C\u8DF3\u904E");
+  let n = new it(env.config.telegram.botToken, { apiRoot: env.config.telegram.apiBaseUrl || void 0 });
+  if ((await n.sendMessage(r, TE(env)), env.config.initGitHubClaw)) {
+    if ((await env.store.get(lg)) === "true") {
+      console.log("[auto-init] 已執行過初始化，跳過");
       return;
     }
     try {
-      let o = await kE(t, r);
-      (await EE(t),
+      let o = await kE(env, r);
+      (await EE(env),
         await n.sendMessage(
           r,
-          `\u{1F99E} \u5DF2\u81EA\u52D5\u5EFA\u7ACB\u7B2C\u4E00\u96BB\u5C0F\u9F8D\u8766\u300C${o.title}\u300D(#${o.number})\uFF01`,
+          t("system.autoInitCreated", { title: o.title, number: o.number }, glang()),
         ));
     } catch (o) {
-      (console.error("[auto-init] \u81EA\u52D5\u5EFA\u7ACB\u5C0F\u9F8D\u8766\u5931\u6557", o),
+      (console.error("[auto-init] 自動建立小龍蝦失敗", o),
         await n.sendMessage(
           r,
-          "\u26A0\uFE0F \u81EA\u52D5\u5EFA\u7ACB\u5C0F\u9F8D\u8766\u5931\u6557\uFF0C\u8ACB\u624B\u52D5\u4F7F\u7528 /new \u5EFA\u7ACB\u3002",
+          t("system.autoInitFailed", {}, glang()),
         ));
     }
   }
