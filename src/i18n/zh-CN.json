@@ -28,7 +28,8 @@
     "list": "📋 Issue 列表",
     "current": "🦞 目前的小龙虾",
     "new": "➕ 新增小龙虾",
-    "close": "🔒 关闭小龙虾"
+    "close": "🔒 关闭小龙虾",
+    "useCommand": "请使用 {command} 指令。"
   },
   "help": {
     "title": "🦞 {repoFullName}",

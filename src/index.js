@@ -16485,21 +16485,18 @@ Ri.callbackQuery("command_menu_skills", async (e) => {
   (await e.answerCallbackQuery(t("kb.skillsManage", {}, glang())), await Il(e));
 });
 var hk = {
-  command_menu_list: { command: "/list", label: "\u{1F4CB} Issue \u5217\u8868" },
-  command_menu_current: {
-    command: "/current",
-    label: "\u{1F99E} \u76EE\u524D\u7684\u5C0F\u9F8D\u8766",
-  },
-  command_menu_new: { command: "/new", label: "\u2795 \u65B0\u589E\u5C0F\u9F8D\u8766" },
-  command_menu_close: { command: "/close", label: "\u{1F512} \u95DC\u9589\u5C0F\u9F8D\u8766" },
-  command_menu_schedules: { command: "/schedules", label: "\u23F0 \u6392\u7A0B\u7BA1\u7406" },
-  command_menu_help: { command: "/help", label: "\u2753 \u5E6B\u52A9" },
-  command_menu_workflow: { command: "/workflow", label: "\u2699\uFE0F \u5DE5\u4F5C\u6D41\u7A0B" },
+  command_menu_list: { command: "/list", labelKey: "menu.list" },
+  command_menu_current: { command: "/current", labelKey: "menu.current" },
+  command_menu_new: { command: "/new", labelKey: "menu.new" },
+  command_menu_close: { command: "/close", labelKey: "menu.close" },
+  command_menu_schedules: { command: "/schedules", labelKey: "menu.schedules" },
+  command_menu_help: { command: "/help", labelKey: "menu.help" },
+  command_menu_workflow: { command: "/workflow", labelKey: "menu.workflow" },
 };
-for (let [e, { command: t, label: r }] of Object.entries(hk))
+for (let [e, { command: t, labelKey: r }] of Object.entries(hk))
   Ri.callbackQuery(e, async (n) => {
-    (await n.answerCallbackQuery(`${r}`),
-      await n.reply(`\u8ACB\u4F7F\u7528 ${t} \u6307\u4EE4\u3002`));
+    (await n.answerCallbackQuery(n.t(r)),
+      await n.reply(n.t("menu.useCommand", { command: t })));
   });
 Ie();
 var wk = "telegram-meta",

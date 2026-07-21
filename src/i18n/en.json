@@ -28,7 +28,8 @@
     "list": "📋 Issue List",
     "current": "🦞 Current Lobster",
     "new": "➕ New Lobster",
-    "close": "🔒 Close Lobster"
+    "close": "🔒 Close Lobster",
+    "useCommand": "Please use the {command} command."
   },
   "help": {
     "title": "🦞 {repoFullName}",
