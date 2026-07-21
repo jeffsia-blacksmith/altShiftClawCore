@@ -18554,7 +18554,7 @@ function Qf(e, t, r) {
   console.warn(
     "Telegram progress relay \u8A0A\u606F\u904E\u9577\uFF0C\u5C07\u622A\u65B7\u539F\u6587\u5F8C\u91CD\u65B0\u8F49\u63DB MarkdownV2",
   );
-  let s = lr(e.body || "", { stripToolRunStatusPrefix: !0 }).trim() || "\uFF08\u7A7A\u767D\uFF09",
+  let s = lr(e.body || "", { stripToolRunStatusPrefix: !0 }).trim() || i18nT("core.blank", {}, glang()),
     o = zf(s, r, e.html_url || ""),
     i = or(o);
   return i.length <= r ? { text: i, parseMode: "MarkdownV2" } : { text: o };
@@ -19259,7 +19259,7 @@ function ag(e) {
     : mu(t).trim() !== "";
 }
 async function fu(e, t) {
-  let r = e.issue?.number ?? "\u672A\u77E5";
+  let r = e.issue?.number ?? "unknown";
   if (!e.issue || !e.comment) {
     console.warn(
       `issue_comment.${e.action} payload \u7F3A\u5C11 issue \u6216 comment \u6B04\u4F4D\uFF0C\u7565\u904E\u5C0F\u9F8D\u8766\u6D3E\u5DE5`,
