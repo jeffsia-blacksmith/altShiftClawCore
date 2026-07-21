@@ -13748,21 +13748,24 @@ function Wn({ ruleType: e, rulePayload: t, now: r = new Date() }) {
     case "once":
       return GT(n, r).toISOString();
     default:
-      throw new Error(`\u4E0D\u652F\u63F4\u7684\u6392\u7A0B\u985E\u578B\uFF1A${e}`);
+      throw new Error(`Unsupported schedule type: ${e}`);
   }
 }
-var Dl =
-    "\u6211\u9019\u6B21\u6C92\u770B\u61C2\u9019\u500B\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u3002",
-  nf =
-    "\u6211\u73FE\u5728\u66AB\u6642\u6C92\u8FA6\u6CD5\u5224\u65B7\u9019\u500B\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\uFF0C\u6216\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u3002",
-  sf =
-    "\u6211\u6709\u9EDE\u4E0D\u78BA\u5B9A\u4F60\u6307\u7684\u662F\u54EA\u4E00\u7A2E\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u76F4\u63A5\u7528\u5B8C\u6574\u53E5\u5B50\u518D\u8AAA\u4E00\u6B21\u3002",
-  DT = new Set(["once", "interval", "cron"]),
+function Dl() {
+  return t("schedule.flow.parseUnknownFallback", {}, glang());
+}
+function nf() {
+  return t("schedule.flow.parseNoBinding", {}, glang());
+}
+function sf() {
+  return t("schedule.flow.parseAmbiguousFallback", {}, glang());
+}
+var DT = new Set(["once", "interval", "cron"]),
   of =
     /workers ai|workflow inputs|json|response_format|parser|cron|stack|exception|timeout|service/i,
   Ll = 2,
   UT = 1e3;
-function sn(e = Dl) {
+function sn(e = Dl()) {
   return { status: "unknown", message: e };
 }
 function BT(e) {
@@ -13799,11 +13802,11 @@ function BT(e) {
 }
 function jT(e) {
   let t = typeof e == "string" ? e.trim() : "";
-  return t ? (of.test(t) ? Dl : t) : Dl;
+  return t ? (of.test(t) ? Dl() : t) : Dl();
 }
 function WT(e) {
   let t = typeof e == "string" ? e.trim() : "";
-  return t ? (of.test(t) ? sf : t) : sf;
+  return t ? (of.test(t) ? sf() : t) : sf();
 }
 function qT(e) {
   return Array.isArray(e) ? e.map((t) => String(t).trim()).filter(Boolean) : [];
@@ -13828,7 +13831,7 @@ function KT(e, t) {
   }
   return null;
 }
-function HT(e, t) {
+function HT(e, nowDate) {
   if (e.status !== "resolved")
     return e.status === "ambiguous"
       ? { status: "ambiguous", message: WT(e.message), candidates: qT(e.candidates) }
@@ -13837,13 +13840,13 @@ function HT(e, t) {
   let r = KT(e.ruleType, e.rulePayload);
   if (!r) return sn();
   try {
-    let n = Wn({ ruleType: e.ruleType, rulePayload: r, now: t });
+    let n = Wn({ ruleType: e.ruleType, rulePayload: r, now: nowDate });
     return { status: "resolved", ruleType: e.ruleType, rulePayload: r, timezone: Fl, nextRunAt: n };
   } catch (n) {
     let s = n instanceof Error ? n.message : String(n);
     return /已过|晚于现在/.test(s)
       ? sn(
-          "\u9019\u500B\u6642\u9593\u5DF2\u7D93\u904E\u4E86\uFF0C\u8ACB\u6539\u6210\u672A\u4F86\u7684\u6642\u9593\u3002",
+          t("schedule.flow.timeAlreadyPassed", {}, glang()),
         )
       : (console.warn("[\u6392\u7A0B] \u9A57\u8B49 AI \u6392\u7A0B\u7D50\u679C\u5931\u6557", {
           ruleType: e.ruleType,
@@ -13878,7 +13881,7 @@ async function Ul(e, t) {
       console.error(
         "[\u6392\u7A0B] \u7F3A\u5C11 AI \u7D81\u5B9A\uFF0C\u7121\u6CD5\u89E3\u6790\u81EA\u7136\u8A9E\u8A00\u6392\u7A0B\u6642\u9593",
       ),
-      sn(nf)
+      sn(nf())
     );
   }
   let s;
@@ -13908,7 +13911,7 @@ async function Ul(e, t) {
   let o = s instanceof Error ? s.message : String(s);
   return (
     console.error("[\u6392\u7A0B] AI \u6642\u9593\u89E3\u6790\u6700\u7D42\u5931\u6557", o),
-    sn(nf)
+    sn(nf())
   );
 }
 var qs = 4,

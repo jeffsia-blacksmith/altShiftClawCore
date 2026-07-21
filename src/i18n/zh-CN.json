@@ -344,7 +344,11 @@
       "notInPayloadStep": "⚠️ 目前不在 Payload 设定步骤",
       "pausedToast": "⏸️ 已停用排程",
       "activatedToast": "▶️ 已启用排程",
-      "deletedToast": "🗑️ 已删除排程"
+      "deletedToast": "🗑️ 已删除排程",
+      "parseUnknownFallback": "我这次没看懂这个排程时间，请换一种更清楚的说法。",
+      "parseNoBinding": "我现在暂时没办法判断这个排程时间，请稍后再试，或换一种更清楚的说法。",
+      "parseAmbiguousFallback": "我有点不确定你指的是哪一种排程时间，请直接用完整句子再说一次。",
+      "timeAlreadyPassed": "这个时间已经过了，请改成未来的时间。"
     }
   },
   "kb": {

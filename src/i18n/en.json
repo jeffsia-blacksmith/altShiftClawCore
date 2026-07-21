@@ -344,7 +344,11 @@
       "notInPayloadStep": "⚠️ Not currently in the Payload setup step",
       "pausedToast": "⏸️ Schedule paused",
       "activatedToast": "▶️ Schedule activated",
-      "deletedToast": "🗑️ Schedule deleted"
+      "deletedToast": "🗑️ Schedule deleted",
+      "parseUnknownFallback": "I did not understand this schedule time. Please phrase it more clearly.",
+      "parseNoBinding": "I cannot determine this schedule time right now. Please try again later, or phrase it more clearly.",
+      "parseAmbiguousFallback": "I am not sure which schedule time you mean. Please say it again in a complete sentence.",
+      "timeAlreadyPassed": "This time has already passed. Please change it to a future time."
     }
   },
   "kb": {
