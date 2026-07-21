@@ -46,6 +46,11 @@ function t(key, params = {}, lang = "en") {
   return result;
 }
 
+// Module-scope alias of the i18n `t` function. Inside `Of(e, t, r)` the param
+// `t` (config) shadows module `t`, so ctx.t's arrow must reference it via this
+// alias — otherwise e.t(...) calls the config object ("t is not a function").
+var i18nT = t;
+
 async function getLanguage(services) {
   let lang = null;
   if (services && services.store) {
@@ -12153,19 +12158,19 @@ Va.command("list", async (e) => {
       d = c ? l.find((I) => I.number === c) : null,
       m = c
         ? d
-          ? `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7684\u662F\uFF1A#${d.number} ${d.title || "\uFF08\u672A\u547D\u540D\u5C0F\u9F8D\u8766\uFF09"}`
-          : `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7D00\u9304\u662F #${c}\uFF0C\u4F46\u76EE\u524D\u5217\u8868\u88E1\u627E\u4E0D\u5230\uFF08\u53EF\u80FD\u5DF2\u95DC\u9589\uFF09\u3002`
+          ? e.t("core.currentActive", { number: d.number, title: d.title || e.t("core.unnamedLobster") })
+          : e.t("core.currentActiveNotFound", { number: c })
         : null;
     if (l.length === 0) {
       i && (await Ut(r, i));
       let I = m
         ? `${m}
-\u{1F99E} \u76EE\u524D\u6C92\u6709\u4EFB\u4F55\u9F8D\u8766\uFF0C\u8ACB\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766\u3002`
-        : "\u{1F99E} \u76EE\u524D\u6C92\u6709\u4EFB\u4F55\u9F8D\u8766\uFF0C\u8ACB\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766\u3002";
+${e.t("core.noLobstersYet")}`
+        : e.t("core.noLobstersYet");
       await e.reply(I);
       return;
     }
-    let w = [m, "\u{1F99E} \u4F60\u7684\u9F8D\u8766\u5011\uFF1A"].filter(Boolean).join(`
+    let w = [m, e.t("core.yourLobsters")].filter(Boolean).join(`
 `),
       y = Do(l),
       _ = await e.reply(w, { reply_markup: y });
@@ -12188,7 +12193,7 @@ async function Qp(e) {
     let n = r ? await Ge(t, r) : null;
     if (!n || n <= 0) {
       await e.reply(
-        "\u{1F99E} \u76EE\u524D\u6C92\u6709\u6B63\u5728\u8FFD\u8E64\u7684\u5C0F\u9F8D\u8766\uFF0C\u5148\u7528 /new \u5EFA\u7ACB\u4E00\u96BB\u5427\u3002",
+        e.t("core.noTrackedLobster"),
       );
       return;
     }
@@ -12196,7 +12201,7 @@ async function Qp(e) {
   } catch (n) {
     (console.error("[/current|/status] \u57F7\u884C\u5931\u6557", n),
       await e.reply(
-        "\u274C \u67E5\u8A62\u76EE\u524D\u5C0F\u9F8D\u8766\u72C0\u614B\u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
+        e.t("core.statusError"),
       ));
   }
 }
@@ -12229,21 +12234,21 @@ rl.command("close", async (e) => {
     if (l.length === 0) {
       (i && (await Ut(r, i)),
         await e.reply(
-          "\u{1F99E} \u76EE\u524D\u6C92\u6709\u958B\u8457\u7684\u5C0F\u9F8D\u8766\u8036\uFF0C\u5927\u5BB6\u90FD\u5E73\u5B89\u6536\u5DE5\u4E2D\uFF0C\u53EF\u4EE5\u653E\u5FC3\u5598\u53E3\u6C23\u3002",
+          e.t("core.closeNoOpenLobsters"),
         ));
       return;
     }
     if (l.length === 1) {
       (i && (await Ut(r, i)),
         await e.reply(
-          "\u{1F99E} \u76EE\u524D\u53EA\u5269\u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u4E86\uFF0C\u6211\u5148\u5E6B\u4F60\u7559\u8457\u7260\uFF0C\u907F\u514D\u6574\u6C60\u90FD\u6536\u5DE5\u5566\u3002",
+          e.t("core.closeOnlyOneLobsterLeft"),
         ));
       return;
     }
     let c = [
-        "\u{1F99E} \u60F3\u8B93\u54EA\u4E00\u96BB\u5C0F\u9F8D\u8766\u5148\u4E0B\u73ED\u5462\uFF1F",
+        e.t("core.closeWhichLobster"),
         "",
-        "\u9EDE\u4E00\u96BB\u7D66\u6211\uFF0C\u6211\u6703\u518D\u5E6B\u4F60\u78BA\u8A8D\u4E00\u6B21\uFF0C\u4E0D\u6703\u8B93\u7260\u7A81\u7136\u5C31\u6536\u5DE5\u3002",
+        e.t("core.closeConfirmHint"),
       ].join(`
 `),
       d = Ud(l),
@@ -12254,7 +12259,7 @@ rl.command("close", async (e) => {
   } catch (a) {
     (console.error("[/close] \u57F7\u884C\u5931\u6557", a),
       await e.reply(
-        "\u274C \u57F7\u884C /close \u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
+        e.t("core.closeError"),
       ));
   }
 });
@@ -17874,7 +17879,7 @@ function Of(e, t, r) {
     n.use(Pd(t.telegram)),
     n.use(async (ctx, next) => {
       ctx.language = await getLanguage(ctx.services);
-      ctx.t = (key, params) => t(key, params, ctx.language);
+      ctx.t = (key, params) => i18nT(key, params, ctx.language);
       await next();
     }),
     n.use(za),
