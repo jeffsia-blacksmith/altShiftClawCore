@@ -7363,7 +7363,7 @@ async function sT(e, t, r, n, s) {
       }
     }
   }
-  throw i ?? new Error("\u540C\u6B65 issue workflow \u5931\u6557\u3002");
+  throw i ?? new Error("Sync issue workflow failed.");
 }
 async function Os(e, t) {
   let { octokit: r, store: n, d1: s, config: o } = e.services,
@@ -12118,15 +12118,15 @@ function gy(e) {
     documentationUrl: t?.response?.data?.documentation_url ?? null,
   };
 }
-function hy(e) {
+function hy(e, lang) {
   switch ((e && typeof e == "object" ? e : null)?.status) {
     case 401:
     case 403:
-      return "\u274C /list \u7121\u6CD5\u8B80\u53D6 GitHub issue\uFF0C\u8ACB\u6AA2\u67E5 CLAW_SYS_GITHUB_TOKEN \u6B0A\u9650\u662F\u5426\u53EF\u8B80\u53D6 Issues\u3002";
+      return t("core.listErrorUnauthorized", {}, lang);
     case 404:
-      return "\u274C /list \u627E\u4E0D\u5230\u76EE\u6A19 GitHub \u5009\u5EAB\uFF0C\u8ACB\u6AA2\u67E5 GITHUB_OWNER \u8207 GITHUB_REPO \u8A2D\u5B9A\u3002";
+      return t("core.listErrorNotFound", {}, lang);
     default:
-      return "\u274C \u57F7\u884C /list \u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002";
+      return t("core.listErrorGeneric", {}, lang);
   }
 }
 Va.command("list", async (e) => {
@@ -12174,7 +12174,7 @@ Va.command("list", async (e) => {
       : i && (await Ut(r, i));
   } catch (a) {
     (console.error("[/list] \u57F7\u884C\u5931\u6557", { owner: s, repo: o, chatId: i, ...gy(a) }),
-      await e.reply(hy(a)));
+      await e.reply(hy(a, e.language)));
   }
 });
 Ie();
@@ -12321,12 +12321,12 @@ function Vp(e) {
 }
 function si(e) {
   let t = e.trim();
-  if (!t) throw new Error("AI \u6C92\u6709\u56DE\u50B3 workflow \u53C3\u6578\u5167\u5BB9\u3002");
+  if (!t) throw new Error("AI did not return workflow parameter content.");
   let r = c_(t),
     n = d_(r),
     s = [r, n, Vp(r), Vp(n)].filter((o, i, a) => o && a.indexOf(o) === i);
   if (s.length === 0)
-    throw new Error("AI \u56DE\u50B3\u5167\u5BB9\u4E0D\u542B JSON \u7269\u4EF6\u3002");
+    throw new Error("AI response does not contain a JSON object.");
   for (let o of s)
     try {
       let i = JSON.parse(o);
