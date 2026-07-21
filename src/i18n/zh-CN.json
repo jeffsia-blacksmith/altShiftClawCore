@@ -4,7 +4,8 @@
     "error_start": "❌ 执行 /start 时发生错误，请稍后再试。",
     "no_active_issue": "目前没有作用中的 Issue，请先用 /new 建立一个。",
     "source_name": "小龙虾",
-    "defaultLobsterDescription": "{name} 的预设小龙虾"
+    "defaultLobsterDescription": "{name} 的预设小龙虾",
+    "messageReceived": "💬 已收到您的讯息！"
   },
   "menu": {
     "active_lobster": "🦞 目前的小龙虾",

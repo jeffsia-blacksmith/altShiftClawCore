@@ -4,7 +4,8 @@
     "error_start": "❌ Error executing /start, please try again later.",
     "no_active_issue": "There is no active Issue currently. Please use /new to create one.",
     "source_name": "Lobster",
-    "defaultLobsterDescription": "{name}'s default Lobster"
+    "defaultLobsterDescription": "{name}'s default Lobster",
+    "messageReceived": "💬 Message received!"
   },
   "menu": {
     "active_lobster": "🦞 Current Lobster",

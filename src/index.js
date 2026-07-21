@@ -17920,8 +17920,8 @@ llmComposer.on("message:text", async (e, t) => {
 });
 var su = new se();
 su.on("message:text", async (e) => {
-  let t = e.message.text;
-  if (!t || t.startsWith("/")) return;
+  let text = e.message.text;
+  if (!text || text.startsWith("/")) return;
   let { store: r, octokit: n, config: s } = e.services,
     o = e.chat.id,
     i = await be(r, o);
@@ -17944,16 +17944,15 @@ su.on("message:text", async (e) => {
     await wl(e);
     return;
   }
-  let m = await Ge(r, o);
+  let gLang = glang(),
+    m = await Ge(r, o);
   if (!m) {
-    await e.reply(
-      "\u76EE\u524D\u6C92\u6709\u4F5C\u7528\u4E2D\u7684 Issue\uFF0C\u8ACB\u5148\u7528 /new \u5EFA\u7ACB\u4E00\u500B\u3002",
-    );
+    await e.reply(t("system.no_active_issue", {}, gLang));
     return;
   }
   let w = await Js(n, s.github.owner, s.github.repo, m),
     y = !w.acceptsDispatch,
-    _ = y ? null : await e.reply("\u{1F4AC} \u6B63\u5728\u8655\u7406\u8A0A\u606F..."),
+    _ = y ? null : await e.reply(t("system.processing", {}, gLang)),
     I = Vs(
       {
         message_id: e.message.message_id,
@@ -17961,7 +17960,7 @@ su.on("message:text", async (e) => {
         from: e.message.from,
         chat: e.message.chat,
       },
-      { content: t },
+      { content: text },
     ),
     P = await n.rest.issues.createComment({
       owner: s.github.owner,
@@ -17972,10 +17971,10 @@ su.on("message:text", async (e) => {
   if (
     (typeof P.data.id == "number" &&
       w.branchExists &&
-      (await Zr(n, s.github.owner, s.github.repo, m, P.data.id, t),
+      (await Zr(n, s.github.owner, s.github.repo, m, P.data.id, text),
       await xn(n, s.github.owner, s.github.repo, m, {
         role: "user",
-        source: "\u5C0F\u9F8D\u8766",
+        source: t("system.source_name", {}, gLang),
         issue_number: m,
         comment_id: P.data.id,
         github_comment_url: P.data.html_url ?? null,
@@ -17986,7 +17985,7 @@ su.on("message:text", async (e) => {
           username: e.message.from?.username ?? null,
           date: e.message.date ?? null,
         },
-        content: t,
+        content: text,
         created_at: new Date().toISOString(),
       })),
     !y && _)
@@ -18002,7 +18001,7 @@ su.on("message:text", async (e) => {
       await e.api.editMessageText(
         o,
         _.message_id,
-        "\u{1F4AC} \u5DF2\u6536\u5230\u60A8\u7684\u8A0A\u606F\uFF01",
+        t("system.messageReceived", {}, gLang),
       ));
     return;
   }
