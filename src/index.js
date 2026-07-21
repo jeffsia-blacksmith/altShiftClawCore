@@ -12587,13 +12587,13 @@ Ve();
 Xe();
 var Sl = new se();
 async function Il(e) {
-  let { store: t, config: r } = e.services,
+  let { store: st, config: r } = e.services,
     n = e.chat?.id;
   if (!n) return;
-  let s = await Ge(t, n);
+  let s = await Ge(st, n);
   if (!s) {
     await e.reply(
-      "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002",
+      t("core.noActiveLobsterSelected", {}, glang()),
     );
     return;
   }
@@ -12615,15 +12615,15 @@ async function Il(e) {
   } catch (m) {
     console.error("[/skills] listRemoteSkills \u5931\u6557", m);
     let w = m instanceof Error ? m.message : String(m);
-    await e.reply(`\u274C \u53D6\u5F97\u6280\u80FD\u6E05\u55AE\u5931\u6557\uFF1A${w}`);
+    await e.reply(t("skills.getFailed", { error: w }, glang()));
     return;
   }
   if (!o || o.length === 0) {
-    await e.reply("\u{1F50D} \u76EE\u524D\u6C92\u6709\u53EF\u5B89\u88DD\u7684\u6280\u80FD\u3002");
+    await e.reply(t("skills.noAvailableSkills", {}, glang()));
     return;
   }
   let l = new Set(i);
-  await ht(t, n, {
+  await ht(st, n, {
     skillName: "",
     step: "selecting",
     issueNumber: s,
@@ -12632,7 +12632,7 @@ async function Il(e) {
   });
   let c = a ? `\u{1F99E} ${a} #${s}` : `\u{1F99E} #${s}`,
     d = as(o, 0, l);
-  await e.reply(`\u{1F6E0} \u9078\u64C7\u8981\u5B89\u88DD\u7684\u6280\u80FD\u5230 ${c}`, {
+  await e.reply(t("skills.select_install", { target: c }, glang()), {
     reply_markup: d,
   });
 }
@@ -12640,10 +12640,10 @@ Sl.command("skills", async (e) => {
   await Il(e);
 });
 async function Pm(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id;
   if (!r) return;
-  let n = await at(t, r);
+  let n = await at(st, r);
   if (!n || n.step !== "awaiting_env") return;
   let s = (e.message?.text ?? "").trim(),
     o = n.requiredEnvs ?? [],
@@ -12651,7 +12651,7 @@ async function Pm(e) {
     a = { ...(n.collectedEnvs ?? {}) },
     l = o[i] ?? "";
   if (!s) {
-    await e.reply(`\u26A0\uFE0F \u8ACB\u8F38\u5165 *${O(l)}* \u7684\u503C`, {
+    await e.reply(t("skills.pleaseEnterEnvValue", { envName: O(l) }, glang()), {
       parse_mode: "MarkdownV2",
       reply_markup: ls(),
     });
@@ -12661,18 +12661,16 @@ async function Pm(e) {
   let c = i + 1,
     d = n.promptMessageId;
   if (c < o.length) {
-    (await ht(t, r, { ...n, currentEnvIndex: c, collectedEnvs: a }), await xm(e, r));
-    let m = `\u{1F511} \u8ACB\u8F38\u5165 *${O(o[c])}* \u7684\u503C
-
-\uFF08${c + 1}/${o.length}\uFF09`,
+    (await ht(st, r, { ...n, currentEnvIndex: c, collectedEnvs: a }), await xm(e, r));
+    let m = t("skills.enterEnvValue", { envName: O(o[c]), current: c + 1, total: o.length }, glang()),
       w = { parse_mode: "MarkdownV2", reply_markup: ls() };
     d ? await e.api.editMessageText(r, d, m, w) : await e.reply(m, w);
   } else {
-    (await ht(t, r, { ...n, step: "confirm_install", collectedEnvs: a }), await xm(e, r));
+    (await ht(st, r, { ...n, step: "confirm_install", collectedEnvs: a }), await xm(e, r));
     let m = n.issueNumber,
       w = n.issueTitle,
       y = w ? `\u{1F99E} ${O(w)} \\#${m}` : `\u{1F99E} \\#${m}`,
-      _ = `\u78BA\u8A8D\u5B89\u88DD\u6280\u80FD *${O(n.skillName)}* \u5230 ${y}\uFF1F`,
+      _ = t("skills.confirm_install", { skillName: O(n.skillName), target: y }, glang()),
       I = { parse_mode: "MarkdownV2", reply_markup: Wo(n.skillName) };
     d ? await e.api.editMessageText(r, d, _, I) : await e.reply(_, I);
   }

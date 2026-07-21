@@ -65,7 +65,7 @@
     "getFailed": "❌ Failed to retrieve skill list: {error}",
     "noAvailableSkills": "🔍 No installable skills found.",
     "pleaseEnterEnvValue": "⚠️ Please enter a value for *{envName}*",
-    "enterEnvValue": "🔑 Please enter the value for *{envName}*\n\n({current}/{total})",
+    "enterEnvValue": "🔑 Please enter the value for *{envName}*\n\n\\({current}/{total}\\)",
     "confirmInstallTo": "Confirm installing skill *{skillName}* to {target}?",
     "action_remove": "remove",
     "action_update": "update",
