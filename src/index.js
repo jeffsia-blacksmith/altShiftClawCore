@@ -19843,9 +19843,9 @@ async function Ig(e, t) {
   let r = await Xt(t.d1, e);
   return r ? { requestId: r.requestId } : null;
 }
-async function PE(e, t, r) {
+async function PE(e, requestId, r) {
   let n = e.workflow_run,
-    s = await At(r.d1, t);
+    s = await At(r.d1, requestId);
   if (!s || s.channel !== "telegram" || !s.chatId) return;
   let o = Number.parseInt(s.chatId, 10);
   if (!Number.isInteger(o) || o <= 0) return;
@@ -19856,9 +19856,7 @@ async function PE(e, t, r) {
     d = s.sourceId === "line-bot" && n.conclusion === "success";
   try {
     if (d) {
-      let m = `\u2705 \u7BC4\u672C *${O(a)}* \u5DF2\u5B89\u88DD\u5B8C\u6210\uFF01
-
-\u{1F916} \u8981\u7E7C\u7E8C\u8A2D\u5B9A LINE Bot \u90E8\u7F72\u55CE\uFF1F`,
+      let m = t("line.postInstallPrompt", { name: O(a) }, glang()),
         w = op(),
         y = null;
       (i && Number.isInteger(i) && i > 0
@@ -19874,10 +19872,10 @@ async function PE(e, t, r) {
       i && Number.isInteger(i) && i > 0
         ? await c.editMessageText(o, i, l, { parse_mode: "MarkdownV2" })
         : await c.sendMessage(o, l, { parse_mode: "MarkdownV2" });
-    await Ne(r.d1, t, { status: "notified", notifiedAt: new Date().toISOString() });
+    await Ne(r.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() });
   } catch (m) {
     throw (
-      await Ne(r.d1, t, {
+      await Ne(r.d1, requestId, {
         status: "failed_to_notify",
         errorMessage: m instanceof Error ? m.message : String(m),
       }),

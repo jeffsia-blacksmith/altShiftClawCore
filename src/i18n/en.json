@@ -586,7 +586,8 @@
     "enable_webhook_instruction": "🔗 Please go to LINE Developers Console and enable \"Use webhook\":",
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* deployment has been cancelled",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* deployment failed, please check the workflow run log",
-    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* deployment ended. Result: {result}"
+    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* deployment ended. Result: {result}",
+    "postInstallPrompt": "✅ Template *{name}* installed successfully!\n\n🤖 Continue setting up the LINE Bot deployment?"
   },
   "api": {
     "rateLimit": {

@@ -586,7 +586,8 @@
     "enable_webhook_instruction": "🔗 请到 LINE Developers Console 开启「Use webhook」：",
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* 部署已取消",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* 部署失败，请查看 workflow run log",
-    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}"
+    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}",
+    "postInstallPrompt": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？"
   },
   "api": {
     "rateLimit": {
