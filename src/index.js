@@ -13098,24 +13098,24 @@ function Km(e, t) {
   return { visibleInputs: { ...e }, dispatchInputs: { ...e, request_id: t } };
 }
 function Hm(e) {
-  return `\u23F3 \u6B63\u5728\u89F8\u767C workflow \`${O(e)}\`\u3002`;
+  return t("core.workflowTriggering", { name: O(e) }, glang());
 }
 function Rl(e) {
   return (e && e.match(_T)?.[1]?.trim()) || null;
 }
-function zm(e, t) {
+function zm(e, fallback) {
   switch (e) {
     case "success":
-      return "\u2705 \u5DF2\u6210\u529F\u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u3002";
+      return t("core.coreUpdateSuccess", {}, glang());
     case "cancelled":
-      return "\u26A0\uFE0F \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u5DF2\u53D6\u6D88\u3002";
+      return t("core.coreUpdateCancelled", {}, glang());
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return "\u274C \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log\u3002";
+      return t("core.coreUpdateFailed", {}, glang());
     default:
-      return `\u2139\uFE0F \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u6D41\u7A0B\u5DF2\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(e || t || "unknown")}`;
+      return t("core.coreUpdateEnded", { result: O(e || fallback || "unknown") }, glang());
   }
 }
 Et();
@@ -13128,19 +13128,19 @@ function bi(e) {
   return `\\#${e}`;
 }
 function Pl() {
-  return "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002";
+  return t("core.noActiveLobsterSelected", {}, glang());
 }
 function Qm(e) {
-  return `\u26A0\uFE0F \u627E\u4E0D\u5230 workflow ${nn(e)}\u3002`;
+  return t("core.workflowNotFound", { name: nn(e) }, glang());
 }
 function TT(e) {
-  return `\u274C \u555F\u7528 workflow ${nn(e)} \u5931\u6557\u3002`;
+  return t("core.enableWorkflowFailed", { name: nn(e) }, glang());
 }
 function kT(e) {
-  return `\u274C \u505C\u7528 workflow ${nn(e)} \u5931\u6557\u3002`;
+  return t("core.disableWorkflowFailed", { name: nn(e) }, glang());
 }
-function ET(e, t) {
-  return `\u2139\uFE0F \u5C0F\u9F8D\u8766 ${bi(e)} \u5C1A\u672A\u5EFA\u7ACB workflow\uFF08${nn(t)} \u4E0D\u5B58\u5728\uFF09\u3002`;
+function ET(e, path) {
+  return t("core.workflowNotCreatedYet", { number: bi(e), name: nn(path) }, glang());
 }
 function ST(e, file, r, n) {
   return t("core.workflowStatusCard", { number: bi(e), name: nn(file), status: O(r), id: n }, glang());
