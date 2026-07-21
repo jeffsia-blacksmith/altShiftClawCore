@@ -802,6 +802,41 @@
       "readIssueFailed": "[/{command}] 读取 issue 失败",
       "enteringNameStep": "[/{command}] 进入等待名称阶段",
       "commandReceivedEnteringName": "[/{command}] 收到 /{command} 指令，进入等待名称阶段"
+    },
+    "command": {
+      "executionFailed": "[/{command}] 执行失败",
+      "skillsListFailed": "[/skills] listRemoteSkills 失败",
+      "templatesListFailed": "[/templates] listRemoteTemplates 失败"
+    },
+    "workflow": {
+      "dispatchUsingAI": "[Workflow dispatch] 使用 Workers AI 推导 workflow inputs",
+      "dispatchAIFailedRetry": "[Workflow dispatch] Workers AI 推导 workflow inputs 失败，准备重试",
+      "clearDispatchFailed": "[/{command}] dispatchWorkflow 失败",
+      "enableFailed": "[/{command}] 启用 workflow 失败",
+      "disableFailed": "[/{command}] 停用 workflow 失败",
+      "queryFailed": "[/{command}] 查询 workflow 失败",
+      "resolveCommandFailed": "[workflow] resolveWorkflowCommand 失败",
+      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs 失败",
+      "autoupdateDispatchFailed": "[workflow] autoupdate notification dispatch 失败",
+      "dispatchFailed": "[workflow] dispatchWorkflow 失败"
+    },
+    "access": {
+      "notFullyConfigured": "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID 与 TELEGRAM_ALLOWED_CHAT_ID 必须同时设定，拒绝所有请求。"
+    },
+    "schedule": {
+      "validateAIFailed": "[排程] 验证 AI 排程结果失败",
+      "missingAIBinding": "[排程] 缺少 AI 绑定，无法解析自然语言排程时间",
+      "aiParseFailedRetry": "[排程] AI 时间解析失败 (attempt {attempt}/{total})",
+      "aiParseFinalFailed": "[排程] AI 时间解析最终失败",
+      "createCommentFailed": "[排程] 建立 issue comment 失败"
+    },
+    "scheduleFlow": {
+      "handlingInput": "[排程 flow] handling input",
+      "unknownStep": "[排程 flow] unknown step"
+    },
+    "templateReset": {
+      "readListFailed": "[template_reset] 读取模板清单失败",
+      "resetFailed": "[template_reset] 重置失败"
     }
   }
 }

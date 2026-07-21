@@ -11983,7 +11983,7 @@ function Pd(e) {
         a = typeof r.message?.text == "string" ? r.message.text.trim() : "";
       if (e.allowedFromId == null || e.allowedChatId == null) {
         (console.error(
-          "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID \u8207 TELEGRAM_ALLOWED_CHAT_ID \u5FC5\u9808\u540C\u6642\u8A2D\u5B9A\uFF0C\u62D2\u7D55\u6240\u6709\u8ACB\u6C42\u3002",
+          i18nT("log.access.notFullyConfigured", {}, glang()),
         ),
           await r.reply(
             t("access.notFullyConfigured", {}, glang()),
@@ -12060,7 +12060,7 @@ za.command("start", async (e) => {
       _ = await e.reply(w, { reply_markup: y });
     l && _.message_id && (await Sn(r, l, { mode: "list", messageId: _.message_id }));
   } catch (i) {
-    (console.error("[/start] 執行失敗", i),
+    (console.error(i18nT("log.command.executionFailed", { command: "start" }, glang()), i),
       await e.reply(
         t("core.startError", {}, gL),
       ));
@@ -12178,7 +12178,7 @@ ${e.t("core.noLobstersYet")}`
       ? await Sn(r, i, { mode: "list", messageId: _.message_id })
       : i && (await Ut(r, i));
   } catch (a) {
-    (console.error("[/list] \u57F7\u884C\u5931\u6557", { owner: s, repo: o, chatId: i, ...gy(a) }),
+    (console.error(i18nT("log.command.executionFailed", { command: "list" }, glang()), { owner: s, repo: o, chatId: i, ...gy(a) }),
       await e.reply(hy(a, e.language)));
   }
 });
@@ -12199,7 +12199,7 @@ async function Qp(e) {
     }
     await ks(e, n);
   } catch (n) {
-    (console.error("[/current|/status] \u57F7\u884C\u5931\u6557", n),
+    (console.error(i18nT("log.command.executionFailed", { command: "current|status" }, glang()), n),
       await e.reply(
         e.t("core.statusError"),
       ));
@@ -12257,7 +12257,7 @@ rl.command("close", async (e) => {
       ? await Sn(r, i, { mode: "close", messageId: m.message_id })
       : i && (await Ut(r, i));
   } catch (a) {
-    (console.error("[/close] \u57F7\u884C\u5931\u6557", a),
+    (console.error(i18nT("log.command.executionFailed", { command: "close" }, glang()), a),
       await e.reply(
         e.t("core.closeError"),
       ));
@@ -12472,7 +12472,7 @@ async function Zp(e, t, r, n) {
     o = r.inputs.filter((l) => l.required && !_r(l.defaultValue)).map((l) => l.name);
   if (!s && o.length > 0) return { inputs: oi(r.inputs), missingRequired: o };
   if (r.inputs.length === 0) return { inputs: {}, missingRequired: [] };
-  console.log("[Workflow dispatch] \u4F7F\u7528 Workers AI \u63A8\u5C0E workflow inputs", {
+  console.log(i18nT("log.workflow.dispatchUsingAI", {}, glang()), {
     workflowName: r.workflowName,
     model: t,
   });
@@ -12496,7 +12496,7 @@ async function Zp(e, t, r, n) {
       if (((a = c), l >= i.maxAttempts)) break;
       let d = w_(l, i.initialBackoffMs);
       (console.warn(
-        "[Workflow dispatch] Workers AI \u63A8\u5C0E workflow inputs \u5931\u6557\uFF0C\u6E96\u5099\u91CD\u8A66",
+        i18nT("log.workflow.dispatchAIFailedRetry", {}, glang()),
         {
           workflowName: r.workflowName,
           attempt: l,
@@ -12559,7 +12559,7 @@ sl.command("clear", async (e) => {
         parse_mode: "MarkdownV2",
       }));
   } catch (l) {
-    (console.error("[/clear] dispatchWorkflow \u5931\u6557", {
+    (console.error(i18nT("log.workflow.clearDispatchFailed", { command: "clear" }, glang()), {
       issueNumber: a,
       error: l instanceof Error ? l.message : String(l),
     }),
@@ -12618,7 +12618,7 @@ async function Il(e) {
     ]);
     ((o = m), (i = w), (a = y?.data?.title || void 0));
   } catch (m) {
-    console.error("[/skills] listRemoteSkills \u5931\u6557", m);
+    console.error(i18nT("log.command.skillsListFailed", {}, glang()), m);
     let w = m instanceof Error ? m.message : String(m);
     await e.reply(t("skills.getFailed", { error: w }, glang()));
     return;
@@ -12859,7 +12859,7 @@ Cl.command("templates", async (e) => {
   try {
     o = await On(r.github);
   } catch (c) {
-    console.error("[/templates] listRemoteTemplates \u5931\u6557", c);
+    console.error(i18nT("log.command.templatesListFailed", {}, glang()), c);
     let d = c instanceof Error ? c.message : String(c);
     await e.reply(t("templates.getFailed", { error: d }, glang()));
     return;
@@ -13182,7 +13182,7 @@ Fn.command("enable", async (e) => {
         He,
       ));
   } catch (c) {
-    (console.error("[/enable] \u555F\u7528 workflow \u5931\u6557", c), await e.reply(TT(l), He));
+    (console.error(i18nT("log.workflow.enableFailed", { command: "enable" }, glang()), c), await e.reply(TT(l), He));
   }
 });
 Fn.command("disable", async (e) => {
@@ -13208,7 +13208,7 @@ Fn.command("disable", async (e) => {
         He,
       ));
   } catch (c) {
-    (console.error("[/disable] \u505C\u7528 workflow \u5931\u6557", c), await e.reply(kT(l), He));
+    (console.error(i18nT("log.workflow.disableFailed", { command: "disable" }, glang()), c), await e.reply(kT(l), He));
   }
 });
 Fn.command("workflow", async (e) => {
@@ -13236,7 +13236,7 @@ Fn.command("workflow", async (e) => {
           : d.state;
     await e.reply(ST(a, l, m, d.id), He);
   } catch (c) {
-    (console.error("[/workflow] \u67E5\u8A62 workflow \u5931\u6557", c), await e.reply(IT(), He));
+    (console.error(i18nT("log.workflow.queryFailed", { command: "workflow" }, glang()), c), await e.reply(IT(), He));
   }
 });
 Fn.on("message:text", async (e, t) => {
@@ -13255,7 +13255,7 @@ async function RT(e, t, r) {
     l = await jm(n, i, a, t);
   } catch (w) {
     return (
-      console.warn("[workflow] resolveWorkflowCommand \u5931\u6557", {
+      console.warn(i18nT("log.workflow.resolveCommandFailed", {}, glang()), {
         commandName: t,
         error: w instanceof Error ? w.message : String(w),
       }),
@@ -13275,7 +13275,7 @@ async function RT(e, t, r) {
     }
   } catch (w) {
     return (
-      console.error("[workflow] inferWorkflowDispatchInputs \u5931\u6557", {
+      console.error(i18nT("log.workflow.inferInputsFailed", {}, glang()), {
         commandName: t,
         error: w instanceof Error ? w.message : String(w),
       }),
@@ -13309,7 +13309,7 @@ async function RT(e, t, r) {
           await Is(n, i, a, l.workflowFile, l.ref, I),
           await e.api.editMessageText(e.chat.id, P.message_id, nl(l, w), He));
       } catch (U) {
-        (console.error("[workflow] autoupdate notification dispatch \u5931\u6557", {
+        (console.error(i18nT("log.workflow.autoupdateDispatchFailed", {}, glang()), {
           commandName: t,
           error: U instanceof Error ? U.message : String(U),
         }),
@@ -13324,7 +13324,7 @@ async function RT(e, t, r) {
     }
     (await Is(n, i, a, l.workflowFile, l.ref, w), await e.reply(nl(l, w), He));
   } catch (w) {
-    (console.error("[workflow] dispatchWorkflow \u5931\u6557", {
+    (console.error(i18nT("log.workflow.dispatchFailed", {}, glang()), {
       commandName: t,
       error: w instanceof Error ? w.message : String(w),
     }),
@@ -13839,7 +13839,7 @@ function HT(e, nowDate) {
       ? sn(
           t("schedule.flow.timeAlreadyPassed", {}, glang()),
         )
-      : (console.warn("[\u6392\u7A0B] \u9A57\u8B49 AI \u6392\u7A0B\u7D50\u679C\u5931\u6557", {
+      : (console.warn(i18nT("log.schedule.validateAIFailed", {}, glang()), {
           ruleType: e.ruleType,
           rulePayload: r,
           detail: s,
@@ -13870,7 +13870,7 @@ async function Ul(e, t) {
     }
     return (
       console.error(
-        "[\u6392\u7A0B] \u7F3A\u5C11 AI \u7D81\u5B9A\uFF0C\u7121\u6CD5\u89E3\u6790\u81EA\u7136\u8A9E\u8A00\u6392\u7A0B\u6642\u9593",
+        i18nT("log.schedule.missingAIBinding", {}, glang()),
       ),
       sn(nf())
     );
@@ -13894,14 +13894,14 @@ async function Ul(e, t) {
       s = a;
       let l = a instanceof Error ? a.message : String(a);
       (console.error(
-        `[\u6392\u7A0B] AI \u6642\u9593\u89E3\u6790\u5931\u6557 (attempt ${i}/${Ll})`,
+        i18nT("log.schedule.aiParseFailedRetry", { attempt: i, total: Ll }, glang()),
         l,
       ),
         i < Ll && (await zT(UT)));
     }
   let o = s instanceof Error ? s.message : String(s);
   return (
-    console.error("[\u6392\u7A0B] AI \u6642\u9593\u89E3\u6790\u6700\u7D42\u5931\u6557", o),
+    console.error(i18nT("log.schedule.aiParseFinalFailed", {}, glang()), o),
     sn(nf())
   );
 }
@@ -13993,7 +13993,7 @@ async function on(e, sched, action) {
 ` + t("schedule.flow.configCommentLog", { action: action === "create" ? t("schedule.flow.actionCreate", {}, glang()) : t("schedule.flow.actionUpdate", {}, glang()), id: sched.id, prompt: sched.prompt, payload: Ln(sched.eventData) }, glang()),
       });
     } catch (a) {
-      console.warn("[排程] 建立 issue comment 失敗", a);
+      console.warn(i18nT("log.schedule.createCommentFailed", {}, glang()), a);
     }
     (await e.reply(ZT(sched, action)), await Es(e, sched.issueNumber, "schedule_configuration"));
   }
@@ -14088,7 +14088,7 @@ async function ql(e) {
     i = await sr(st, s);
   if (!i) return !1;
   if (
-    (console.log("[排程 flow] handling input", {
+    (console.log(i18nT("log.scheduleFlow.handlingInput", {}, glang()), {
       chatId: s,
       step: i.step,
       text: o.substring(0, 50),
@@ -14195,7 +14195,7 @@ async function ql(e) {
         await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0);
   }
-  return (console.warn("[排程 flow] unknown step", { step: i.step }), !1);
+  return (console.warn(i18nT("log.scheduleFlow.unknownStep", {}, glang()), { step: i.step }), !1);
 }
 var Kl = new se();
 Kl.command("schedules", async (e) => {
@@ -14207,7 +14207,7 @@ Kl.command("schedules", async (e) => {
       let l = await Un(r, ok, s, o, i, a);
       await e.reply(Dn(l), { reply_markup: Bn(l) });
     } catch (l) {
-      (console.error("[/schedules] 執行失敗", l),
+      (console.error(i18nT("log.command.executionFailed", { command: "schedules" }, glang()), l),
         await e.reply(t("schedule.flow.listFetchFailed", {}, glang())));
     }
 });
@@ -14438,7 +14438,7 @@ zt.callbackQuery(/^current_template_reset:/, async (e) => {
   try {
     l = await tn(n, o, i);
   } catch (c) {
-    console.warn("[template_reset] \u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\u5931\u6557", {
+    console.warn(i18nT("log.templateReset.readListFailed", {}, glang()), {
       error: c instanceof Error ? c.message : String(c),
     });
   }
@@ -14484,7 +14484,7 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
       ),
       await Es(e, n, "template_reset_select"));
   } catch (w) {
-    (console.error("[template_reset] \u91CD\u7F6E\u5931\u6557", w),
+    (console.error(i18nT("log.templateReset.resetFailed", {}, glang()), w),
       await e.answerCallbackQuery(
         t("core.resetTemplateFailedAnswer", {}, glang()),
       ));

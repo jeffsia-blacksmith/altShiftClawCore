@@ -802,6 +802,41 @@
       "readIssueFailed": "[/{command}] Read issue failed",
       "enteringNameStep": "[/{command}] Entering wait-for-name step",
       "commandReceivedEnteringName": "[/{command}] /{command} command received, entering wait-for-name step"
+    },
+    "command": {
+      "executionFailed": "[/{command}] Execution failed",
+      "skillsListFailed": "[/skills] listRemoteSkills failed",
+      "templatesListFailed": "[/templates] listRemoteTemplates failed"
+    },
+    "workflow": {
+      "dispatchUsingAI": "[Workflow dispatch] Using Workers AI to infer workflow inputs",
+      "dispatchAIFailedRetry": "[Workflow dispatch] Workers AI inference of workflow inputs failed, preparing retry",
+      "clearDispatchFailed": "[/{command}] dispatchWorkflow failed",
+      "enableFailed": "[/{command}] Enable workflow failed",
+      "disableFailed": "[/{command}] Disable workflow failed",
+      "queryFailed": "[/{command}] Query workflow failed",
+      "resolveCommandFailed": "[workflow] resolveWorkflowCommand failed",
+      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs failed",
+      "autoupdateDispatchFailed": "[workflow] autoupdate notification dispatch failed",
+      "dispatchFailed": "[workflow] dispatchWorkflow failed"
+    },
+    "access": {
+      "notFullyConfigured": "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID and TELEGRAM_ALLOWED_CHAT_ID must both be set; denying all requests."
+    },
+    "schedule": {
+      "validateAIFailed": "[schedule] Validate AI schedule result failed",
+      "missingAIBinding": "[schedule] Missing AI binding, cannot parse natural-language schedule time",
+      "aiParseFailedRetry": "[schedule] AI time parse failed (attempt {attempt}/{total})",
+      "aiParseFinalFailed": "[schedule] AI time parse final failure",
+      "createCommentFailed": "[schedule] Create issue comment failed"
+    },
+    "scheduleFlow": {
+      "handlingInput": "[schedule flow] handling input",
+      "unknownStep": "[schedule flow] unknown step"
+    },
+    "templateReset": {
+      "readListFailed": "[template_reset] Read template list failed",
+      "resetFailed": "[template_reset] Reset failed"
     }
   }
 }
