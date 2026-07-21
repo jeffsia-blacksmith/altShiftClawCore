@@ -12709,31 +12709,19 @@ var Gm = "jeffsia-blacksmith",
   Fm = "altShiftClawToolkit",
   $m = "main",
   aT = 5 * 6e4,
-  Mm = {
-    default: "\u9810\u8A2D\u7BC4\u672C",
-    summary: "\u6458\u8981\u7BC4\u672C",
-    "image-generation": "\u5716\u50CF\u751F\u6210\u7BC4\u672C",
-  },
-  Om = {
-    default:
-      "\u901A\u7528\u4EFB\u52D9\u7528\u7BC4\u672C\uFF0C\u9069\u5408\u5927\u591A\u6578\u958B\u767C\u8207\u81EA\u52D5\u5316\u6D41\u7A0B\u3002",
-    summary:
-      "\u504F\u91CD\u6458\u8981\u3001\u6574\u7406\u8207\u91CD\u9EDE\u63D0\u7149\u7684\u4EFB\u52D9\u7BC4\u672C\u3002",
-    "image-generation":
-      "\u504F\u91CD\u5716\u50CF\u751F\u6210\u3001\u7D20\u6750\u7522\u51FA\u8207\u8996\u89BA\u4EFB\u52D9\u7684\u7BC4\u672C\u3002",
-  },
+  templateCatalogIds = new Set(["default", "summary", "image-generation"]),
   qt = null;
+function TmLabel(id) {
+  return templateCatalogIds.has(id) ? t("templates.name_" + id.replace(/-/g, "_"), {}, glang()) : null;
+}
+function TmDesc(id) {
+  return templateCatalogIds.has(id) ? t("templates.desc_" + id.replace(/-/g, "_"), {}, glang()) : null;
+}
 function Nm(e) {
-  let t = String(e || "").trim();
-  return t
-    ? Mm[t]
-      ? Mm[t]
-      : t
-          .split(/[-_]/g)
-          .filter(Boolean)
-          .map((r) => r.charAt(0).toUpperCase() + r.slice(1))
-          .join(" ")
-    : "\u7BC4\u672C";
+  let id = String(e || "").trim();
+  if (!id) return t("templates.fallback_name", {}, glang());
+  let lbl = TmLabel(id);
+  return lbl || id.split(/[-_]/g).filter(Boolean).map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(" ");
 }
 async function On(e) {
   if (qt && Date.now() - qt.fetchedAt < aT) return qt.templates;
@@ -12756,8 +12744,8 @@ async function On(e) {
     throw n;
   }
 }
-async function Lm(e, t) {
-  let r = String(t || "").trim();
+async function Lm(e, tplId) {
+  let r = String(tplId || "").trim();
   if (!r) return null;
   let n = await rn(e, r);
   return n
@@ -12765,12 +12753,12 @@ async function Lm(e, t) {
         name: n.name?.trim() || Nm(r),
         description:
           n.description ||
-          Om[r] ||
-          `\u540C\u6B65 templates/${r} \u5230\u76EE\u524D\u5C08\u6848\u3002`,
+          TmDesc(r) ||
+          t("templates.sync_desc", { name: r }, glang()),
       }
     : {
         name: Nm(r),
-        description: Om[r] ?? `\u540C\u6B65 templates/${r} \u5230\u76EE\u524D\u5C08\u6848\u3002`,
+        description: TmDesc(r) ?? t("templates.sync_desc", { name: r }, glang()),
       };
 }
 function lT(e) {
@@ -12858,21 +12846,21 @@ async function Dm(e, t, r, n) {
 Ve();
 var Cl = new se();
 Cl.command("templates", async (e) => {
-  let { store: t, config: r } = e.services,
+  let { store: st, config: r } = e.services,
     n = e.chat?.id;
   if (!n) return;
-  (await be(t, n)) && (await oe(t, n, { templateName: "", step: "selecting" }));
+  (await be(st, n)) && (await oe(st, n, { templateName: "", step: "selecting" }));
   let o;
   try {
     o = await On(r.github);
   } catch (c) {
     console.error("[/templates] listRemoteTemplates \u5931\u6557", c);
     let d = c instanceof Error ? c.message : String(c);
-    await e.reply(`\u274C \u53D6\u5F97\u7BC4\u672C\u6E05\u55AE\u5931\u6557\uFF1A${d}`);
+    await e.reply(t("templates.getFailed", { error: d }, glang()));
     return;
   }
   if (!o.length) {
-    await e.reply("\u{1F50D} \u76EE\u524D\u6C92\u6709\u53EF\u5B89\u88DD\u7684\u7BC4\u672C\u3002");
+    await e.reply(t("templates.noAvailableTemplates", {}, glang()));
     return;
   }
   let { octokit: i } = e.services,
@@ -12883,9 +12871,9 @@ Cl.command("templates", async (e) => {
       }),
     ),
     l = new Set(a.filter((c) => c.installed).map((c) => c.name));
-  (await oe(t, n, { templateName: "", step: "selecting" }),
+  (await oe(st, n, { templateName: "", step: "selecting" }),
     await e.reply(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      t("templates.selectInstallTo", {}, glang()),
       { reply_markup: us(o, 0, l) },
     ));
 });
