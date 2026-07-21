@@ -578,6 +578,8 @@
     "inferWorkflowFailed": "❌ 推导 workflow `{name}` 参数时发生错误。",
     "notSet": "（未设定）",
     "lobsterHash": "小龙虾 #{issueNumber}",
+    "lobsterLabel": "小龙虾 #{number}",
+    "lobsterLabelWithTitle": "小龙虾 #{number}「{title}」",
     "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
     "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。"
   },

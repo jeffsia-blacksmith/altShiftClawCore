@@ -578,6 +578,8 @@
     "inferWorkflowFailed": "❌ An error occurred while inferring the workflow `{name}` parameters.",
     "notSet": "(not set)",
     "lobsterHash": "Lobster #{issueNumber}",
+    "lobsterLabel": "Lobster #{number}",
+    "lobsterLabelWithTitle": "Lobster #{number} \"{title}\"",
     "workflowEnabledOk": "✅ Workflow {name} enabled. Lobster {number} will auto-accept dispatches.",
     "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches."
   },

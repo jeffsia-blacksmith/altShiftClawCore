@@ -14282,8 +14282,8 @@ async function Ht(e, t, r) {
     .filter((s) => !s.pull_request)
     .map((s) => ({ number: s.number, title: s.title, body: s.body }));
 }
-function Ei(e, t) {
-  return t ? `\u5C0F\u9F8D\u8766 #${e}\u300C${t}\u300D` : `\u5C0F\u9F8D\u8766 #${e}`;
+function Ei(e, title) {
+  return title ? t("core.lobsterLabelWithTitle", { number: e, title }, glang()) : t("core.lobsterLabel", { number: e }, glang());
 }
 function ur(e) {
   return e.callbackQuery?.message?.message_id;
@@ -14299,19 +14299,19 @@ async function Hs(e, t, r) {
 ms();
 var zt = new se();
 zt.callbackQuery(/^switch_issue:/, async (e) => {
-  let t = await V(e);
+  let guard = await V(e);
   if (
-    !t ||
+    !guard ||
     !(await Hs(
       e,
       "list",
-      "\u26A0\uFE0F \u5217\u8868\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /list\u3002",
+      t("core.listMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
@@ -14319,14 +14319,14 @@ zt.callbackQuery(/^switch_issue:/, async (e) => {
     l = (await Ht(s, i, a)).find((c) => c.number === r);
   if (!l) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u76EE\u524D\u4E0D\u662F\u958B\u555F\u72C0\u614B\uFF0C\u8ACB\u5148 /list \u91CD\u65B0\u78BA\u8A8D\u3002",
+      t("core.lobsterNotOpen", {}, glang()),
     );
     return;
   }
-  (await Dt(n, t),
-    await rr(n, r, t),
+  (await Dt(n, guard),
+    await rr(n, r, guard),
     await e.answerCallbackQuery(),
-    await e.reply(`\u{1F99E} \u5DF2\u5207\u63DB\u5230\u300C${l.title}\u300D#${r}`),
+    await e.reply(t("core.switchedToLobster", { title: l.title, number: r }, glang())),
     await Es(e, r, "switch_issue"));
 });
 zt.callbackQuery(/^close_issue_prompt:/, async (e) => {
@@ -14335,44 +14335,37 @@ zt.callbackQuery(/^close_issue_prompt:/, async (e) => {
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u7684\u7DE8\u865F\u602A\u602A\u7684",
-    );
+    await e.answerCallbackQuery(t("core.invalidLobsterNumber", {}, glang()));
     return;
   }
   let { octokit: n, config: s } = e.services,
     o = await Ht(n, s.github.owner, s.github.repo);
   if (o.length <= 1) {
-    (await e.answerCallbackQuery(
-      "\u{1F99E} \u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u8981\u5148\u7559\u8457\u5594",
-    ),
+    (await e.answerCallbackQuery(t("core.lastLobsterMustKeep", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u76EE\u524D\u53EA\u5269\u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u4E86\uFF0C\u6211\u5148\u5E6B\u4F60\u7559\u8457\u7260\uFF0C\u907F\u514D\u6574\u6C60\u90FD\u6536\u5DE5\u5566\u3002",
+        t("core.closeOnlyOneLobsterLeftMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
   }
   let i = o.find((a) => a.number === r);
   if (!i) {
-    await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u53EF\u80FD\u5DF2\u7D93\u6536\u5DE5\u4E86\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /close",
-    );
+    await e.answerCallbackQuery(t("core.lobsterAlreadyClosed", {}, glang()));
     return;
   }
-  (await e.answerCallbackQuery("\u{1F97A} \u6211\u518D\u5E6B\u4F60\u78BA\u8A8D\u4E00\u6B21"),
+  (await e.answerCallbackQuery(t("core.closeConfirmAnswer", {}, glang())),
     await e.editMessageText(
       [
-        `\u{1F97A} \u4F60\u771F\u7684\u8981\u95DC\u9589${Ei(i.number, i.title)}\u55CE\uFF1F`,
+        t("core.closeConfirmQuestion", { target: Ei(i.number, i.title) }, glang()),
         "",
-        "\u7260\u9019\u4E00\u8DEF\u4E5F\u5F88\u52AA\u529B\uFF0C\u5982\u679C\u53EA\u662F\u60F3\u5148\u653E\u8457\uFF0C\u6211\u5011\u4E5F\u53EF\u4EE5\u665A\u9EDE\u518D\u56DE\u4F86\u7167\u9867\u7260\u3002",
-      ].join(`
-`),
+        t("core.closeConfirmDescription", {}, glang()),
+      ].join("\n"),
       { reply_markup: Bd(i.number) },
     ));
 });
@@ -14382,56 +14375,50 @@ zt.callbackQuery(/^close_issue_cancel:/, async (e) => {
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
-  (await e.answerCallbackQuery("\u{1FAF6} \u597D\uFF0C\u6211\u5148\u8B93\u7260\u7E7C\u7E8C\u6E38"),
+  (await e.answerCallbackQuery(t("core.closeCancelAnswer", {}, glang())),
     await e.editMessageText(
       r
-        ? `\u{1F99E} \u6536\u5230\uFF0C\u5148\u4E0D\u95DC\u5C0F\u9F8D\u8766 #${r}\u3002
-
-\u8B93\u7260\u518D\u6E38\u4E00\u4E0B\uFF0C\u6709\u9700\u8981\u518D\u53EB\u6211\u4F86\u5E6B\u7260\u6536\u5DE5\u3002`
-        : "\u{1F99E} \u6536\u5230\uFF0C\u9019\u96BB\u5C0F\u9F8D\u8766\u5148\u4E0D\u95DC\uFF0C\u8B93\u7260\u518D\u6E38\u4E00\u4E0B\u3002",
+        ? t("core.closeCancelMessage", { number: r }, glang())
+        : t("core.closeCancelMessageGeneric", {}, glang()),
       { reply_markup: new F() },
     ));
 });
 zt.callbackQuery(/^close_issue_confirm:/, async (e) => {
-  let t = await V(e);
+  let guard = await V(e);
   if (
-    !t ||
+    !guard ||
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, d1: o, config: i } = e.services,
     { owner: a, repo: l, repoFullName: c } = i.github,
     d = await Ht(s, a, l);
   if (!d.find((K) => K.number === r)) {
-    (await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u53EF\u80FD\u5DF2\u7D93\u6536\u5DE5\u4E86\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /close",
-    ),
+    (await e.answerCallbackQuery(t("core.lobsterAlreadyClosed", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u6211\u525B\u525B\u770B\u4E86\u4E00\u4E0B\uFF0C\u9019\u96BB\u5C0F\u9F8D\u8766\u5DF2\u7D93\u4E0D\u662F\u958B\u555F\u72C0\u614B\u4E86\uFF0C\u91CD\u65B0\u7528 /close \u770B\u770B\u6700\u65B0\u6E05\u55AE\u5427\u3002",
+        t("core.closeAlreadyClosedMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
   }
   if (d.length <= 1) {
-    (await e.answerCallbackQuery(
-      "\u{1F99E} \u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u8981\u5148\u7559\u8457\u5594",
-    ),
+    (await e.answerCallbackQuery(t("core.lastLobsterMustKeep", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u9019\u662F\u6700\u5F8C\u4E00\u96BB\u9084\u958B\u8457\u7684\u5C0F\u9F8D\u8766\uFF0C\u6211\u5148\u4E0D\u5E6B\u4F60\u95DC\uFF0C\u7559\u4E00\u96BB\u503C\u73ED\u6BD4\u8F03\u5B89\u5FC3\u3002",
+        t("core.closeOnlyOneLobsterLeftMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
@@ -14443,24 +14430,23 @@ zt.callbackQuery(/^close_issue_confirm:/, async (e) => {
   } catch {
     _ = null;
   }
-  let I = await ym(s, n, a, l, r, t);
-  await e.answerCallbackQuery("\u{1FAF6} \u5C0F\u9F8D\u8766\u5B89\u5FC3\u6536\u5DE5\u4E86");
+  let I = await ym(s, n, a, l, r, guard);
+  await e.answerCallbackQuery(t("core.closeAnswer", {}, glang()));
   let P =
       I.changed && I.nextActiveIssueNumber
-        ? `\u6211\u5148\u5E6B\u4F60\u628A\u76EE\u524D\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766 \u2705 \u5DF2\u5207\u63DB\u5230\u9F8D\u8766 #${I.nextActiveIssueNumber}\uFF0C\u6211\u5011\u7E7C\u7E8C\u7167\u9867\u4E0B\u4E00\u96BB\u3002`
+        ? t("core.closeNextActiveIssueSwitched", { number: I.nextActiveIssueNumber }, glang())
         : I.nextActiveIssueNumber
-          ? `\u76EE\u524D\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766\u9084\u662F\u9F8D\u8766 #${I.nextActiveIssueNumber}\uFF0C\u6211\u5011\u7E7C\u7E8C\u7167\u9867\u7260\u3002`
-          : "\u76EE\u524D\u6C92\u6709\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766\u4E86\uFF0C\u5927\u5BB6\u90FD\u53EF\u4EE5\u5148\u5598\u53E3\u6C23\u3002",
+          ? t("core.closeNextActiveIssueSame", { number: I.nextActiveIssueNumber }, glang())
+          : t("core.closeNoMoreActiveIssues", {}, glang()),
     S =
       _ != null && _ > 0
-        ? `\u6211\u4E5F\u9806\u624B\u6E05\u6389\u4E86 ${_} \u7B46\u6392\u7A0B\uFF0C\u907F\u514D\u9019\u96BB\u5DF2\u6536\u5DE5\u7684\u5C0F\u9F8D\u8766\u7E7C\u7E8C\u88AB\u53EB\u8D77\u4F86\u4E0A\u73ED\u3002`
-        : "\u9019\u96BB\u5C0F\u9F8D\u8766\u6C92\u6709\u7559\u4E0B\u6392\u7A0B\uFF0C\u6240\u4EE5\u4E0D\u7528\u53E6\u5916\u6E05\u7406\u3002",
-    U = [`\u{1FAF6} ${Ei(y.number, y.title)}\u5DF2\u7D93\u5B89\u5FC3\u6536\u5DE5\u4E86\u3002`];
+        ? t("core.closeClearedSchedules", { count: _ }, glang())
+        : t("core.closeNoSchedulesToClear", {}, glang()),
+    U = [t("core.closeTargetSuccess", { target: Ei(y.number, y.title) }, glang())];
   (_ !== null && U.push("", S),
     U.push("", P),
     await e.editMessageText(
-      U.join(`
-`),
+      U.join("\n"),
       { reply_markup: new F() },
     ));
 });
@@ -14468,7 +14454,7 @@ zt.callbackQuery(/^current_template_reset:/, async (e) => {
   if (!(await V(e))) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { octokit: n, config: s } = e.services,
@@ -14485,14 +14471,13 @@ zt.callbackQuery(/^current_template_reset:/, async (e) => {
       error: c instanceof Error ? c.message : String(c),
     });
   }
-  (await e.answerCallbackQuery("\u{1F504} \u6E96\u5099\u91CD\u7F6E\u7BC4\u672C"),
+  (await e.answerCallbackQuery(t("core.resetTemplateAnswer", {}, glang())),
     await e.reply(
       [
-        `\u{1F504} \u9078\u64C7\u8981\u7528\u4F86\u91CD\u7F6E ${Ei(r, a)} \u7684\u7BC4\u672C\uFF1A`,
+        t("core.resetTemplateSelect", { target: Ei(r, a) }, glang()),
         "",
-        "\u91CD\u7F6E\u5F8C\u6703\u7528\u9078\u64C7\u7684\u7BC4\u672C\u8986\u84CB\u6389\u76EE\u524D\u7684\u7BC4\u672C\u3002",
-      ].join(`
-`),
+        t("core.resetTemplateWarning", {}, glang()),
+      ].join("\n"),
       { reply_markup: Kd(r, l) },
     ));
 });
@@ -14502,7 +14487,7 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
     n = parseInt(r[1] ?? "", 10),
     s = r[2] ?? "";
   if (!n || n <= 0 || !s) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684\u53C3\u6578");
+    await e.answerCallbackQuery(t("core.invalidParams", {}, glang()));
     return;
   }
   let { octokit: o, d1: i, config: a } = e.services,
@@ -14521,36 +14506,36 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
       await Sr(o, l, c, n, s));
     let y = await Qr(i, d, n);
     (await Vr(i, { repo: d, issueNumber: n, template: s }),
-      await e.answerCallbackQuery("\u2705 \u7BC4\u672C\u91CD\u7F6E\u6210\u529F"),
+      await e.answerCallbackQuery(t("core.resetTemplateSuccessAnswer", {}, glang())),
       await e.editMessageText(
-        `\u2705 \u5DF2\u7528\u300C${s}\u300D\u7BC4\u672C\u91CD\u7F6E\u5C0F\u9F8D\u8766 #${n}\u3002`,
+        t("core.resetTemplateSuccessMessage", { number: n, template: s }, glang()),
         { reply_markup: new F() },
       ),
       await Es(e, n, "template_reset_select"));
   } catch (w) {
     (console.error("[template_reset] \u91CD\u7F6E\u5931\u6557", w),
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u91CD\u7F6E\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66",
+        t("core.resetTemplateFailedAnswer", {}, glang()),
       ));
   }
 });
 zt.callbackQuery(/^template_reset_cancel:/, async (e) => {
-  (await e.answerCallbackQuery("\u5DF2\u53D6\u6D88\u91CD\u7F6E\u7BC4\u672C"),
-    await e.editMessageText("\u5DF2\u53D6\u6D88\u91CD\u7F6E\u7BC4\u672C\u3002", {
+  (await e.answerCallbackQuery(t("core.resetTemplateCancelledAnswer", {}, glang())),
+    await e.editMessageText(t("core.resetTemplateCancelledMessage", {}, glang()), {
       reply_markup: new F(),
     }));
 });
 zt.callbackQuery(/^current_edit:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let guard = await V(e);
+  if (!guard) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
     { owner: i, repo: a } = o.github;
-  (await rr(n, r, t), await e.answerCallbackQuery("\u270F\uFE0F \u9032\u5165\u7DE8\u8F2F"));
+  (await rr(n, r, guard), await e.answerCallbackQuery(t("core.enterEditAnswer", {}, glang())));
   let { initEditFlow: l } = await Promise.resolve().then(() => (Fs(), Am));
   await l(e);
 });
