@@ -21,6 +21,16 @@ await build({
 
 const mod = await import(`file://${OUT}`);
 const handler = mod.default.fetch;
+const scheduled = mod.default.scheduled;
+const {
+  installMockFetch,
+  tg,
+  gh,
+  makeD1,
+  mockAI,
+  capturingCtx,
+  tgUpdate,
+} = await import(`file://${join(root, "lib/mock.mjs")}`);
 
 const MOCK_ENV = {
   GITHUB_OWNER: "test-owner",
@@ -189,6 +199,167 @@ console.log("guardrails: workflow_notifications CRUD (extracted module)");
   } catch (e) {
     console.error(`  ✗ CRUD round-trip: ${e.message}`);
     fail++;
+  }
+}
+
+// --- Worker-level guardrails: Telegram webhook, AccessGuard, commands, cron ---
+// These assert on STRUCTURE (status, reply count, non-empty body, stable tokens like
+// the issue number) — NOT on Traditional-Chinese text — so the i18n migration (which
+// changes literal reply text) keeps them green while still catching catastrophic
+// regressions (5xx, missing reply, broken control flow, an unresolved t() key leaking
+// through as a dotted path).
+console.log("guardrails: Telegram webhook + AccessGuard + commands + cron");
+
+function baseEnv(overrides = {}) {
+  return {
+    GITHUB_OWNER: "test-owner",
+    GITHUB_REPO: "test-repo",
+    GITHUB_WEBHOOK_SECRET: "test-secret",
+    TELEGRAM_BOT_TOKEN: "000000:fake",
+    TELEGRAM_WEBHOOK_SECRET: "tg-secret",
+    TELEGRAM_API_BASE_URL: "https://api.telegram.org",
+    TELEGRAM_WEBHOOK_PATH: "/telegram/webhook",
+    TELEGRAM_MAX_MESSAGE_LENGTH: "4096",
+    CLAW_SYS_GITHUB_TOKEN: "ghp_fake",
+    SCHEDULES_DB: makeD1(),
+    ...overrides,
+  };
+}
+
+// POST a Telegram Update to /telegram/webhook with mock fetch + a capturing ctx,
+// drain waitUntil side-effects (grammY replies happen inside handleUpdate's waitUntil),
+// then run check(res, replyTexts, fetchCalls).
+async function hitTg(label, env, update, extraFetchRoutes, check) {
+  const replies = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(replies), ...extraFetchRoutes]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: {
+        "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    await check(res, replies, mock.calls);
+  } catch (e) {
+    console.error(`  ✗ ${label}: ${e.message}`);
+    fail++;
+    mock.restore();
+    return;
+  }
+  console.log(`  ✓ ${label}`);
+  pass++;
+  mock.restore();
+}
+
+function assertReply(replies, { exact = 1, contains, inKeyboard, notKey = true } = {}) {
+  if (replies.length !== exact)
+    throw new Error(`expected ${exact} reply, got ${replies.length}: ${JSON.stringify(replies)}`);
+  const msg = replies[0] ?? { text: "" };
+  const text = msg.text ?? "";
+  if (text.trim() === "" && !msg.reply_markup)
+    throw new Error(`reply was empty (no text and no keyboard)`);
+  // an unresolved t() key returns the raw dotted key path — must never leak to the user
+  if (notKey && /^[a-z][a-zA-Z]*\.[a-zA-Z]/.test(text) && !text.includes(" ") && text.length < 60)
+    throw new Error(`reply looks like an unresolved i18n key: ${text}`);
+  if (contains && !text.includes(contains))
+    throw new Error(`reply text missing "${contains}": ${text}`);
+  if (inKeyboard) {
+    const labels = keyboardLabels(msg.reply_markup);
+    if (!labels.some((l) => l.includes(inKeyboard)))
+      throw new Error(`reply keyboard missing "${inKeyboard}": ${JSON.stringify(labels)}`);
+  }
+  return text;
+}
+
+function keyboardLabels(replyMarkup) {
+  const ik = replyMarkup?.inline_keyboard;
+  if (!Array.isArray(ik)) return [];
+  return ik.flat().map((b) => b?.text ?? "").filter(Boolean);
+}
+
+// 1. wrong path → falls through (404), NOT the secret 401
+await hit("POST /telegram/other-path → 404 (path fall-through, not secret 401)", "/other-path", {
+  method: "POST",
+  headers: { "x-telegram-bot-api-secret-token": "tg-secret", "content-type": "application/json" },
+  body: JSON.stringify(tgUpdate("/list")),
+}, async (res) => {
+  if (res.status !== 404) throw new Error(`expected 404 fall-through, got ${res.status}`);
+});
+
+// 2. bad/missing secret → 401 {ok:false,error}
+await hit("POST /telegram/webhook bad secret → 401", "/telegram/webhook", {
+  method: "POST",
+  headers: { "x-telegram-bot-api-secret-token": "WRONG", "content-type": "application/json" },
+  body: JSON.stringify(tgUpdate("/list")),
+}, async (res) => {
+  if (res.status !== 401) throw new Error(`expected 401, got ${res.status}`);
+  const b = await json(res);
+  if (b.ok !== false) throw new Error(`expected ok:false, got ${JSON.stringify(b)}`);
+});
+
+// 3. AccessGuard default-deny (allowed IDs unset) → 200 {ok:true} + one reply
+await hitTg("AccessGuard not configured → 200 + 1 access reply", baseEnv(), tgUpdate("/list"), [], async (res, replies) => {
+  is(res, 200);
+  const b = await json(res);
+  if (b.ok !== true) throw new Error(`expected {ok:true}, got ${JSON.stringify(b)}`);
+  assertReply(replies);
+});
+
+const guardedEnv = baseEnv({
+  TELEGRAM_ALLOWED_FROM_ID: "111",
+  TELEGRAM_ALLOWED_CHAT_ID: "111",
+});
+
+// 4. /help (fully-migrated fy() builder) → one reply listing commands
+await hitTg("POST /help (configured) → reply with command list", guardedEnv, tgUpdate("/help"), [], async (res, replies) => {
+  is(res, 200);
+  const text = assertReply(replies, { contains: "/list" });
+  if (text.length < 20) throw new Error(`help reply too short: ${text}`);
+});
+
+// 5. /list with empty issues → one "no lobsters" reply
+await hitTg("POST /list empty issues → reply (GitHub mocked empty)", guardedEnv, tgUpdate("/list"), [gh.issues([])], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies);
+});
+
+// 6. /list with one issue → keyboard button mentions the issue number (stable token)
+await hitTg("POST /list one issue → keyboard shows #7", guardedEnv, tgUpdate("/list"), [
+  gh.issues([{ number: 7, title: "Test issue" }]),
+], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { inKeyboard: "7" });
+});
+
+// 7. /current with no active issue → one "no active" reply
+await hitTg("POST /current no active issue → reply", guardedEnv, tgUpdate("/current"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies);
+});
+
+// 8. scheduled (cron) with no due schedules → [] and zero fetch calls
+{
+  const mock = installMockFetch([]);
+  const ctx = capturingCtx();
+  try {
+    const result = await scheduled({}, baseEnv(), ctx);
+    await ctx.drain();
+    if (!Array.isArray(result)) throw new Error(`cron should return array, got ${typeof result}`);
+    if (result.length !== 0) throw new Error(`expected empty result, got ${JSON.stringify(result)}`);
+    if (mock.calls.length !== 0)
+      throw new Error(`cron empty should make no fetch calls: ${JSON.stringify(mock.calls.map((c) => c.url))}`);
+    console.log("  ✓ scheduled (cron) empty → [] with no fetch calls");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ scheduled (cron) empty: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
   }
 }
 
