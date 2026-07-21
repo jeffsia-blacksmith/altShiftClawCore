@@ -40,7 +40,7 @@
 | **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ⬜ 待开始 | — |
 | **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
 
-**量化（最新）：** `src/index.js` 22,805 → **~20,290 行**；bundle 605,818 → **616,696 bytes**（i18n t() 调用 + key 占用）；i18n key 对等 533 → **625**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
+**量化（最新）：** `src/index.js` 22,805 → **20,249 行**；bundle 605,818 → **616,696 bytes**（i18n t() 调用 + key 占用）；i18n key 对等 533 → **625**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
 
 ---
 
