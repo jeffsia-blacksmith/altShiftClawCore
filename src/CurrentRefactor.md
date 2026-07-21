@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-21（Phase 2b 完成；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-22（Phase 2c/2d/2e 全部完成 —— i18n 迁移收尾，稳定基线就绪；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
 
 ---
 
@@ -35,14 +35,14 @@
 | **Phase 1.3** | 护栏全绿 + check + commit | ✅ 完成 | — |
 | **Phase 2a** | Et 尾 + 业务 helper + router 字串 | ✅ 完成 | `c4096b9` `4f58fff` `d6ca852` `8034a73` `1f0d129` `b8f8307` `40478db` `8dee9b1` |
 | **Phase 2b** | Hl Telegram 装设/安装流程 | ✅ 完成 | `5715c96` |
-| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | 🔄 进行中（2c-i/ii/iii + close/reset/switch + schedule-flow + workflow-status builders 已完成；剩 ~7 个子流程 ~185 行） | `3253c2a` `bd1f075` `0b0e309` `a13d456` `6dece0d` `1b66676` |
-| **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ⬜ 待开始（机械式） | — |
-| **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ⬜ 待开始 | — |
+| **Phase 2c** | Pc AI/octokit（含 error-code 重构） | ✅ 完成（2c-i/ii/iii + close/reset/switch + schedule-flow + workflow-status builders + 媒体/message-builder + AI throws/scheduler prompt + Qf/fu fallback 全完成） | `3253c2a` `bd1f075` `0b0e309` `a13d456` `6dece0d` `1b66676` `e5a2c47` `ac387d9` `2a8db6d` `97edb81` `dc01d32` `f22794b` |
+| **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ✅ 完成（4 批次 ~108 console 行 + Simplified 输入 token） | `83dbb30` `40105fa` `210aadd` `8b5084d` `6ca3e84` `60472e6` |
+| **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ✅ 完成（808=808 leaf 对等、零 placeholder mismatch、bundle 重建） | `ebf3a20` |
 | **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
 
-**量化（最新）：** `src/index.js` 22,805 → **20,209 行**；bundle 605,818 → **616,601 bytes**（i18n t() 调用 + key 占用，多数既有键已接故 bundle 反而缩小）；i18n key 对等 533 → **652**（en = zh）；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件（content-type-shim / tweetnacl-shim / empty / workflow-notifications）。
+**量化（最新，2026-07-22 Phase 2e 收尾）：** `src/index.js` 22,805 → **20,333 行**；bundle 605,818 → **629,928 bytes**（i18n t() 调用 + log.* 命名空间占用，net 略增）；**i18n leaf-key 对等 533 → 808（en = zh，零 placeholder mismatch）**；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件。**业务码 CJK 残留 = 40 行，全部为 KEEP 业务逻辑**（内容匹配 regex、输入判别 map、中文数字 parser、zh 标点分隔符、刻意保留的 Simplified AI prompt 范例）。`GitHubClawCore/index.js` 已重建。
 
-> **2c 剩余真实规模（2026-07-21 重扫核实，推翻旧「~329/16300 band ~18行」估计）**：Pc 区 12500-16400 共 ~249 行含 CJK，去掉已迁/递延 console/业务逻辑后，仍有 **~185 business CJK 行跨 7 个子流程**：① AI dispatch inputs + `/clear`（12500-12560，~12）② `/skills` 装设（12590-12680，~20）③ 范本/样本 labels + `/templates`（12700-12900，~30）④ 排程格式校验 throws（13514-13751，~25，需先确认是否 catch 后面向用户）⑤ AI 排程解析 fallback（13751-13903，~10，含 `已过|晚于现在`/`每\s*\d+\s*分` regex = 业务逻辑保留）⑥ skills/templates 装设 + 「流程已过,请重新 /skills」×20（14900-15634，~60）⑦ LINE Bot 部署流程（15700-16160，~25）。schedule-setup callbacks（16234-16397，~25）复用已建 `schedule.flow.*` 键 + `on` create/update 判别子，是①的自然延续。每个子流程可独立 commit。
+> **2c 已全部完成（2026-07-22）**：原估的 7 个子流程 ~185 business CJK 行已逐批迁移（AI throws/scheduler prompt 简化、媒体/message-builder、Qf/fu fallback 等），剩余 CJK 已分类为 KEEP 业务逻辑或归入 2d console 批次。详见下方 2c/2d/2e 明细。
 
 ---
 
@@ -75,15 +75,18 @@
 - **留为业务逻辑**：`零一二三` 中文数字 map（parse 用）、`QT` 跳过 token set（`略過`/`skip`，匹配用户输入）、解析 regex、`｜`（U+FF5C 全宽分隔符，display）。
 - **递延到 2d**：Pc 区 24 条 `console.*` + 1 条 `chore:` commit msg。
 
-### 2d — console 日志 + commit msg（待开始，机械式）
-- **CJK console 日志**（~50+ 行，6xxx-8xxx、19xxx-20xxx）→ `t("log.*", {...}, glang())`。注意：非 Telegram 路径（cron、GitHub webhook）中 `globalThis.globalLanguage` 未设 → `glang()` 回传 `"en"`（可接受，需确认这些路径的日志语言）。
-- **11 个 `chore:` commit 讯息** → 固定英文（audit trail，不应随请求语言变）。位置：L6164/6184/6993/7325/7344/7434/7471/19506… → 如 `chore: init issue #{n} orphan branch (template: {tpl})`。
-- 2b 遗留：ug 两行 console（已写成 decoded CJK 待处理）。
+### 2d — console 日志 + commit msg（✅ 完成，4 批次 + 1 输入 token 补丁）
+- **CJK console 日志（~108 行）→ `i18nT("log.*", {...}, glang())`**，分 4 批 commit：A `83dbb30`（new-flow/workspace/issue-status/branch/sync，19 键）、B `40105fa`（/edit+/new flow，21 键）、C `210aadd`（command/workflow/scheduler/template_reset，23 键）、D `8b5084d`（relay/coding-agent/auto-init/webhook，36 键）+ `6ca3e84`（coding-agent notepad-mode reason 2 键）。新增顶层 `log` 命名空间共 ~101 键，en/zh 对等。
+- **关键手法：统一用 `i18nT`（module-scope alias）调用**，避免逐 site 分析 `t` 遮蔽——`i18nT` 在所有 scope 都安全。模板字面量 `` `...${x}...` `` 转成 `i18nT(key, {param: x}, glang())`，参数化 `{command}/{issue}/{event}/{reason}/{error}` 折叠重复。
+- **`chore:` commit 讯息全固定英文**（2c 中 `ac387d9` 已完成，9 处；2e 复扫确认 `chore:` 行零 CJK 残留）。
+- **Simplified 输入 token 补丁**（`60472e6`）：yes/no 与 skip 输入判别器原只认繁体 `啟用`/`略過`，zh-CN 用户打简体 `启用`/`略过` 会漏判；additive 加入简体变体（无移除、无回归）。
+- **非 Telegram 路径**（cron、GitHub webhook）`glang()` 回传 `"en"` —— 可接受，这些日志英文即可。
 
-### 2e — 收尾（待开始）
-- 用 **raw+escape 双侦测** CJK 扫描器确认业务码零残留（vendor grammY/octokit 的 library 字串不计；唯一合理剩余是解析 regex / 对英数字面值的 `.includes` 与中文数字 map 等业务逻辑）。
-- 确认 `zh-CN.json` 与 `en.json` key 集完全一致（recursive flatten parity check）。
-- `npm run build` 重建 `GitHubClawCore/index.js`。更新 `MODULE_MAP.md` + 本文件。
+### 2e — 收尾（✅ 完成，commit `ebf3a20`）
+- **raw+escape 双侦测 CJK 扫描**：业务码残留 **40 行，全部 KEEP**（内容匹配 regex `执行小龙虾任务`/`已过|晚于现在`/`每\s*\d+\s*分`/`图片|image|photo`/`技能\s+\*\*`/`来自：|From:`/`技能(?:安装|移除)`/`范本同步|范本安装`；输入判别 map `是/否/啟用/启用/停用`；中文数字 `零一二…十`；skip set `略過/略过/skip`；zh 标点 `、：｜` 分隔符；刻意保留的 Simplified AI prompt 范例 L13787-88）。无遗漏的真实用户面向字串。
+- **JSON parity**：recursive flatten 808 = 808 leaf；**placeholder 对等零 mismatch**（修复 1 处 pre-existing bug：en `core.dispatchFailed` 原写 `[name]` 非 `{name}`，英文渲染会留 literal token → 改 `[{name}]`）。
+- **`npm run build`** 重建 `GitHubClawCore/index.js`（629,928 bytes）。本文件已更新。
+- **结论：i18n 迁移全部完成。** 当前 bundle = 完全 i18n 化、行为不变的稳定基线，可作 from-scratch 重写的行为对照。
 
 ---
 
@@ -203,7 +206,8 @@ bundle 大量用 `t` 作普通局部变数（message text、params、conclusion�
 ---
 
 ## 9. 待办与下一步
-- **i18n 主线（阶段 B）：** Phase 2c（建议下步，最大且高风险，单独 session 起头：先 error-code 重构 2c-i，再 AI prompts 2c-ii，最后回复建构器 2c-iii，可拆 3 commit）；或先做机械式 Phase 2d（快速见效）。
-- **模组抽离主线（阶段 A 续）：** §5 Step 1 keyboard builders 抽离（低风险高收益，与 i18n 解耦，可平行推进）。
-- **遗留判定为业务逻辑、不 i18n：** L7028/7030/7038/7039 是/否/停 boolean 阵列（用户输入值匹配）、解析 regex（`/(图片|image|photo)/` 等）。
-- **记忆待修正：** i18n 残留计数（401/282 vs 680）不确定，2e 时以双侦测扫描器重新精确计数。
+- **i18n 主线（阶段 B）：✅ 全部完成（Phase 2a-2e）。** 当前 bundle 是完全 i18n 化、行为不变的稳定基线。可作 from-scratch 重写的行为对照基准。
+- **后阶段 — from-scratch 重写：** 基于锁定的行为基线，用干净源码重写 worker（与 i18n 化解耦）。先决条件已满足（护栏 + i18n 基线就绪）。
+- **模组抽离主线（阶段 A 续）：** §5 Step 1 keyboard builders 抽离（低风险高收益，与 i18n 解耦，可平行推进）—— 但用户倾向直接 from-scratch 重写，边际价值低，大概率不做。
+- **遗留判定为业务逻辑、不 i18n（40 行 KEEP）：** 输入判别 map（是/否/啟用/启用/停用）、中文数字 parser（零一二…十）、skip set（略過/略过/skip）、内容匹配 regex（`/(图片|image|photo)/`、`/执行小龙虾任务/`、`/已过|晚于现在/`、`/每\s*\d+\s*分/`、`/技能\s+\*\*/`、`/来自：|From:/`、`/技能(?:安装|移除)/`、`/范本同步|范本安装/`）、zh 标点分隔符（、：｜）、刻意保留的 Simplified AI prompt 范例（L13787-88）。
+- **计数已核实（2026-07-22）：** 业务码 CJK 残留 40 行（全 KEEP）；i18n leaf-key 808×2 对等；零 placeholder mismatch。
