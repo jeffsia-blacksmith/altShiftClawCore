@@ -1,5 +1,7 @@
 # Worker Bundle 完整识别（IDENTIFICATION）
 
+> 配套文件：[`CurrentRefactor.md`](./CurrentRefactor.md) 追踪重构/i18n 迁移进度与踩坑；本文则是模组识别。
+>
 > `src/index.js` = `GitHubClawCore/index.js`（esbuild 压缩 bundle）格式化 + 区块标注后的可编辑版。
 > 本文是**整体内容的完整识别**：每个模组的行范围、身份（厂商库 vs 业务）、证据。
 > 标注已直接写进 `src/index.js`（搜 `[MODULE xx]` 即可跳到）。加注解不影响 build（esbuild 会剥除）。
