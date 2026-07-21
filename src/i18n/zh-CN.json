@@ -511,7 +511,11 @@
     "infoCardTemplate": "📄 已套用范本",
     "infoCardSkills": "🧩 已安装技能",
     "infoCardSchedules": "⏰ 已设定排程",
-    "infoCardTaskStatus": "⚒️ 任务执行状态"
+    "infoCardTaskStatus": "⚒️ 任务执行状态",
+    "instructionReceived": "「{name}」已经收到新的指示，正在帮忙安排处理中，请稍等一下，事情很快就会有进展。",
+    "noTaskMessage2": "之后若需要小龙虾执行任务，只要透过 /edit 即可更新设定。",
+    "dispatchFailed": "🦞「{name}」派工失败。",
+    "dispatchErrorLine": "- 错误：{error}"
   },
   "templates": {
     "name_default": "预设范本",

@@ -19334,29 +19334,29 @@ async function hE(e, t, r, n) {
         null);
   }
 }
-function wE(e) {
-  return `\u300C${e || "\u5C0F\u9F8D\u8766"}\u300D\u5DF2\u7D93\u6536\u5230\u65B0\u7684\u6307\u793A\uFF0C\u6B63\u5728\u5E6B\u5FD9\u5B89\u6392\u8655\u7406\u4E2D\uFF0C\u8ACB\u7A0D\u7B49\u4E00\u4E0B\uFF0C\u4E8B\u60C5\u5F88\u5FEB\u5C31\u6703\u6709\u9032\u5C55\u3002`;
+function wE(e, gLang = glang()) {
+  return t("core.instructionReceived", { name: e || t("system.source_name", {}, gLang) }, gLang);
 }
-function bE(e, t) {
-  let r = e || "\u5C0F\u9F8D\u8766";
-  if (fE(t))
+function bE(e, err, gLang = glang()) {
+  let r = e || t("system.source_name", {}, gLang);
+  if (fE(err))
     return [
-      `\u{1F99E}\u300C${r}\u300D\u73FE\u5728\u6B63\u5728\u4F11\u606F\u4E2D\uFF0C\u5148\u5225\u64D4\u5FC3\u3002`,
+      t("core.restingMessage1", { name: r }, gLang),
       "",
-      "\u4F60\u7684\u8A0A\u606F\u6211\u5DF2\u7D93\u5148\u5E6B\u4F60\u4FDD\u7559\u4E0B\u4F86\u4E86\uFF0C\u4E0D\u6703\u6F0F\u6389\u3002",
-      "\u5982\u679C\u4F60\u60F3\u99AC\u4E0A\u53EB\u9192\u7260\uFF0C\u8ACB\u4F7F\u7528 /enable \u555F\u52D5\u3002",
-    ].join(`
-`);
-  if (og(t))
+      t("core.restingMessage2", {}, gLang),
+      t("core.restingMessage3", {}, gLang),
+    ].join("\n");
+  if (og(err))
     return [
-      "\u76EE\u524D\u5C0F\u9F8D\u8766\u5C1A\u672A\u8A2D\u5B9A\u4EFB\u52D9\uFF0C\u4F46\u6211\u4F9D\u7136\u6703\u8A18\u9304\u4F60\u7684\u8A0A\u606F\u3002",
-      "\u4E4B\u5F8C\u82E5\u9700\u8981\u5C0F\u9F8D\u8766\u57F7\u884C\u4EFB\u52D9\uFF0C\u53EA\u8981\u900F\u904E /edit \u5373\u53EF\u66F4\u65B0\u8A2D\u5B9A\u3002",
-    ].join(`
-`);
-  let n = t instanceof Error ? t.message : "\u672A\u77E5\u932F\u8AA4";
-  return [`\u{1F99E}\u300C${r}\u300D\u6D3E\u5DE5\u5931\u6557\u3002`, "", `- \u932F\u8AA4\uFF1A${n}`]
-    .join(`
-`);
+      t("core.noTaskMessage1", {}, gLang),
+      t("core.noTaskMessage2", {}, gLang),
+    ].join("\n");
+  let n = err instanceof Error ? err.message : t("core.unknownError", {}, gLang);
+  return [
+    t("core.dispatchFailed", { name: r }, gLang),
+    "",
+    t("core.dispatchErrorLine", { error: n }, gLang),
+  ].join("\n");
 }
 function mu(e) {
   return iE(e, "");
@@ -19843,22 +19843,20 @@ function AE(e, t) {
     "template"
   );
 }
-function xE(e, t, r) {
+function xE(e, conclusion, status, gLang = glang()) {
   let n = O(e);
-  switch (t) {
+  switch (conclusion) {
     case "success":
-      return `\u2705 \u7BC4\u672C *${n}* \u5DF2\u5B89\u88DD\u5230\u9F8D\u8766\u5821
-
-\u{1F99E} \u63A5\u4E0B\u4F86\u53EF\u4EE5\u7528 /new \u5EFA\u7ACB\u4E00\u96BB\u65B0\u7684\u5C0F\u9F8D\u8766\u56C9\uFF01`;
+      return t("templates.installed_message", { name: n }, gLang);
     case "cancelled":
-      return `\u26A0\uFE0F \u7BC4\u672C *${n}* \u5B89\u88DD\u5DF2\u53D6\u6D88`;
+      return t("templates.cancelled_message", { name: n }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C \u7BC4\u672C *${n}* \u5B89\u88DD\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("templates.failed_message", { name: n }, gLang);
     default:
-      return `\u2139\uFE0F \u7BC4\u672C *${n}* \u5B89\u88DD\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(t || r || "unknown")}`;
+      return t("templates.ended_message", { name: n, result: O(conclusion || status || "unknown") }, gLang);
   }
 }
 async function Sg(e, t) {
@@ -19982,31 +19980,26 @@ function ME(e) {
     return null;
   }
 }
-function OE(e, t, r, n) {
+function OE(e, status, r, n, gLang = glang()) {
   let s = O(n);
   switch (e) {
     case "success": {
-      let o = [`\u2705 LINE Bot Worker *${s}* \u90E8\u7F72\u5B8C\u6210\uFF01`];
+      let o = [t("line.deployed_message", { name: s }, gLang)];
       if (r) {
         let i = `https://developers.line.biz/console/channel/${r}/messaging-api`;
-        o.push(
-          "",
-          "\u{1F517} \u8ACB\u5230 LINE Developers Console \u958B\u555F\u300CUse webhook\u300D\uFF1A",
-          O(i),
-        );
+        o.push("", t("line.enable_webhook_instruction", {}, gLang), O(i));
       }
-      return o.join(`
-`);
+      return o.join("\n");
     }
     case "cancelled":
-      return `\u26A0\uFE0F LINE Bot Worker *${s}* \u90E8\u7F72\u5DF2\u53D6\u6D88`;
+      return t("line.deploy_cancelled_message_callback", { name: s }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C LINE Bot Worker *${s}* \u90E8\u7F72\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("line.deploy_failed_message_callback", { name: s }, gLang);
     default:
-      return `\u2139\uFE0F LINE Bot Worker *${s}* \u90E8\u7F72\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(e || t || "unknown")}`;
+      return t("line.deploy_ended_message_callback", { name: s, result: O(e || status || "unknown") }, gLang);
   }
 }
 async function Ag(e, t) {
