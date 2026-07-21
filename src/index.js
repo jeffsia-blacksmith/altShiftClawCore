@@ -7028,7 +7028,7 @@ var z_,
 function ml(e) {
   if (typeof e != "string") return null;
   let t = e.trim().toLowerCase();
-  return ["true", "1", "yes", "y", "on", "enable", "enabled", "\u662F", "\u555F\u7528"].includes(t)
+  return ["true", "1", "yes", "y", "on", "enable", "enabled", "\u662F", "\u555F\u7528", "\u542F\u7528"].includes(t)
     ? !0
     : ["false", "0", "no", "n", "off", "disable", "disabled", "\u5426", "\u505C\u7528"].includes(t)
       ? !1
@@ -13907,7 +13907,7 @@ async function Ul(e, t) {
 }
 var qs = 4,
   Ks = 2,
-  QT = new Set(["略過", "skip"]);
+  QT = new Set(["略過", "略过", "skip"]);
 function Bl() {
   return t("schedule.flow.timeExamples", {}, glang());
 }
