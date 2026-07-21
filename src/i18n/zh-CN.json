@@ -257,7 +257,14 @@
     "not_in_payload_step": "⚠️ 目前不在 Payload 设定步骤",
     "paused_alert": "⏸️ 已停用排程",
     "activated_alert": "▶️ 已启用排程",
-    "deleted_alert": "🗑️ 已删除排程"
+    "deleted_alert": "🗑️ 已删除排程",
+    "cardNextRun": "下次执行：{time}",
+    "cardPrompt": "提示：{prompt}",
+    "workflowState": {
+      "disabled": "停用",
+      "running": "启用 \\(正在执行任务 {run}\\)",
+      "idle": "启用 \\(闲置中\\)"
+    }
   },
   "kb": {
     "confirmClose": "😭 确定关闭",
@@ -497,7 +504,14 @@
     "workflowDisabledMessage": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
     "workflow_state_active": "启用中",
     "workflow_state_disabled_manually": "已手动停用",
-    "unfilled": "（未填）"
+    "unfilled": "（未填）",
+    "none": "无",
+    "infoCardTitle": "ℹ️ 小龙虾资讯",
+    "infoCardModels": "🤖 使用模型",
+    "infoCardTemplate": "📄 已套用范本",
+    "infoCardSkills": "🧩 已安装技能",
+    "infoCardSchedules": "⏰ 已设定排程",
+    "infoCardTaskStatus": "⚒️ 任务执行状态"
   },
   "templates": {
     "name_default": "预设范本",

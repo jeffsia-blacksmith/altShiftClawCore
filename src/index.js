@@ -4601,7 +4601,7 @@ function tr() {
 }
 function Bo() {
   return new F()
-    .text("\u23ED\uFE0F \u7565\u904E", "schedule_payload_skip:current")
+    .text(t("kb.skip", {}, glang()), "schedule_payload_skip:current")
     .row()
     .text(t("kb.cancelSetup", {}, glang()), "schedule_flow_cancel:current");
 }
@@ -4717,13 +4717,13 @@ function Wa(e) {
     .text(t("kb.removeFromList", {}, glang()), `skills_remove_from_list:${e}`)
     .text(t("kb.updateFromList", {}, glang()), `skills_update_from_list:${e}`)
     .row()
-    .text("\u{1F519} \u4E0A\u4E00\u6B65", "skills_preview_back:0");
+    .text(t("kb.backOneStep", {}, glang()), "skills_preview_back:0");
 }
 function Xd(e) {
   return new F()
     .text(t("kb.confirmRemove", {}, glang()), `skills_remove_confirm_from_list:${e}`)
     .row()
-    .text("\u{1F519} \u4E0A\u4E00\u6B65", `skills_remove_back:${e}`);
+    .text(t("kb.backOneStep", {}, glang()), `skills_remove_back:${e}`);
 }
 function us(e, t = 0, r) {
   let n = new F();
@@ -5177,29 +5177,29 @@ function Bt(e, gLang = glang()) {
 var zr,
   xs = Oe(() => {
     "use strict";
-    zr = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
+    zr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   });
-function gp(e) {
-  let t = ["\u2139\uFE0F \u5C0F\u9F8D\u8766\u8CC7\u8A0A", _y(e)];
+function gp(e, gLang = glang()) {
+  let lines = [t("core.infoCardTitle", {}, gLang), _y(e)];
   return (
-    t.push(
+    lines.push(
       "",
-      "\u{1F916} \u4F7F\u7528\u6A21\u578B",
-      ...Ty(e),
+      t("core.infoCardModels", {}, gLang),
+      ...Ty(e, gLang),
       "",
-      "\u{1F4C4} \u5DF2\u5957\u7528\u7BC4\u672C",
-      O(e.templateName?.trim() || "\u7121"),
+      t("core.infoCardTemplate", {}, gLang),
+      O(e.templateName?.trim() || t("core.none", {}, gLang)),
       "",
-      "\u{1F9E9} \u5DF2\u5B89\u88DD\u6280\u80FD",
-      ...ky(e.skills),
+      t("core.infoCardSkills", {}, gLang),
+      ...ky(e.skills, gLang),
       "",
-      "\u23F0 \u5DF2\u8A2D\u5B9A\u6392\u7A0B",
-      ...Ey(e.schedules.items),
+      t("core.infoCardSchedules", {}, gLang),
+      ...Ey(e.schedules.items, gLang),
       "",
-      "\u2692\uFE0F \u4EFB\u52D9\u57F7\u884C\u72C0\u614B",
-      ...Sy(e.workflow),
+      t("core.infoCardTaskStatus", {}, gLang),
+      ...Sy(e.workflow, gLang),
     ),
-    t.join(`
+    lines.join(`
 `)
   );
 }
@@ -5234,15 +5234,15 @@ function Ey(e, gLang = glang()) {
           sch.shouldNotify ? t("schedule.notify_open", {}, gLang) : t("schedule.notify_close", {}, gLang),
         ];
         return (
-          sch.nextRunAt && r.push(`下次執行：${Bt(sch.nextRunAt, gLang)}`),
-          sch.prompt && r.push(`提示：${sch.prompt}`),
+          sch.nextRunAt && r.push(t("schedule.cardNextRun", { time: Bt(sch.nextRunAt, gLang) }, gLang)),
+          sch.prompt && r.push(t("schedule.cardPrompt", { prompt: sch.prompt }, gLang)),
           ps(r.join("｜"))
         );
       });
 }
 function Sy(e, gLang = glang()) {
   return e.exists
-    ? [zo(`${O("File: ")}${vy(e)}`), zo(`${O("Status: ")}${Cy(e)}`)]
+    ? [zo(`${O("File: ")}${vy(e)}`), zo(`${O("Status: ")}${Cy(e, gLang)}`)]
     : [
         O(
           `No workflow configured yet. You can run /edit to reset the template and enable the Lobster workflow.`,
@@ -5256,12 +5256,12 @@ function Iy(e) {
 function vy(e) {
   return e.url ? hp(e.file, e.url) : O(e.file);
 }
-function Cy(e) {
+function Cy(e, gLang = glang()) {
   return !e.enabled || e.status === "disabled"
-    ? O("\u505C\u7528")
+    ? O(t("schedule.workflowState.disabled", {}, gLang))
     : e.status === "running" && e.activeRun
-      ? `\u555F\u7528 \\(\u6B63\u5728\u57F7\u884C\u4EFB\u52D9 ${Iy(e.activeRun)}\\)`
-      : "\u555F\u7528 \\(\u9592\u7F6E\u4E2D\\)";
+      ? t("schedule.workflowState.running", { run: Iy(e.activeRun) }, gLang)
+      : t("schedule.workflowState.idle", {}, gLang);
 }
 function zo(e) {
   return `\\- ${e}`;
@@ -5279,9 +5279,9 @@ var by,
     "use strict";
     Xe();
     ((by = Object.freeze({
-      active: "\u555F\u7528",
-      paused: "\u66AB\u505C",
-      cancelled: "\u5DF2\u53D6\u6D88",
+      active: "active",
+      paused: "paused",
+      cancelled: "cancelled",
     })),
       (yy = Object.freeze({ copilot: "Copilot CLI", codex: "Codex CLI" })),
       (fp = { parse_mode: "MarkdownV2" }));
@@ -6187,10 +6187,10 @@ ${l}`;
     ...(a.sha ? { sha: a.sha } : {}),
   });
 }
-async function qp(e, t, r, n, s) {
-  await xn(e, t, r, n, {
+async function qp(e, owner, r, n, s) {
+  await xn(e, owner, r, n, {
     role: "assistant",
-    source: "\u5C0F\u9F8D\u8766",
+    source: t("system.source_name", {}, glang()),
     delivery: "telegram",
     issue_number: n,
     comment_id: s.commentId ?? null,
@@ -7104,10 +7104,10 @@ var fl,
       "awaiting_workflow_enabled",
     ])),
       (Tm = Object.freeze({
-        awaiting_name: "\u540D\u7A31",
-        awaiting_description: "\u63CF\u8FF0",
-        awaiting_template_reset: "\u7BC4\u672C",
-        awaiting_workflow_enabled: "\u6D3E\u5DE5\u8A2D\u5B9A",
+        awaiting_name: 1,
+        awaiting_description: 1,
+        awaiting_template_reset: 1,
+        awaiting_workflow_enabled: 1,
       })),
       (rC = el.map((e) => e.key)));
   });

@@ -257,7 +257,14 @@
     "not_in_payload_step": "⚠️ Currently not in Payload configuration step",
     "paused_alert": "⏸️ Schedule disabled",
     "activated_alert": "▶️ Schedule enabled",
-    "deleted_alert": "🗑️ Schedule deleted"
+    "deleted_alert": "🗑️ Schedule deleted",
+    "cardNextRun": "Next run: {time}",
+    "cardPrompt": "Prompt: {prompt}",
+    "workflowState": {
+      "disabled": "Disabled",
+      "running": "Enabled \\(running task {run}\\)",
+      "idle": "Enabled \\(idle\\)"
+    }
   },
   "kb": {
     "confirmClose": "😭 Confirm Close",
@@ -497,7 +504,14 @@
     "workflowDisabledMessage": "✅ Workflow {name} has been disabled. Lobster {number} will not accept dispatches for now.",
     "workflow_state_active": "active",
     "workflow_state_disabled_manually": "disabled manually",
-    "unfilled": "(unfilled)"
+    "unfilled": "(unfilled)",
+    "none": "none",
+    "infoCardTitle": "ℹ️ Lobster info",
+    "infoCardModels": "🤖 Models in use",
+    "infoCardTemplate": "📄 Applied template",
+    "infoCardSkills": "🧩 Installed skills",
+    "infoCardSchedules": "⏰ Configured schedules",
+    "infoCardTaskStatus": "⚒️ Task execution status"
   },
   "templates": {
     "name_default": "Default Template",
