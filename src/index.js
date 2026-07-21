@@ -18709,12 +18709,15 @@ function Qf(e, t, r) {
 function Kf(e) {
   return String(e || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-function Oi(e, t) {
-  if (typeof e != "string") return "\u5DF2\u9644\u4E0A\u5716\u7247";
-  let r = String(t || "")
+function Oi(e, path) {
+  let gLang = glang(),
+    attached = t("core.imageAttached", {}, gLang),
+    attachedShort = t("core.imageAttachedShort", {}, gLang);
+  if (typeof e != "string") return attached;
+  let r = String(path || "")
       .trim()
       .replace(/^\/+/, ""),
-    n = r ? new RegExp(`\\\`${Kf(r)}\\\`|${Kf(r)}`, "g") : null,
+    n = r ? new RegExp(`\`${Kf(r)}\`|${Kf(r)}`, "g") : null,
     s = /^.*!\[[^\]]*]\([^)]+\).*$\n?/gm;
   return (
     e
@@ -18722,29 +18725,21 @@ function Oi(e, t) {
       .split(/\r?\n/)
       .map((i) => {
         if (!n) return i;
-        if (/(图片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, "\u5DF2\u9644\u4E0A");
+        if (/(图片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, attachedShort);
         let a = i.trim();
         return a && n.test(a)
-          ? ((n.lastIndex = 0), i.replace(n, "\u5DF2\u9644\u4E0A\u5716\u7247"))
+          ? ((n.lastIndex = 0), i.replace(n, attached))
           : ((n.lastIndex = 0), i);
       })
-      .join(
-        `
-`,
-      )
-      .replace(
-        /\n{3,}/g,
-        `
-
-`,
-      )
-      .trim() || "\u5DF2\u9644\u4E0A\u5716\u7247"
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim() || attached
   );
 }
-function lu(e, t, r, n = !1) {
+function lu(e, evt, r, n = !1) {
   return n
-    ? lr(t?.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09"
-    : Zs(e, t, r, !1);
+    ? lr(evt?.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, glang())
+    : Zs(e, evt, r, !1);
 }
 function Vf(e, t, r, n, s, o = !1) {
   if (!s || typeof n?.text != "string") return n;
@@ -18758,29 +18753,16 @@ function Vf(e, t, r, n, s, o = !1) {
   }
   return { ...n, text: Oi(n.text, s.path) };
 }
-function Jf(e, t, r, n, s, o, i = !1) {
+function Jf(e, issue, r, n, s, o, i = !1) {
   if (!s || !o) return n;
-  let a = lu(e, t, r, i),
+  let gLang = glang(),
+    a = lu(e, issue, r, i),
     l = Oi(a, s.path),
-    c = [
-      l,
-      "",
-      "\u5716\u7247\u8ACB\u9EDE\u64CA\u9023\u7D50\u6253\u958B\uFF1A",
-      `[\u958B\u555F\u5716\u7247](${o})`,
-    ]
-      .join(
-        `
-`,
-      )
-      .trim();
+    clickLabel = t("core.imageClickLinkToOpen", {}, gLang),
+    c = [l, "", clickLabel, `[${t("core.openImage", {}, gLang)}](${o})`].join("\n").trim();
   return n.parseMode === "MarkdownV2"
     ? { ...n, text: or(c) }
-    : {
-        ...n,
-        text: `${l}
-\u5716\u7247\u8ACB\u9EDE\u64CA\u9023\u7D50\u6253\u958B\uFF1A
-${o}`,
-      };
+    : { ...n, text: `${l}\n${clickLabel}\n${o}` };
 }
 function Yf(e) {
   return (
@@ -18860,16 +18842,17 @@ function Yk(e) {
     ? `https://github.com/jeffsia-blacksmith/altShiftClawToolkit/blob/main/skills/${encodeURIComponent(r)}/README.md`
     : "";
 }
-function Zf(e, t, r) {
-  let n = zk(e, t, r) || Qk(e, t),
+function Zf(e, issue, r) {
+  let gLang = glang(),
+    n = zk(e, issue, r) || Qk(e, issue),
     s = Yk(r),
-    o = Vk(e, t, r?.id);
+    o = Vk(e, issue, r?.id);
   if (!n) return;
-  let i = new F().url("\u958B\u555F GitHub", n);
+  let i = new F().url(t("kb.openGithub", {}, gLang), n);
   return (
     s
-      ? i.url("\u6280\u80FD\u8AAA\u660E", s)
-      : o && i.url("\u958B\u555F\u5DE5\u4F5C\u76EE\u9304", o),
+      ? i.url(t("kb.skillDocs", {}, gLang), s)
+      : o && i.url(t("kb.openWorkdir", {}, gLang), o),
     i
   );
 }
@@ -18883,8 +18866,8 @@ function eg(e, t) {
     o = pm(s)[0];
   return o ? { kind: "repo-path", branch: Rn(e?.number), path: o } : null;
 }
-async function tg(e, t, r) {
-  let n = `${e.github.apiBaseUrl}/repos/${e.github.owner}/${e.github.repo}/contents/${t}?ref=${encodeURIComponent(r)}`,
+async function tg(e, path, r) {
+  let n = `${e.github.apiBaseUrl}/repos/${e.github.owner}/${e.github.repo}/contents/${path}?ref=${encodeURIComponent(r)}`,
     s = await fetch(n, {
       headers: {
         Authorization: `token ${e.github.token}`,
@@ -18892,7 +18875,7 @@ async function tg(e, t, r) {
         "User-Agent": e.github.userAgent,
       },
     });
-  if (!s.ok) throw new Error(`\u53D6\u5F97 repo \u6A94\u6848 ${t} \u5931\u6557: ${s.status}`);
+  if (!s.ok) throw new Error(t("errors.getFileFailed", { path, status: s.status }, glang()));
   let o = s.headers.get("content-type") || "application/octet-stream";
   return { bytes: new Uint8Array(await s.arrayBuffer()), contentType: o };
 }

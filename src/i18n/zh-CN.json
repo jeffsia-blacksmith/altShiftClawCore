@@ -313,7 +313,10 @@
     "defaultReply": "💬 预设回应",
     "issueNumberLabel": "🦞 小龙虾",
     "timezone": "🕐 时区",
-    "back": "⬅️ 返回"
+    "back": "⬅️ 返回",
+    "openGithub": "开启 GitHub",
+    "skillDocs": "技能说明",
+    "openWorkdir": "开启工作目录"
   },
   "newFlow": {
     "stepName": "名称",
@@ -513,9 +516,13 @@
     "infoCardSchedules": "⏰ 已设定排程",
     "infoCardTaskStatus": "⚒️ 任务执行状态",
     "instructionReceived": "「{name}」已经收到新的指示，正在帮忙安排处理中，请稍等一下，事情很快就会有进展。",
-    "noTaskMessage2": "之后若需要小龙虾执行任务，只要透过 /edit 即可更新设定。",
     "dispatchFailed": "🦞「{name}」派工失败。",
-    "dispatchErrorLine": "- 错误：{error}"
+    "dispatchErrorLine": "- 错误：{error}",
+    "imageAttached": "已附加图片",
+    "imageAttachedShort": "已附加",
+    "imageClickLinkToOpen": "图片请点击链接打开：",
+    "openImage": "开启图片",
+    "blank": "（空白）"
   },
   "templates": {
     "name_default": "预设范本",
@@ -586,6 +593,7 @@
     }
   },
   "errors": {
-    "notAFile": "{name} 不是文件"
+    "notAFile": "{name} 不是文件",
+    "getFileFailed": "取得 repo 档案 {path} 失败：{status}"
   }
 }

@@ -313,7 +313,10 @@
     "defaultReply": "💬 Default Reply",
     "issueNumberLabel": "🦞 Lobster",
     "timezone": "🕐 Timezone",
-    "back": "⬅️ Back"
+    "back": "⬅️ Back",
+    "openGithub": "Open GitHub",
+    "skillDocs": "Skill docs",
+    "openWorkdir": "Open work directory"
   },
   "newFlow": {
     "stepName": "Name",
@@ -513,9 +516,13 @@
     "infoCardSchedules": "⏰ Configured schedules",
     "infoCardTaskStatus": "⚒️ Task execution status",
     "instructionReceived": "{name} has received your new instructions and is working on them — please wait a moment, things will progress soon.",
-    "noTaskMessage2": "Later, if you need the lobster to run tasks, just update the settings via /edit.",
     "dispatchFailed": "🦞 [name] dispatch failed.",
-    "dispatchErrorLine": "- Error: {error}"
+    "dispatchErrorLine": "- Error: {error}",
+    "imageAttached": "Image attached",
+    "imageAttachedShort": "Attached",
+    "imageClickLinkToOpen": "Click the link to open the image:",
+    "openImage": "Open image",
+    "blank": "(blank)"
   },
   "templates": {
     "name_default": "Default Template",
@@ -586,6 +593,7 @@
     }
   },
   "errors": {
-    "notAFile": "{name} is not a file"
+    "notAFile": "{name} is not a file",
+    "getFileFailed": "Failed to get repo file {path}: {status}"
   }
 }
