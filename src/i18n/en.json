@@ -633,7 +633,8 @@
     "workflowEnabledOk": "✅ Workflow {name} enabled. Lobster {number} will auto-accept dispatches.",
     "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches.",
     "buttonExpired": "⚠️ This button has expired. Please try again.",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "noneLabel": "(None)"
   },
   "templates": {
     "name_default": "Default Template",
@@ -739,5 +740,13 @@
   "errors": {
     "notAFile": "{name} is not a file",
     "getFileFailed": "Failed to get repo file {path}: {status}"
+  },
+  "media": {
+    "photo": "📷 Photo",
+    "video": "🎬 Video",
+    "audio": "🎵 Audio",
+    "document": "📄 Document",
+    "voice": "🎙️ Voice",
+    "media": "📁 Media"
   }
 }

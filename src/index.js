@@ -16499,11 +16499,10 @@ for (let [e, { command: t, labelKey: r }] of Object.entries(hk))
       await n.reply(n.t("menu.useCommand", { command: t })));
   });
 Ie();
-var wk = "telegram-meta",
-  bk = "\uFF08\u5EFA\u7ACB\u6642\u672A\u63D0\u4F9B\u5167\u5BB9\uFF09";
+var wk = "telegram-meta";
 function yk(e) {
   let t = e.from;
-  if (!t) return "\u672A\u77E5\u767C\u9001\u8005";
+  if (!t) return i18nT("core.unknownSender", {}, glang());
   let r = [t.first_name, t.last_name].filter(Boolean),
     n = r.length > 0 ? r.join(" ") : (t.username ?? `user-${t.id}`);
   return t.username ? `${n} (@${t.username})` : n;
@@ -16529,10 +16528,10 @@ function Xl(e) {
   return `<!-- ${wk}: ${JSON.stringify(t)} -->`;
 }
 function kk(e) {
-  return `**\u4F86\u81EA\uFF1A** ${yk(e)} \xB7 ${_k(e)}`;
+  return t("core.messageFromSource", { sender: yk(e), chat: _k(e) }, glang());
 }
 function Ek(e) {
-  return (typeof e?.content == "string" ? e.content.trim() : "") || bk;
+  return (typeof e?.content == "string" ? e.content.trim() : "") || i18nT("core.noContentProvided", {}, glang());
 }
 function Vs(e, t) {
   return [Xl(e), "", kk(e), "", "---", "", Ek(t)].join(`
@@ -16546,19 +16545,18 @@ di();
 ar();
 function vf(e) {
   return [
-    `\u{1F99E}\u300C${typeof e == "string" && e.trim() !== "" ? e.trim() : "\u5C0F\u9F8D\u8766"}\u300D\u73FE\u5728\u6B63\u5728\u4F11\u606F\u4E2D\uFF0C\u5148\u5225\u64D4\u5FC3\u3002`,
+    t("core.restingMessage1", { name: typeof e == "string" && e.trim() !== "" ? e.trim() : t("core.unnamedLobster", {}, glang()) }, glang()),
     "",
-    "\u4F60\u7684\u8A0A\u606F\u6211\u5DF2\u7D93\u5148\u5E6B\u4F60\u4FDD\u7559\u4E0B\u4F86\u4E86\uFF0C\u4E0D\u6703\u6F0F\u6389\u3002",
-    "\u5982\u679C\u4F60\u60F3\u99AC\u4E0A\u53EB\u9192\u7260\uFF0C\u8ACB\u4F7F\u7528 /enable \u555F\u52D5\u3002",
-  ].join(`
-`);
+    t("core.restingMessage2", {}, glang()),
+    "",
+    t("core.restingMessage3", {}, glang()),
+  ].join("\n");
 }
 function Sk(e) {
   return [
-    "\u76EE\u524D\u5C0F\u9F8D\u8766\u5C1A\u672A\u8A2D\u5B9A\u4EFB\u52D9\uFF0C\u4F46\u6211\u4F9D\u7136\u6703\u8A18\u9304\u4F60\u7684\u8A0A\u606F\u3002",
-    "\u4E4B\u5F8C\u82E5\u9700\u8981\u5C0F\u9F8D\u8766\u57F7\u884C\u4EFB\u52D9\uFF0C\u53EA\u8981\u900F\u904E /edit \u5373\u53EF\u66F4\u65B0\u8A2D\u5B9A\u3002",
-  ].join(`
-`);
+    t("core.noTaskMessage1", {}, glang()),
+    t("core.noTaskMessage2", {}, glang()),
+  ].join("\n");
 }
 async function Js(e, t, r, n) {
   let s = await Ts(e, t, r, n);
@@ -16593,15 +16591,14 @@ function Zl(e, t) {
   let r = typeof e == "string" ? e.trim() : "",
     n = t.map((o) => String(o.repoPath || "").trim()).filter((o) => o !== "");
   return [
-    "\u4F86\u81EA Telegram \u7684\u5A92\u9AD4\u8A0A\u606F",
+    i18nT("core.mediaMessageFromTelegram", {}, glang()),
     "",
-    "\u4F7F\u7528\u8005\u6587\u5B57\uFF1A",
-    r || "\uFF08\u7121\uFF09",
+    i18nT("core.userTextLabel", {}, glang()),
+    r || i18nT("core.noneLabel", {}, glang()),
     "",
-    "\u9644\u4EF6\uFF1A",
-    ...(n.length > 0 ? n.map((o) => `- ${o}`) : ["- \uFF08\u7121\uFF09"]),
-  ].join(`
-`);
+    i18nT("core.attachmentsLabel", {}, glang()),
+    ...(n.length > 0 ? n.map((o) => `- ${o}`) : [`- ${i18nT("core.noneLabel", {}, glang())}`]),
+  ].join("\n");
 }
 var ln = new se(),
   Ik = 3e3;
@@ -16613,7 +16610,7 @@ function Cf(e) {
 }
 function vk(e) {
   let t = e.from;
-  if (!t) return "\u672A\u77E5\u767C\u9001\u8005";
+  if (!t) return i18nT("core.unknownSender", {}, glang());
   let r = [t.first_name, t.last_name].filter(Boolean),
     n = r.length > 0 ? r.join(" ") : (t.username ?? `user-${t.id}`);
   return t.username ? `${n} (@${t.username})` : n;
@@ -16713,17 +16710,17 @@ function Pk(e) {
 function xf(e) {
   switch (e) {
     case "photo":
-      return "\u{1F4F7} \u7167\u7247";
+      return t("media.photo", {}, glang());
     case "video":
-      return "\u{1F3AC} \u5F71\u7247";
+      return t("media.video", {}, glang());
     case "audio":
-      return "\u{1F3B5} \u97F3\u8A0A";
+      return t("media.audio", {}, glang());
     case "document":
-      return "\u{1F4C4} \u6587\u4EF6";
+      return t("media.document", {}, glang());
     case "voice":
-      return "\u{1F399}\uFE0F \u8A9E\u97F3";
+      return t("media.voice", {}, glang());
     default:
-      return "\u{1F4C1} \u5A92\u9AD4";
+      return t("media.media", {}, glang());
   }
 }
 function xi(e, t_files, r, n) {
@@ -19038,7 +19035,7 @@ function oE(e) {
         .replace(/<!--\s*line-meta:\s*\{[\s\S]*?\}\s*-->\s*/g, "")
         .replace(/<a\s+href=(?:"([^"]*)"|'([^']*)')\s*>([\s\S]*?)<\/a>/gi, "$3 ($1$2)")
         .replace(/<\/?(?:b|i|u|s|tg-spoiler|code|pre|blockquote)\s*>/gi, "")
-        .replace(/^\*\*来自：\*\*.*$/gm, "")
+        .replace(/^\*\*(?:来自：|From:)\*\*.*$/gm, "")
         .replace(/^\s*---\s*$/gm, "")
         .trim();
 }

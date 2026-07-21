@@ -633,7 +633,8 @@
     "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
     "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
     "buttonExpired": "⚠️ 按钮已过期，请重新操作",
-    "cancelled": "已取消"
+    "cancelled": "已取消",
+    "noneLabel": "（无）"
   },
   "templates": {
     "name_default": "预设范本",
@@ -739,5 +740,13 @@
   "errors": {
     "notAFile": "{name} 不是文件",
     "getFileFailed": "取得 repo 档案 {path} 失败：{status}"
+  },
+  "media": {
+    "photo": "📷 照片",
+    "video": "🎬 影片",
+    "audio": "🎵 音讯",
+    "document": "📄 文件",
+    "voice": "🎙️ 语音",
+    "media": "📁 媒体"
   }
 }
