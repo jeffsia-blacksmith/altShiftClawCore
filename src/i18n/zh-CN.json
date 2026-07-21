@@ -399,6 +399,8 @@
     "noTemplatesInstalled": "⚠️ 目前龙虾堡尚未安装任何范本，请先用 /templates 安装。",
     "errorTemplateNotInstalled": "❌ 范本尚未安装到龙虾堡",
     "errorTemplateReadFailed": "❌ 读取范本失败",
+    "notInstalled": "范本 {name} 尚未安装到龙虾堡（templates/{name}/ 不存在）",
+    "readFailed": "读取范本 {name} 失败：{error}",
     "errorCreateFailed": "❌ 建立小龙虾时发生错误。",
     "envValueRequired": "⚠️ 请输入环境变量的值",
     "setEnvFailed": "❌ 设定 {name} 失败：{error}",

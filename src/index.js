@@ -6767,18 +6767,16 @@ function W_(e, t) {
   return t.personality ? e.replace(/\{\{personality\}\}/g, t.personality) : e;
 }
 function q_(e) {
-  return `\u7BC4\u672C ${e} \u5C1A\u672A\u5B89\u88DD\u5230\u9F8D\u8766\u5821\uFF08templates/${e}/ \u4E0D\u5B58\u5728\uFF09`;
+  return t("templates.notInstalled", { name: e }, glang());
 }
 function fm(e) {
-  return (
-    e instanceof Error && e.message.includes("\u5C1A\u672A\u5B89\u88DD\u5230\u9F8D\u8766\u5821")
-  );
+  return e instanceof Error && e.code === "TEMPLATE_NOT_INSTALLED";
 }
-function K_(e, t) {
-  return `\u8B80\u53D6\u7BC4\u672C ${e} \u5931\u6557\uFF1A${t}`;
+function K_(e, detail) {
+  return t("templates.readFailed", { name: e, error: detail }, glang());
 }
 function gm(e) {
-  return e instanceof Error && e.message.startsWith("\u8B80\u53D6\u7BC4\u672C ");
+  return e instanceof Error && e.code === "TEMPLATE_READ_FAILED";
 }
 function hm(e, pfx, r) {
   if (!e?.length) return [];
@@ -6810,7 +6808,7 @@ async function H_(e, owner, r, n) {
     o = Array.isArray(s.data?.errors) ? s.data.errors : [];
   if (o.length > 0) {
     let a = o[0]?.message?.trim() || t("templates.unknownGraphqlError", {}, glang());
-    throw new Error(K_(n, a));
+    throw Object.assign(new Error(K_(n, a)), { code: "TEMPLATE_READ_FAILED" });
   }
   let i = s.data?.data?.repository?.object;
   return !i || i.__typename !== "Tree" ? null : i;
@@ -6826,7 +6824,7 @@ async function tn(e, t, r) {
 }
 async function Er(e, t, r, n, s = {}) {
   let o = await H_(e, t, r, n);
-  if (!o) throw new Error(q_(n));
+  if (!o) throw Object.assign(new Error(q_(n)), { code: "TEMPLATE_NOT_INSTALLED" });
   return hm(o.entries, "", s);
 }
 var j_,
