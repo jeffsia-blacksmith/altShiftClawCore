@@ -12504,53 +12504,53 @@ async function Zp(e, t, r, n) {
     }
   throw a instanceof Error
     ? a
-    : new Error("Workers AI \u63A8\u5C0E workflow inputs \u5931\u6557\u3002");
+    : new Error("Workers AI failed to infer workflow inputs.");
 }
 Xe();
 async function Is(e, t, r, n, s, o) {
   await e.actions.createWorkflowDispatch({ owner: t, repo: r, workflow_id: n, ref: s, inputs: o });
 }
-function nl(e, t) {
-  let r = Object.entries(t || {}).filter(([, n]) => _r(n));
+function nl(e, inputs) {
+  let r = Object.entries(inputs || {}).filter(([, n]) => _r(n));
   return [
-    `\u2699\uFE0F \u5DF2\u89F8\u767C workflow \`${O(e.workflowName)}\`\u3002`,
+    t("core.workflowTriggered", { name: O(e.workflowName) }, glang()),
     "",
     ...(r.length > 0
       ? r.map(([n, s]) => `\\- ${O(n)}: ${O(Xp(n) ? "[REDACTED]" : s)}`)
-      : ["\\- \u9019\u500B workflow \u6C92\u6709\u984D\u5916\u8F38\u5165\u53C3\u6578\u3002"]),
+      : [t("core.workflowNoInputs", {}, glang())]),
   ].join(`
 `);
 }
-function em(e, t) {
-  let r = Array.isArray(t) ? t.filter(Boolean) : [];
+function em(e, missing) {
+  let r = Array.isArray(missing) ? missing.filter(Boolean) : [];
   return [
-    `\u26A0\uFE0F \u7121\u6CD5\u89F8\u767C workflow \`${O(e.workflowName)}\`\u3002`,
+    t("core.workflowCannotTrigger", { name: O(e.workflowName) }, glang()),
     "",
-    "\u7F3A\u5C11\u5FC5\u586B\u53C3\u6578\uFF1A",
+    t("core.workflowMissingRequiredInputs", {}, glang()),
     ...r.map((n) => `\\- ${O(n)}`),
     "",
-    "\u8ACB\u76F4\u63A5\u7528\u81EA\u7136\u8A9E\u8A00\u628A\u9019\u4E9B\u503C\u88DC\u9F4A\u5F8C\u518D\u9001\u4E00\u6B21\u3002",
+    t("core.workflowProvideInputsPrompt", {}, glang()),
   ].join(`
 `);
 }
 Xe();
 var sl = new se();
 sl.command("clear", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: octo, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
   if (!a) {
     await e.reply(
-      "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002",
+      O(t("core.noActiveLobsterSelected", {}, glang())),
       { parse_mode: "MarkdownV2" },
     );
     return;
   }
   try {
-    let l = await t.repos.get({ owner: s, repo: o });
-    (await Is(t, s, o, "clear-memory.yml", l.data.default_branch, { active_issue: String(a) }),
-      await e.reply(`\u{1F9F9} \u5DF2\u6E05\u9664\u5C0F\u9F8D\u8766 \\#${a} \u8A18\u61B6`, {
+    let l = await octo.repos.get({ owner: s, repo: o });
+    (await Is(octo, s, o, "clear-memory.yml", l.data.default_branch, { active_issue: String(a) }),
+      await e.reply(t("core.memoryCleared", { number: a }, glang()), {
         parse_mode: "MarkdownV2",
       }));
   } catch (l) {
@@ -12559,7 +12559,7 @@ sl.command("clear", async (e) => {
       error: l instanceof Error ? l.message : String(l),
     }),
       await e.reply(
-        `\u274C \u89F8\u767C workflow \`${O("\u{1F9F9} \u6E05\u9664\u5C0F\u9F8D\u8766\u8A18\u61B6")}\` \u5931\u6557\uFF1A${O(l instanceof Error ? l.message : "\u672A\u77E5\u932F\u8AA4")}`,
+        t("core.triggerWorkflowFailed", { name: O(t("core.clearMemoryWorkflow", {}, glang())), error: O(l instanceof Error ? l.message : t("core.unknownError", {}, glang())) }, glang()),
         { parse_mode: "MarkdownV2" },
       ));
   }
@@ -13128,7 +13128,7 @@ function bi(e) {
   return `\\#${e}`;
 }
 function Pl() {
-  return t("core.noActiveLobsterSelected", {}, glang());
+  return O(t("core.noActiveLobsterSelected", {}, glang()));
 }
 function Qm(e) {
   return t("core.workflowNotFound", { name: nn(e) }, glang());
