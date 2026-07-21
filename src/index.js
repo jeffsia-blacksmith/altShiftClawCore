@@ -13497,7 +13497,7 @@ function tf(e, t) {
 }
 function Ws(e) {
   let t = typeof e == "string" ? e.trim() : String(e ?? "").trim();
-  if (!t) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (!t) throw new Error("Invalid schedule format");
   if (/^\d{1,3}$/.test(t)) return Number.parseInt(t, 10);
   let r = {
     零: 0,
@@ -13516,27 +13516,27 @@ function Ws(e) {
   if (t === "\u5341") return 10;
   if (t.startsWith("\u5341")) {
     let s = r[t.slice(1)];
-    if (s == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (s == null) throw new Error("Invalid schedule format");
     return 10 + s;
   }
   if (t.includes("\u5341")) {
     let [s, o] = t.split("\u5341"),
       i = r[s];
-    if (i == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (i == null) throw new Error("Invalid schedule format");
     if (!o) return i * 10;
     let a = r[o];
-    if (a == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (a == null) throw new Error("Invalid schedule format");
     return i * 10 + a;
   }
   let n = r[t];
-  if (n == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (n == null) throw new Error("Invalid schedule format");
   return n;
 }
 function rf(e) {
   let t = Ws(e);
   if (!Number.isInteger(t) || t < 0 || t > 23)
     throw new Error(
-      "\u6642\u9593\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u5C0F\u6642\u8D85\u51FA\u7BC4\u570D",
+      "Invalid time format: hour out of range",
     );
   return t;
 }
@@ -13545,7 +13545,7 @@ function $l(e) {
   let t = Ws(e);
   if (!Number.isInteger(t) || t < 0 || t > 59)
     throw new Error(
-      "\u6642\u9593\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u5206\u9418\u8D85\u51FA\u7BC4\u570D",
+      "Invalid time format: minute out of range",
     );
   return t;
 }
@@ -13564,7 +13564,7 @@ function xT(e, t) {
 function PT(e, t) {
   let r = Ws(e.interval_minutes || 1);
   if (!Number.isInteger(r) || r <= 0 || r > 59)
-    throw new Error("\u6BCF\u5206\u9418\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid per-minute schedule format");
   let n = jn(t),
     s = n.minute,
     o = Cr({ year: n.year, month: n.month, day: n.day, hour: n.hour, minute: s });
@@ -13575,7 +13575,7 @@ function MT(e, t) {
   let r = Ws(e.interval_hours || 1),
     n = $l(e.minute);
   if (!Number.isInteger(r) || r <= 0 || r > 24)
-    throw new Error("\u6BCF\u5C0F\u6642\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid hourly schedule format");
   let s = jn(t),
     o = s.hour,
     i = Cr({ year: s.year, month: s.month, day: s.day, hour: o, minute: n });
@@ -13599,7 +13599,7 @@ function Gl(e, t, r) {
     o = $l(t.minute);
   if (n.size === 0)
     throw new Error(
-      "\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u7F3A\u5C11\u6709\u6548\u7684\u661F\u671F\u8A2D\u5B9A",
+      "Invalid schedule format: missing valid weekday setting",
     );
   let i = jn(r);
   for (let l = 0; l < 7; l += 1) {
@@ -13613,37 +13613,37 @@ function Gl(e, t, r) {
 }
 function NT(e, t) {
   let r = OT(e);
-  if (r.length === 0) throw new Error("\u6BCF\u9031\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (r.length === 0) throw new Error("Invalid weekly schedule format");
   return Gl(r, e, t);
 }
 function GT(e, t) {
   let r = new Date(e.run_at);
   if (Number.isNaN(r.getTime()))
-    throw new Error("\u55AE\u6B21\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid once schedule format");
   if (r.getTime() <= t.getTime())
-    throw new Error("\u55AE\u6B21\u6392\u7A0B\u6642\u9593\u5FC5\u9808\u665A\u65BC\u73FE\u5728");
+    throw new Error("Once schedule time must be later than now");
   return r;
 }
 function ef(e, t) {
   let r = Ws(e.minutes);
   if (!Number.isInteger(r) || r <= 0 || r > 1440)
-    throw new Error("\u56FA\u5B9A\u9593\u9694\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid fixed-interval schedule format");
   return tf(t, r);
 }
 function Ti(e, t, r, n = !1) {
   let s = Number.parseInt(e, 10);
-  if (!Number.isInteger(s)) throw new Error(`\u7121\u6548\u7684 cron \u6B04\u4F4D\u503C\uFF1A${e}`);
+  if (!Number.isInteger(s)) throw new Error(`Invalid cron field value: ${e}`);
   if (n && s === 7) return 0;
-  if (s < t || s > r) throw new Error(`cron \u6B04\u4F4D\u8D85\u51FA\u7BC4\u570D\uFF1A${e}`);
+  if (s < t || s > r) throw new Error(`cron field out of range: ${e}`);
   return s;
 }
 function js(e, t, r, n = !1) {
   let s = String(e ?? "").trim();
-  if (!s) throw new Error("cron \u6B04\u4F4D\u4E0D\u53EF\u70BA\u7A7A");
+  if (!s) throw new Error("cron field cannot be empty");
   let o = new Set(),
     i = (a, l, c = 1) => {
-      if (c <= 0) throw new Error(`\u7121\u6548\u7684 cron step\uFF1A${e}`);
-      if (a > l) throw new Error(`\u7121\u6548\u7684 cron \u7BC4\u570D\uFF1A${e}`);
+      if (c <= 0) throw new Error(`Invalid cron step: ${e}`);
+      if (a > l) throw new Error(`Invalid cron range: ${e}`);
       for (let d = a; d <= l; d += c) o.add(d);
     };
   for (let a of s.split(",")) {
@@ -13678,7 +13678,7 @@ function FT(e, t, r) {
 function $T(e, t) {
   let r = typeof e.expression == "string" ? e.expression.trim() : "",
     n = r.split(/\s+/);
-  if (n.length !== 5) throw new Error("cron \u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (n.length !== 5) throw new Error("Invalid cron schedule format");
   let [s, o, i, a, l] = n,
     c = js(s, 0, 59),
     d = js(o, 0, 23),
@@ -13695,7 +13695,7 @@ function $T(e, t) {
           if (U.getTime() > t.getTime()) return U;
         }
   }
-  throw new Error(`\u7121\u6CD5\u8A08\u7B97 cron \u4E0B\u6B21\u57F7\u884C\u6642\u9593\uFF1A${r}`);
+  throw new Error(`Cannot compute next cron run time: ${r}`);
 }
 function LT(e) {
   if (!e) return {};
