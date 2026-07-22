@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-22（Phase 2c/2d/2e 全部完成 —— i18n 迁移收尾，稳定基线就绪；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-22（Phase 2c/2d/2e 全部完成 —— i18n 迁移收尾，稳定基线就绪；**新增 §10 from-scratch 重写计划（Phase R）**；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
 
 ---
 
@@ -39,6 +39,7 @@
 | **Phase 2d** | console 日志 i18n + commit msg 固定英文 | ✅ 完成（4 批次 ~108 console 行 + Simplified 输入 token） | `83dbb30` `40105fa` `210aadd` `8b5084d` `6ca3e84` `60472e6` |
 | **Phase 2e** | parity check + rebuild bundle + 收尾文档 | ✅ 完成（808=808 leaf 对等、零 placeholder mismatch、bundle 重建） | `ebf3a20` |
 | **A 续** | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分 | ⏸️ **暂缓**（大概率不做，见 §5 存档） | — |
+| **Phase R** | from-scratch 重写（基于锁定基线，干净源码重写 worker） | ⬜ 待开始（计划见 §10，先决条件已满足） | — |
 
 **量化（最新，2026-07-22 Phase 2e 收尾）：** `src/index.js` 22,805 → **20,333 行**；bundle 605,818 → **629,928 bytes**（i18n t() 调用 + log.* 命名空间占用，net 略增）；**i18n leaf-key 对等 533 → 808（en = zh，零 placeholder mismatch）**；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件。**业务码 CJK 残留 = 40 行，全部为 KEEP 业务逻辑**（内容匹配 regex、输入判别 map、中文数字 parser、zh 标点分隔符、刻意保留的 Simplified AI prompt 范例）。`GitHubClawCore/index.js` 已重建。
 
@@ -207,7 +208,121 @@ bundle 大量用 `t` 作普通局部变数（message text、params、conclusion�
 
 ## 9. 待办与下一步
 - **i18n 主线（阶段 B）：✅ 全部完成（Phase 2a-2e）。** 当前 bundle 是完全 i18n 化、行为不变的稳定基线。可作 from-scratch 重写的行为对照基准。
-- **后阶段 — from-scratch 重写：** 基于锁定的行为基线，用干净源码重写 worker（与 i18n 化解耦）。先决条件已满足（护栏 + i18n 基线就绪）。
+- **后阶段 — from-scratch 重写：** 基于锁定的行为基线，用干净源码重写 worker（与 i18n 化解耦）。先决条件已满足（护栏 + i18n 基线就绪）。**完整计划见 §10（Phase R）**。
 - **模组抽离主线（阶段 A 续）：** §5 Step 1 keyboard builders 抽离（低风险高收益，与 i18n 解耦，可平行推进）—— 但用户倾向直接 from-scratch 重写，边际价值低，大概率不做。
 - **遗留判定为业务逻辑、不 i18n（40 行 KEEP）：** 输入判别 map（是/否/啟用/启用/停用）、中文数字 parser（零一二…十）、skip set（略過/略过/skip）、内容匹配 regex（`/(图片|image|photo)/`、`/执行小龙虾任务/`、`/已过|晚于现在/`、`/每\s*\d+\s*分/`、`/技能\s+\*\*/`、`/来自：|From:/`、`/技能(?:安装|移除)/`、`/范本同步|范本安装/`）、zh 标点分隔符（、：｜）、刻意保留的 Simplified AI prompt 范例（L13787-88）。
 - **计数已核实（2026-07-22）：** 业务码 CJK 残留 40 行（全 KEEP）；i18n leaf-key 808×2 对等；零 placeholder mismatch。
+
+---
+
+## 10. From-scratch 重写计划（Phase R）
+
+### 10.0 定位与原则
+- **目标**：用干净源码重写 worker —— 真正拥有代码、i18n 烤进架构、消除混淆 bundle 的「改一点坏一片」连锁脆弱。
+- **不是**换技术栈、不是换部署平台。Cloudflare Workers + Hono + grammY + Octokit + D1 + Workers AI 已验证可用，保留。
+- **行为契约 = 现有 14 护栏 + 重写前补的 characterization 护栏**。重写后逐条对齐基线，护栏全绿才算该子系统完成。
+- **i18n = 冻结的 UI 契约**：808 leaf 键 × 2 语原样复用，不重命名、不改 value（重写中发现需新增才加，两份同步）。
+- **参考而非 fork**：`src/index.js`（旧 bundle）作为行为规格读取，**不复制**其代码结构/混淆命名。
+- **沿用 Phase 2 执行原则**：先护栏后重写、最低风险先做、每阶段独立交付 + 护栏验收。
+
+### 10.1 目标架构（模块分解）
+```
+src-v2/
+  worker.js              # entry: export { fetch, scheduled }
+  config.js              # env/binding 解析（TELEGRAM_* / GITHUB_* / AI / DB）
+  http/
+    routes.js            # Hono app: /, /health, /github/webhook, /telegram/webhook
+    github-webhook.js    # signature 验证 + event 分发
+    telegram-webhook.js  # secret 验证 + path 透传
+  i18n/                  # 复用现有 en.json / zh-CN.json
+    index.js             # t(), glang(), getLanguage()
+  telegram/
+    bot.js               # grammY Bot 装配 + middleware 链
+    access-guard.js      # default-deny FROM_ID / CHAT_ID
+    language.js          # ctx.language / ctx.t middleware
+    commands/            # /start /list /current /status /close /schedules /skills /templates /enable /disable /workflow /clear
+    flows/               # new-flow.js, edit-flow.js（kv_state 状态机）
+    keyboards.js         # InlineKeyboard builders（原 ~35 个）
+  github/
+    octokit.js           # GitHub App auth + token 缓存
+    branches.js          # orphan 分支创建/重置、template 同步
+    webhooks/            # issue_comment.js, workflow_run.js, installation.js
+  coding-agent/
+    dispatch.js          # lobster 派工（issue → workflow dispatch）
+    relay.js             # issue 留言 ↔ Telegram 转送
+  scheduler/
+    cron.js              # scheduled() handler
+    ai-parser.js         # 自然语言 → cron（Workers AI）
+    crud.js              # schedules 表 CRUD
+  ai/
+    workflow-inputs.js   # Workers AI 推导 workflow_dispatch inputs
+    prompts.js           # aiPrompt.parser.* / scheduler prompt
+  db/
+    d1.js                # D1 wrapper
+    kv-state.js          # 流程状态
+    schedules.js
+    workflow-notifications.js
+    album-queue.js
+  media/
+    relay.js             # 图片/相册转送
+    album.js             # album_queue 合并
+  auto-init.js           # INIT_GITHUB_CLAW repo variable + 第一只龙虾
+```
+
+### 10.2 技术栈决策（推荐）
+- **保留**：Cloudflare Workers、Hono、grammY（npm 直接装 + pin 版本）、@octokit/*、D1、Workers AI、esbuild build。
+- **JS vs TypeScript**：推荐 **JS 起步**（与现有 i18n/护栏一致、低摩擦），稳定后可选升 TS。→ 待决（§10.9）。
+- **部署产物不变**：仍 build 出 `GitHubClawCore/index.js`，部署契约不动。
+
+### 10.3 仓库布局（推荐 side-by-side）
+- 新代码放 `src-v2/`；旧 bundle `src/index.js` 保留作行为参考 + 仍是现役部署产物，直到 src-v2 全绿后一次性 swap。
+- `build.mjs` 加 `src-v2` 入口（或新建 `build-v2.mjs`），产物先放 `GitHubClawCore/index.v2.js`，shadow 阶段不接流量。
+- swap 时机：§10.8 验收全过 + 一次手动 smoke。
+
+### 10.4 阶段分解（每阶段：写 → 护栏绿 → commit）
+| Phase | 范围 | 验收护栏 |
+|---|---|---|
+| **R0** bootstrap | wrangler.toml / build / CI 复用、空 worker `/health`、i18n 复用 | /health |
+| **R1** HTTP skeleton + config + D1 wrapper | `/`, `/health`, `/github/webhook` 签名, `/telegram/webhook` secret+path | 4 个 HTTP 护栏 |
+| **R2** i18n + language middleware | `t()`/`glang()`、`ctx.t`、`getLanguage` | 单测：key 解析 + parity |
+| **R3** Telegram skeleton + AccessGuard + 基础命令 | `/start` `/list` `/current` `/status` `/close` | 5 个 Telegram 护栏 |
+| **R4** Telegram flows | `/new` `/edit` 状态机（kv_state）、keyboards | +新增 flow 护栏 |
+| **R5** GitHub webhooks | issue_comment relay + coding-agent dispatch + workflow_run + installation | +新增 webhook 护栏 |
+| **R6** Scheduler | cron handler + AI 时间解析 + schedule CRUD + issue-comment 记录 | 2 个 cron 护栏 + 新增 |
+| **R7** AI workflow inputs + 其余命令 | `/clear` dispatch、`/skills` `/templates` `/enable` `/disable` `/workflow`、Workers AI 推导 | AI 护栏 + 新增 |
+| **R8** Media relay + album queue | 图片/相册转送、album_queue | +新增 media 护栏（**顺带修 §6.2 Ys/Nk `t_msg`/`t_file` 旧 bug**） |
+| **R9** auto-init + 全量 parity + smoke | INIT_GITHUB_CLAW、第一只龙虾；全护栏 + `wrangler dev` smoke + `CLAW_LANGUAGE` toggle | 全 14+ 全绿 |
+
+### 10.5 护栏先行（characterization tests — 重写安全性的关键杠杆）
+- **重写前先补护栏锁行为**：对即将重写的子系统，先在**旧 bundle** 上加 characterization 护栏（结构断言、不绑死字串），把当前行为钉死，再重写到绿。
+- 现有 14 护栏已覆盖：HTTP 路由、Telegram 命令（/list /current）、cron 空态/有 due 行、AI no-AI fallback。
+- **优先补的护栏**（现未覆盖）：media 路径、`/new` `/edit` 完整状态机往返、`/skills` `/templates` 装设、workflow_run 三态、installation welcome、auto-init、`/clear` dispatch。
+- 护栏覆盖越全，行为漂移风险越低 —— 这一步是 Phase R 安全性的核心，不可跳。
+
+### 10.6 i18n 复用
+- `src-v2/i18n/en.json` / `zh-CN.json` = 现有 808 键副本（`git mv` 或 copy），调用约定不变 `t(key, params, lang)` + `glang()`。
+- KEEP 业务逻辑随对应模组重写（regex / 中文数字 / 输入 token / skip set），保持 zh-CN+en 输入兼容（沿用已加的简体 `启用`/`略过`）。
+- 重写中若需新 key：两份 JSON 同步加，保 leaf 对等（沿用 Phase 2 规范）。
+
+### 10.7 风险与对策
+1. **行为漂移**（最大风险）→ 护栏先行 + 每阶段护栏全绿才推进；旧 bundle 保留可随时比对。
+2. **护栏未覆盖路径**（media 已知坏、部分命令）→ §10.5 先补 characterization 护栏；重写时顺带修旧 bug，并明确记录「行为变更」而非「对齐」。
+3. **grammY 版本漂移**：npm 直接装、pin 版本；用 Telegram 护栏挡 API 漂移。
+4. **lobster 语义逐字节保留**：orphan 分支、template、workflow name `🦞 Execute Lobster Task #${n}`、issue↔Telegram meta —— 写成常量 + 护栏断言。
+5. **D1 schema 不改**：kv_state / schedules / workflow_notifications / album_queue 保数据兼容。
+6. **secret / AccessGuard**：default-deny 语义保留，护栏已覆盖。
+
+### 10.8 验收标准（swap gate）
+- 全部 14 + 新增 characterization 护栏绿。
+- `npm run check` + `npm run build`（src-v2 入口）绿。
+- i18n parity 808×2（或新数）对等、零 placeholder mismatch。
+- `wrangler dev --local` 手动 smoke：6 端点 + 一轮 `/new → dispatch → comment relay`；toggle `CLAW_LANGUAGE` zh-CN/en 渲染正确。
+- （可选）与旧 bundle 输出逐字节 shadow 比对。
+- swap：`src-v2` → `src`，旧 bundle 归档到 `src-legacy/`。
+
+### 10.9 待决问题（开工前定）
+1. **JS vs TypeScript**：推荐 JS 起步，TS 作稳定后可选升级。
+2. **side-by-side vs in-place**：推荐 side-by-side（`src-v2/`），旧 bundle 作参考 + 现役部署直到 swap。
+3. **护栏扩展力度**：是否在 R0 前先做一轮纯 characterization 护栏扩展（不改旧 bundle 逻辑，只加测试）？**推荐是**。
+4. **grammY 版本 pin**：开工时查 npm 最新稳定版并 pin。
+5. **是否保留 esbuild**：推荐保留（部署产物契约不变）；如换 Vite / npm 直接上 Workers 也可，但增加变量。
