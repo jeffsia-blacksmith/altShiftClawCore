@@ -5192,6 +5192,9 @@ function gp(e, gLang = glang()) {
       t("core.infoCardModels", {}, gLang),
       ...Ty(e, gLang),
       "",
+      t("core.infoCardLLM", {}, gLang),
+      ...llmCardLines(e, gLang),
+      "",
       t("core.infoCardTemplate", {}, gLang),
       O(e.templateName?.trim() || t("core.none", {}, gLang)),
       "",
@@ -5217,6 +5220,26 @@ function Ty(e, gLang = glang()) {
   return srcs.length === 0
     ? [ps(e.models.fallbackLabel || t("schedule.workflow_defined_label", {}, gLang))]
     : srcs.map((r) => zo(O(`${yy[r.source]} (${r.model.trim()})`)));
+}
+function llmCardLines(e, gLang = glang()) {
+  let p = e.llm?.provider ?? null,
+    m = e.llm?.model ?? null;
+  return [
+    zo(
+      O(
+        `${t("core.llmProviderLabel", {}, gLang)}: ${
+          p ? p : t("core.llmNotSet", {}, gLang)
+        }`,
+      ),
+    ),
+    zo(
+      O(
+        `${t("core.llmModelLabel", {}, gLang)}: ${
+          m ? m : t("core.llmNotSet", {}, gLang)
+        }`,
+      ),
+    ),
+  ];
 }
 function ky(e, gLang = glang()) {
   return e.length > 0
@@ -6236,13 +6259,14 @@ var ar = Oe(() => {
 async function Hp(e) {
   let t = Number.parseInt(String(e.issueNumber), 10),
     r = Rn(t),
-    [n, s, o, i, a, l] = await Promise.all([
+    [n, s, o, i, a, l, u] = await Promise.all([
       Zy(e.octokit, e.owner, e.repo, t),
       ei(e.octokit, e.owner, e.repo, r),
       e_(e.d1, e.repoFullName, t),
       t_(e.d1, e.repoFullName, t),
       r_(e.octokit, e.owner, e.repo, r),
       s_(e.octokit, e.owner, e.repo, t),
+      llmReadSettingsSafe(e.octokit, e.owner, e.repo, t),
     ]);
   return {
     issue: { number: t, title: n.title, state: n.state, branch: r, exists: n.exists },
@@ -6254,8 +6278,18 @@ async function Hp(e) {
       hasConfiguredModel: a.some((c) => c.model !== null),
       fallbackLabel: null,
     },
+    llm: u,
     workflow: l,
   };
+}
+async function llmReadSettingsSafe(e, t, r, n) {
+  try {
+    let s = await llmReadSettings(e, t, r, n);
+    return { provider: s.defaultProvider ?? null, model: s.defaultModel ?? null };
+  } catch (o) {
+    console.error(i18nT("log.issueStatus.readLLMSettingsFailed", {}, glang()), o);
+    return { provider: null, model: null };
+  }
 }
 async function Zy(e, t, r, n) {
   try {

@@ -634,7 +634,11 @@
     "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
     "buttonExpired": "⚠️ 按钮已过期，请重新操作",
     "cancelled": "已取消",
-    "noneLabel": "（无）"
+    "noneLabel": "（无）",
+    "infoCardLLM": "🧠 AI 模型设置",
+    "llmProviderLabel": "提供商",
+    "llmModelLabel": "模型",
+    "llmNotSet": "（未设置）"
   },
   "templates": {
     "name_default": "预设范本",
@@ -767,7 +771,8 @@
       "readTemplateMetaFailed": "[issue-status] 读取模板 metadata 失败",
       "readBranchFileFailed": "[issue-status] 读取分支文件失败",
       "readWorkflowRunsFailed": "[issue-status] 读取 workflow runs 失败",
-      "sendMessageFailed": "[{tag}] 传送 issue 状态消息失败"
+      "sendMessageFailed": "[{tag}] 传送 issue 状态消息失败",
+      "readLLMSettingsFailed": "[issue-status] 读取 LLM 设置失败"
     },
     "branch": {
       "existsSkip": "分支 {branch} 已存在，略过建立",

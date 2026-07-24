@@ -634,7 +634,11 @@
     "workflowDisabledOk": "✅ Workflow {name} disabled. Lobster {number} temporarily not accepting dispatches.",
     "buttonExpired": "⚠️ This button has expired. Please try again.",
     "cancelled": "Cancelled",
-    "noneLabel": "(None)"
+    "noneLabel": "(None)",
+    "infoCardLLM": "🧠 AI provider",
+    "llmProviderLabel": "Provider",
+    "llmModelLabel": "Model",
+    "llmNotSet": "(not set)"
   },
   "templates": {
     "name_default": "Default Template",
@@ -767,7 +771,8 @@
       "readTemplateMetaFailed": "[issue-status] Read template metadata failed",
       "readBranchFileFailed": "[issue-status] Read branch file failed",
       "readWorkflowRunsFailed": "[issue-status] Read workflow runs failed",
-      "sendMessageFailed": "[{tag}] Send issue status message failed"
+      "sendMessageFailed": "[{tag}] Send issue status message failed",
+      "readLLMSettingsFailed": "[issue-status] Read LLM settings failed"
     },
     "branch": {
       "existsSkip": "Branch {branch} already exists, skip creation",
