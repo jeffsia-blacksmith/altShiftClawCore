@@ -17517,13 +17517,7 @@ async function llmValidateModel(e, t, r) {
         return { ok: o, skipped: !1 };
       }
       case "ollama-cloud": {
-        let n = await fetch("https://ollama.com/v1/models", {
-          headers: { Authorization: `Bearer ${t}` },
-        });
-        if (!n.ok) return { ok: !0, skipped: !0 };
-        let s = await n.json(),
-          o = Array.isArray(s?.data) && s.data.some((i) => i?.id === r);
-        return { ok: o, skipped: !1 };
+        return { ok: !0, skipped: !0 };
       }
       default:
         return { ok: !0, skipped: !0 };
