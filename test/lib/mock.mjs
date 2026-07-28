@@ -92,6 +92,16 @@ export const gh = {
     match: (url) => /\/repos\/[^/]+\/[^/]+\/issues(\?|$)/.test(url),
     response: () => ({ body: JSON.stringify(issues) }),
   }),
+  // POST /repos/{owner}/{repo}/issues/<n>/comments — capture comment body
+  createComment: (sink) => ({
+    match: (url) => /\/repos\/[^/]+\/[^/]+\/issues\/\d+\/comments$/.test(url),
+    response: ({ body }) => {
+      let parsed = {};
+      try { parsed = JSON.parse(body); } catch {}
+      sink.push(parsed.body ?? "");
+      return { body: JSON.stringify({ id: 100, body: parsed.body ?? "", issue_url: "x" }) };
+    },
+  }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,6 +121,7 @@ export const gh = {
 export function makeD1(initial = {}) {
   const kv = new Map(initial.kv_state ?? []);
   const schedules = new Map(initial.schedules ?? []);
+  const albumQueue = new Map(); // key: media_group_id:message_id → row
 
   function stmt(sql) {
     const s = { _args: [], _sql: sql };
@@ -168,6 +179,36 @@ export function makeD1(initial = {}) {
       s.first = async () => null;
     } else if (/DELETE FROM schedules/.test(sql)) {
       s.run = async () => ({ meta: { changes: 1 } });
+    } else if (/INSERT OR REPLACE INTO album_queue/.test(sql)) {
+      // album_queue INSERT（bind: media_group_id, message_id, file_id, original_name,
+      //   media_field, arrival_ts, issue_number, issue_owner, issue_repo, branch, caption, telegram_meta）
+      s.run = async () => {
+        const row = {
+          media_group_id: s._args[0], message_id: s._args[1], file_id: s._args[2],
+          original_name: s._args[3], media_field: s._args[4], arrival_ts: s._args[5],
+          issue_number: s._args[6], issue_owner: s._args[7], issue_repo: s._args[8],
+          branch: s._args[9], caption: s._args[10], telegram_meta: s._args[11],
+        };
+        albumQueue.set(`${row.media_group_id}:${row.message_id}`, row);
+        return { meta: { changes: 1 } };
+      };
+      s.first = async () => null;
+      s.all = async () => ({ results: [] });
+    } else if (/DELETE FROM album_queue.*RETURNING/.test(sql)) {
+      // flush: DELETE...RETURNING all rows for a media_group_id
+      s.all = async () => {
+        const groupId = s._args[0];
+        const results = [];
+        for (const [key, row] of albumQueue.entries()) {
+          if (row.media_group_id === groupId) {
+            results.push(row);
+            albumQueue.delete(key);
+          }
+        }
+        return { results };
+      };
+      s.run = async () => ({ meta: { changes: results => results.length } });
+      s.first = async () => null;
     } else if (/CREATE TABLE/.test(sql)) {
       s.run = async () => ({ meta: { changes: 0 } });
       s.first = async () => null;
@@ -186,6 +227,7 @@ export function makeD1(initial = {}) {
     // test helpers / inspection
     putKv: (k, v) => kv.set(k, v),
     getKv: (k) => kv.get(k) ?? null,
+    albumQueueSize: () => albumQueue.size,
     addSchedule: (row) => schedules.set(row.id, row),
     _kv: kv,
     _schedules: schedules,

@@ -592,6 +592,124 @@ await hitTg("POST /workflow no active issue → noActiveLobsterSelected", guarde
   }
 }
 
+console.log("guardrails-v2: Media relay + album queue");
+// 12. single photo, no active issue → noActiveIssueWarn reply
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  const replies = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(replies)]);
+  const ctx = capturingCtx();
+  try {
+    const update = {
+      update_id: 3,
+      message: {
+        message_id: 20, from: { id: 111 }, chat: { id: 111, type: "private" }, date: 1700000000,
+        photo: [{ file_id: "f1", width: 100, height: 100 }],
+        caption: "a photo",
+      },
+    };
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    assertReply(replies);
+    console.log("  ✓ single photo no active issue → noActiveIssueWarn reply");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ single photo no active: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+// 13. single photo with active issue → createComment
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("active-issue:111", "7");
+  const replies = [];
+  const comments = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(replies), gh.createComment(comments)]);
+  const ctx = capturingCtx();
+  try {
+    const update = {
+      update_id: 4,
+      message: {
+        message_id: 21, from: { id: 111 }, chat: { id: 111, type: "private" }, date: 1700000000,
+        photo: [{ file_id: "f1", width: 100, height: 100 }, { file_id: "f2", width: 800, height: 600 }],
+        caption: "single photo caption",
+      },
+    };
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    if (comments.length !== 1) throw new Error(`expected 1 createComment, got ${comments.length}`);
+    if (!comments[0].includes("photo")) throw new Error(`comment body missing label: ${comments[0]}`);
+    console.log("  ✓ single photo (active=7) → 1 createComment");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ single photo with active: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+// 14. photo album (media_group_id) → album_queue INSERT then flush + 1 createComment
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("active-issue:111", "7");
+  const replies = [];
+  const comments = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(replies), gh.createComment(comments)]);
+  const ctx = capturingCtx();
+  try {
+    // 发两张同 group 的照片，并发处理（不逐个 drain，让 3s debounce 重叠）
+    for (let i = 0; i < 2; i++) {
+      const update = {
+        update_id: 10 + i,
+        message: {
+          message_id: 30 + i, from: { id: 111 }, chat: { id: 111, type: "private" }, date: 1700000000,
+          media_group_id: "group-1",
+          photo: [{ file_id: `f${i}`, width: 100, height: 100 }],
+          caption: i === 1 ? "album caption" : "",
+        },
+      };
+      const req = new Request("https://test.dev/telegram/webhook", {
+        method: "POST",
+        headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+        body: JSON.stringify(update),
+      });
+      const res = await handler(req, env, ctx);
+      is(res, 200);
+      // 不在此 drain，让两个 handler 的 3s setTimeout 并发
+    }
+    await ctx.drain(); // 等所有 waitUntil（含两个 3s setTimeout）
+    // album_queue 应被 flush 清空
+    if (env.SCHEDULES_DB.albumQueueSize() !== 0)
+      throw new Error(`album_queue not flushed, size=${env.SCHEDULES_DB.albumQueueSize()}`);
+    // 应有且仅有 1 条 createComment（抢答的 handler 发的）
+    if (comments.length !== 1) throw new Error(`expected 1 createComment, got ${comments.length}`);
+    if (!comments[0].includes("×2")) throw new Error(`album comment missing count: ${comments[0]}`);
+    console.log("  ✓ photo album (2 photos, media_group_id) → flush + 1 createComment ×2");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ photo album: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {

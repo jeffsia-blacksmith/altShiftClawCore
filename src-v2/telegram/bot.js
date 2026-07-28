@@ -18,6 +18,8 @@ import { registerSkills } from "./commands/skills.js";
 import { registerTemplates } from "./commands/templates.js";
 import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
+import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
+import { t, glang } from "../i18n/index.js";
 
 export function createBot({ config, services }) {
   const bot = new Bot(config.telegram.botToken, {
@@ -65,7 +67,44 @@ export function createBot({ config, services }) {
     await next();
   });
 
-  // 5. 全局错误捕获 — 对齐 n.catch（L17928）
+  // 5. 媒体 handlers — 对齐 ln.on("message:photo/voice/video/audio/document") L17169-17230
+  const lang0 = () => glang();
+  bot.on("message:photo", async (ctx) => {
+    const ph = ctx.message.photo;
+    const file = {
+      field: "photo",
+      label: t("mediaLabel.photo", {}, lang0()),
+      ext: ".jpg",
+      fileId: ph[ph.length - 1].file_id,
+      fileName: null,
+      mimeType: null,
+      duration: null,
+      caption: ctx.message.caption ?? "",
+    };
+    const groupId = ctx.message.media_group_id;
+    if (groupId) await handleAlbumMedia(ctx, file, groupId);
+    else await handleSingleMedia(ctx, file);
+  });
+  const singleMediaHandler = (field) => async (ctx) => {
+    const fileObj = ctx.message[field];
+    const file = {
+      field,
+      label: t(`mediaLabel.${field}`, {}, lang0()),
+      ext: fieldExt(field, fileObj?.file_name),
+      fileId: fileObj?.file_id,
+      fileName: fileObj?.file_name ?? null,
+      mimeType: fileObj?.mime_type ?? null,
+      duration: fileObj?.duration ?? null,
+      caption: ctx.message.caption ?? "",
+    };
+    await handleSingleMedia(ctx, file);
+  };
+  bot.on("message:voice", singleMediaHandler("voice"));
+  bot.on("message:video", singleMediaHandler("video"));
+  bot.on("message:audio", singleMediaHandler("audio"));
+  bot.on("message:document", singleMediaHandler("document"));
+
+  // 6. 全局错误捕获 — 对齐 n.catch（L17928）
   bot.catch((err) => console.error("[Bot Error]", err.error));
 
   return bot;
