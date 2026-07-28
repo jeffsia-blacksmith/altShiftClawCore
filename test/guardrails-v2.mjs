@@ -441,6 +441,45 @@ console.log("guardrails-v2: GitHub webhook event dispatch");
   }
 }
 
+console.log("guardrails-v2: Scheduler (cron)");
+// 1. no SCHEDULES_DB binding → [] (early bail, no fetch)
+{
+  const env = { ...baseEnv(), SCHEDULES_DB: undefined };
+  const ctx = capturingCtx();
+  try {
+    const result = await scheduled({}, env, ctx);
+    await ctx.drain();
+    if (!Array.isArray(result)) throw new Error(`cron should return array, got ${typeof result}`);
+    if (result.length !== 0) throw new Error(`expected empty, got ${JSON.stringify(result)}`);
+    console.log("  ✓ scheduled (cron) no SCHEDULES_DB → []");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ scheduled no SCHEDULES_DB: ${e.message}`);
+    fail++;
+  }
+}
+// 2. empty schedules → [] with no fetch calls
+{
+  const env = baseEnv();
+  const mock = installMockFetch([]);
+  const ctx = capturingCtx();
+  try {
+    const result = await scheduled({}, env, ctx);
+    await ctx.drain();
+    if (!Array.isArray(result)) throw new Error(`cron should return array, got ${typeof result}`);
+    if (result.length !== 0) throw new Error(`expected empty, got ${JSON.stringify(result)}`);
+    if (mock.calls.length !== 0)
+      throw new Error(`cron empty should make no fetch calls: ${JSON.stringify(mock.calls.map((c) => c.url))}`);
+    console.log("  ✓ scheduled (cron) empty → [] with no fetch calls");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ scheduled empty: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
