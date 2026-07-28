@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-22（Phase 2c/2d/2e 全部完成 —— i18n 迁移收尾，稳定基线就绪；**新增 §10 from-scratch 重写计划（Phase R）**；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-28（Phase R 启动：R0 bootstrap 完成 —— src-v2/ 骨架就绪，/ + /health 对齐基线，i18n 808×2 复用，build-v2 + guardrails-v2 4/4 绿，基线 14/14 无回归；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
 
 ---
 
@@ -41,7 +41,7 @@
 | **Phase 2d**       | console 日志 i18n + commit msg 固定英文                                                               | ✅ 完成（4 批次 ~108 console 行 + Simplified 输入 token）                                                                                                          | `83dbb30` `40105fa` `210aadd` `8b5084d` `6ca3e84` `60472e6`                                                                         |
 | **Phase 2e**       | parity check + rebuild bundle + 收尾文档                                                              | ✅ 完成（808=808 leaf 对等、零 placeholder mismatch、bundle 重建）                                                                                                 | `ebf3a20`                                                                                                                                     |
 | **A 续**           | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分                                              | ⏸️**暂缓**（大概率不做，见 §5 存档）                                                                                                                      | —                                                                                                                                              |
-| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | ⬜ 待开始（计划见 §10，先决条件已满足）                                                                                                                           | —                                                                                                                                              |
+| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | 🔄 R0 完成（bootstrap：src-v2/ 骨架 + / + /health + i18n 复用 + build-v2/guardrails-v2，4/4 护栏绿，基线 14/14 无回归）                          | （本提交）                                                                                                                                     |
 
 **量化（最新，2026-07-22 Phase 2e 收尾）：** `src/index.js` 22,805 → **20,333 行**；bundle 605,818 → **629,928 bytes**（i18n t() 调用 + log.* 命名空间占用，net 略增）；**i18n leaf-key 对等 533 → 808（en = zh，零 placeholder mismatch）**；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件。**业务码 CJK 残留 = 40 行，全部为 KEEP 业务逻辑**（内容匹配 regex、输入判别 map、中文数字 parser、zh 标点分隔符、刻意保留的 Simplified AI prompt 范例）。`GitHubClawCore/index.js` 已重建。
 
@@ -361,8 +361,10 @@ src-v2/
 
 ### 10.9 待决问题（开工前定）
 
-1. **JS vs TypeScript**：推荐 JS 起步，TS 作稳定后可选升级。
-2. **side-by-side vs in-place**：推荐 side-by-side（`src-v2/`），旧 bundle 作参考 + 现役部署直到 swap。
-3. **护栏扩展力度**：是否在 R0 前先做一轮纯 characterization 护栏扩展（不改旧 bundle 逻辑，只加测试）？**推荐是**。
-4. **grammY 版本 pin**：开工时查 npm 最新稳定版并 pin。
-5. **是否保留 esbuild**：推荐保留（部署产物契约不变）；如换 Vite / npm 直接上 Workers 也可，但增加变量。
+> 2026-07-28 R0 开工时已定案（均采推荐项）：
+
+1. **JS vs TypeScript**：✅ **JS 起步**（与现有 i18n/护栏一致、低摩擦），稳定后再考虑升 TS。
+2. **side-by-side vs in-place**：✅ **side-by-side**（`src-v2/`），旧 bundle 作参考 + 现役部署直到 swap。
+3. **护栏扩展力度**：✅ **先补 characterization 护栏**（R0 末已加 guardrails-v2；后续每阶段前补对应路径）。
+4. **grammY 版本 pin**：✅ pin **1.45.1**（R3 接入 telegram/ 时装；R0 尚未用 grammY）。
+5. **是否保留 esbuild**：✅ **保留**（`build-v2.mjs` 与 `build.mjs` 并存，部署产物契约 `GitHubClawCore/index.v2.js` 不动）。
