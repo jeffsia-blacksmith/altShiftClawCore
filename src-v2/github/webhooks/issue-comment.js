@@ -6,6 +6,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { parseTelegramMeta, stripTelegramMeta } from "./meta.js";
 import { escapeMarkdownV2 } from "../../telegram/markdown.js";
+import { dispatchCodingAgent } from "../../coding-agent/dispatch.js";
 
 // relay：把 comment body（body-only，MarkdownV2 转义）发到 issue body 的 telegram-meta chat_id
 async function relayCommentToTelegram(payload, env) {
@@ -70,16 +71,21 @@ export function registerIssueCommentHandlers(webhooks, env) {
       await relayP;
       return;
     }
-    // 人类 / scheduled-trigger Bot → relay + dispatch（R5 占位 dispatch，R7 完善为 createWorkflowDispatch）
-    const dispatchP = Promise.resolve(); // R7: fu(payload, env)
+    // 人类 / scheduled-trigger Bot → relay + dispatch
+    const dispatchP = dispatchCodingAgent(payload, env).catch((e) => {
+      console.error("[webhook] dispatch to coding agent failed:", e);
+    });
     await Promise.allSettled([relayP, dispatchP]);
   });
 
   webhooks.on("issue_comment.edited", async ({ payload }) => {
-    // R5：仅 relay，dispatch gate（ag/As）在 R7 完善
+    // R5：relay + dispatch gate（ag 等价判断在 dispatchCodingAgent 内部）
     const relayP = relayCommentToTelegram(payload, env).catch((e) => {
       console.error("[webhook] relay edited to Telegram failed:", e);
     });
-    await Promise.allSettled([relayP]);
+    const dispatchP = dispatchCodingAgent(payload, env).catch((e) => {
+      console.error("[webhook] dispatch edited to coding agent failed:", e);
+    });
+    await Promise.allSettled([relayP, dispatchP]);
   });
 }

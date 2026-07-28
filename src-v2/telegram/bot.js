@@ -12,6 +12,10 @@ import { registerHelp } from "./commands/help.js";
 import { registerList } from "./commands/list.js";
 import { registerCurrent } from "./commands/current.js";
 import { registerClose } from "./commands/close.js";
+import { registerClear } from "./commands/clear.js";
+import { registerWorkflowControls } from "./commands/workflow-controls.js";
+import { registerSkills } from "./commands/skills.js";
+import { registerTemplates } from "./commands/templates.js";
 import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
 
@@ -44,6 +48,10 @@ export function createBot({ config, services }) {
   registerList(commands);
   registerCurrent(commands);
   registerClose(commands);
+  registerClear(commands);
+  registerWorkflowControls(commands);
+  registerSkills(commands);
+  registerTemplates(commands);
   registerNew(commands);
   registerFlowCancel(commands);
   registerFlowCallbacks(commands);

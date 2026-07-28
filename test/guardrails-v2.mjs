@@ -480,6 +480,118 @@ console.log("guardrails-v2: Scheduler (cron)");
   }
 }
 
+// gh helpers for workflow commands
+function ghWorkflows(workflows) {
+  return {
+    match: (url) => /\/repos\/[^/]+\/[^/]+\/actions\/workflows(\?|$)/.test(url),
+    response: () => ({ body: JSON.stringify({ workflows }) }),
+  };
+}
+function ghWorkflowEnable() {
+  return {
+    match: (url) => /\/actions\/workflows\/\d+\/enable$/.test(url),
+    response: () => ({ body: JSON.stringify({ ok: true }) }),
+  };
+}
+function ghRepo(defaultBranch = "main") {
+  return {
+    match: (url) => /\/repos\/[^/]+\/[^/]+(\?|$)/.test(url) && !url.includes("/actions/") && !url.includes("/issues") && !url.includes("/contents"),
+    response: () => ({ body: JSON.stringify({ default_branch: defaultBranch }) }),
+  };
+}
+function ghDispatch() {
+  return {
+    match: (url) => /\/actions\/workflows\/[^/]+\/dispatches$/.test(url),
+    response: () => ({ body: JSON.stringify({ ok: true }) }),
+  };
+}
+
+// 7. /clear no active → noActiveLobsterSelected
+await hitTg("POST /clear no active issue → noActiveLobsterSelected", guardedEnv, tgUpdate("/clear"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "lobster" });
+});
+
+// 8. /enable no active → noActiveLobsterSelected
+await hitTg("POST /enable no active issue → noActiveLobsterSelected", guardedEnv, tgUpdate("/enable"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "lobster" });
+});
+
+// 9. /workflow no active → noActiveLobsterSelected
+await hitTg("POST /workflow no active issue → noActiveLobsterSelected", guardedEnv, tgUpdate("/workflow"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "lobster" });
+});
+
+// 10. /enable with active → enableWorkflow called
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("active-issue:111", "7");
+  const mock = installMockFetch([
+    tg.getMe(),
+    tg.sendMessage([]),
+    ghWorkflows([{ id: 42, path: ".github/workflows/issue-7.yml", state: "active" }]),
+    ghWorkflowEnable(),
+  ]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(tgUpdate("/enable")),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const enableCall = mock.calls.find((c) => /\/actions\/workflows\/42\/enable$/.test(c.url));
+    if (!enableCall) throw new Error("expected enableWorkflow call, not made");
+    console.log("  ✓ /enable (active=7) → enableWorkflow dispatched");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ /enable with active: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+// 11. /clear with active → dispatch clear-memory.yml
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("active-issue:111", "7");
+  const mock = installMockFetch([
+    tg.getMe(),
+    tg.sendMessage([]),
+    ghRepo("main"),
+    ghDispatch(),
+  ]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(tgUpdate("/clear")),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const dispatchCall = mock.calls.find((c) => /\/actions\/workflows\/[^/]+\/dispatches$/.test(c.url));
+    if (!dispatchCall) throw new Error("expected workflow dispatch, not made");
+    if (!/\/workflows\/clear-memory\.yml\//.test(dispatchCall.url))
+      throw new Error(`wrong workflow in URL: ${dispatchCall.url}`);
+    const body = JSON.parse(dispatchCall.body ?? "{}");
+    if (body.inputs?.active_issue !== "7") throw new Error(`wrong inputs: ${JSON.stringify(body.inputs)}`);
+    console.log("  ✓ /clear (active=7) → clear-memory.yml dispatch with active_issue=7");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ /clear with active: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
