@@ -5,6 +5,7 @@
 import { Hono } from "hono";
 import { buildConfig, ConfigError } from "../config.js";
 import { createKvStore, ensureMigrated } from "../db/d1.js";
+import { languageMiddleware } from "../i18n/language.js";
 import { createGithubWebhookHandler } from "./github-webhook.js";
 import { createTelegramWebhookHandler } from "./telegram-webhook.js";
 
@@ -30,6 +31,9 @@ export function createApp({ bot = null, githubEventHandlers = {}, buildOctokit =
     }
     await next();
   });
+
+  // 语言中间件 — 对齐 Of L17902-17906：ctx.language = getLanguage(services), ctx.t
+  app.use("*", languageMiddleware());
 
   // Ao — GET / + GET /health（L11993-12001）
   app.get("/", (c) => {

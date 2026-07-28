@@ -169,5 +169,40 @@ await (async () => {
   }
 })();
 
+console.log("guardrails-v2: i18n t() key resolution + placeholders");
+await (async () => {
+  try {
+    const { t } = await import(`file://${join(root, "../src-v2/i18n/index.js")}`);
+    // EN key resolution
+    const enHealth = t("core.workflowStatusCard", {}, "en");
+    if (typeof enHealth !== "string" || enHealth.length === 0)
+      throw new Error(`en core.workflowStatusCard empty: ${enHealth}`);
+    if (enHealth.startsWith("core."))
+      throw new Error(`en key leaked unresolved: ${enHealth}`);
+    // ZH key resolution (different value than en)
+    const zhHealth = t("core.workflowStatusCard", {}, "zh-CN");
+    if (typeof zhHealth !== "string" || zhHealth.length === 0)
+      throw new Error(`zh core.workflowStatusCard empty: ${zhHealth}`);
+    // Unknown key returns the dotted key path (fallback)
+    const unknown = t("core.__nonexistent_key__", {}, "en");
+    if (unknown !== "core.__nonexistent_key__")
+      throw new Error(`unknown key should return path, got: ${unknown}`);
+    // Placeholder interpolation
+    const interpolated = t("access.messageTooLong", { max: 12345 }, "en");
+    if (!String(interpolated).includes("12345"))
+      throw new Error(`placeholder {max} not interpolated: ${interpolated}`);
+    // Fallback to en when lang dict missing the key
+    const enOnly = t("access.notFullyConfigured", {}, "en");
+    const zhFallback = t("access.notFullyConfigured", {}, "zh-CN");
+    if (enOnly === "access.notFullyConfigured" || zhFallback === "access.notFullyConfigured")
+      throw new Error(`notFullyConfigured unresolved in both: en=${enOnly} zh=${zhFallback}`);
+    console.log("  ✓ t() en/zh/unknown/placeholder/fallback");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ i18n t(): ${e.message}`);
+    fail++;
+  }
+})();
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);
