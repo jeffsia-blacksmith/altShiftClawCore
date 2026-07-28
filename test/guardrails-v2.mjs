@@ -67,7 +67,7 @@ async function hitTg(label, env, update, extraFetchRoutes, check) {
     });
     const res = await handler(req, env, ctx);
     await ctx.drain();
-    await check(res, replies, mock.calls);
+    await check(res, replies, mock.calls, env);
   } catch (e) {
     console.error(`  ✗ ${label}: ${e.message}`);
     fail++;
@@ -252,6 +252,109 @@ await hitTg("POST /current no active issue → reply", guardedEnv, tgUpdate("/cu
   is(res, 200);
   assertReply(replies);
 });
+
+console.log("guardrails-v2: Telegram flows (/new + switch_issue + close)");
+// 7. /new → reply enterName + D1 new-flow state awaiting_name
+await hitTg("POST /new → enterName reply + flow state awaiting_name", guardedEnv, tgUpdate("/new"), [], async (res, replies, _calls, env) => {
+  is(res, 200);
+  const text = assertReply(replies, { contains: "lobster" });
+  void text;
+  const flow = env.SCHEDULES_DB.getKv("new-flow:111");
+  if (!flow) throw new Error("D1 missing new-flow:111");
+  const st = JSON.parse(flow);
+  if (st.step !== "awaiting_name" || st.mode !== "create")
+    throw new Error(`flow state wrong: ${flow}`);
+});
+
+// 8. /new then text "Bookkeeping" → reply enterDescription + flow awaiting_description
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  const replies = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(replies)]);
+  const ctx = capturingCtx();
+  try {
+    // step 0: /new
+    let req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(tgUpdate("/new")),
+    });
+    let res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    // step 1: send name text
+    replies.length = 0;
+    req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(tgUpdate("Bookkeeping Lobster")),
+    });
+    res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    assertReply(replies, { contains: "Bookkeeping" });
+    const flow = env.SCHEDULES_DB.getKv("new-flow:111");
+    const st = JSON.parse(flow);
+    if (st.step !== "awaiting_description" || st.name !== "Bookkeeping Lobster")
+      throw new Error(`flow state after name: ${flow}`);
+    console.log("  ✓ /new + text name → enterDescription reply + flow awaiting_description");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ /new + text name flow: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+// 9. switch_issue callback — set active-issue + clear new-flow
+{
+  const env = baseEnv({
+    TELEGRAM_ALLOWED_FROM_ID: "111",
+    TELEGRAM_ALLOWED_CHAT_ID: "111",
+  });
+  // 预置 menu-state:list + 一条开 issue
+  env.SCHEDULES_DB.putKv("menu-state:111", JSON.stringify({ mode: "list", messageId: 42 }));
+  const replies = [];
+  const cbAnswers = [];
+  const mock = installMockFetch([
+    tg.getMe(),
+    tg.sendMessage(replies),
+    tg.answerCallback(cbAnswers),
+    tg.editMessageText(replies),
+    gh.issues([{ number: 7, title: "Test issue" }]),
+  ]);
+  const ctx = capturingCtx();
+  try {
+    const update = {
+      update_id: 2,
+      callback_query: {
+        id: "cq1",
+        from: { id: 111, is_bot: false, first_name: "Test" },
+        message: { message_id: 42, chat: { id: 111, type: "private" }, date: 1700000000, text: "list" },
+        chat_instance: "x",
+        data: "switch_issue:7",
+      },
+    };
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const active = env.SCHEDULES_DB.getKv("active-issue:111");
+    if (active !== "7") throw new Error(`active-issue:111 expected "7", got ${active}`);
+    console.log("  ✓ switch_issue:7 → active-issue:111 = 7");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ switch_issue: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
 
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {

@@ -12,6 +12,8 @@ import { registerHelp } from "./commands/help.js";
 import { registerList } from "./commands/list.js";
 import { registerCurrent } from "./commands/current.js";
 import { registerClose } from "./commands/close.js";
+import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flow.js";
+import { registerFlowCallbacks } from "./flows/callbacks.js";
 
 export function createBot({ config, services }) {
   const bot = new Bot(config.telegram.botToken, {
@@ -35,16 +37,27 @@ export function createBot({ config, services }) {
     await next();
   });
 
-  // 3. 命令路由 — 用 Composer 分组（对齐 za/Ko/Va/ri/rl）
+  // 3. 命令路由 — 用 Composer 分组（对齐 za/Ko/Va/ri/rl/Gs/zt）
   const commands = new Composer();
   registerStart(commands);
   registerHelp(commands);
   registerList(commands);
   registerCurrent(commands);
   registerClose(commands);
+  registerNew(commands);
+  registerFlowCancel(commands);
+  registerFlowCallbacks(commands);
   bot.use(commands);
 
-  // 4. 全局错误捕获 — 对齐 n.catch（L17928）
+  // 4. message:text 续接 — 对齐 su.on("message:text") 的 Ke 分支（L17831）
+  // 若存在 new-flow 状态，文本由 flow 消费；否则留给后续阶段的 comment-on-issue 路径。
+  bot.on("message:text", async (ctx, next) => {
+    const consumed = await handleFlowText(ctx);
+    if (consumed) return;
+    await next();
+  });
+
+  // 5. 全局错误捕获 — 对齐 n.catch（L17928）
   bot.catch((err) => console.error("[Bot Error]", err.error));
 
   return bot;

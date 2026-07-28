@@ -68,6 +68,21 @@ export const tg = {
       return { body: JSON.stringify({ ok: true, result: { message_id: 42, date: 1700000000, chat: { id: 111, type: "private" } } }) };
     },
   }),
+  // answerCallbackQuery: grammY calls POST /bot<token>/answerCallbackQuery — capture into sink
+  answerCallback: (sink) => ({
+    match: (url) => url.endsWith("/answerCallbackQuery"),
+    response: ({ body }) => { sink.push(body ?? ""); return { body: JSON.stringify({ ok: true, result: true }) }; },
+  }),
+  // editMessageText: capture edited message text + reply_markup
+  editMessageText: (sink) => ({
+    match: (url) => url.endsWith("/editMessageText"),
+    response: ({ body }) => {
+      let parsed = {};
+      try { parsed = JSON.parse(body); } catch {}
+      sink.push({ text: parsed.text ?? "", reply_markup: parsed.reply_markup ?? null });
+      return { body: JSON.stringify({ ok: true, result: { message_id: 42, date: 1700000000, chat: { id: 111, type: "private" } } }) };
+    },
+  }),
 };
 
 export const gh = {
