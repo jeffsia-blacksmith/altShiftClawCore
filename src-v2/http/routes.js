@@ -1,32 +1,67 @@
 // http/routes.js — Hono app 装配
-// R0 阶段：仅 / + /health + onError + config middleware。
-// 行为对齐旧 bundle Ao（L11993-12001）+ Jc onError（L11987-11992）+ oc config 中间件（L9297-9300）。
+// 行为对齐旧 bundle dr（L20076-20083）+ oc/Vc 中间件 + Jc onError + 子路由。
+// R1 阶段：oc(config) + Vc(store/octokit/d1/ai) + Ao(/ + /health) + bu(github webhook) + ou(telegram webhook)。
 
 import { Hono } from "hono";
 import { buildConfig, ConfigError } from "../config.js";
+import { createKvStore, ensureMigrated } from "../db/d1.js";
+import { createGithubWebhookHandler } from "./github-webhook.js";
+import { createTelegramWebhookHandler } from "./telegram-webhook.js";
 
-export function createApp() {
+export function createApp({ bot = null, githubEventHandlers = {}, buildOctokit = null } = {}) {
   const app = new Hono();
 
-  // config middleware — 对齐 oc(e, t)：把 buildConfig(env) 写入 c.var.config
+  // oc 中间件 — 对齐 L9297-9300：buildConfig(env) → c.var.config
   app.use("*", async (c, next) => {
     c.set("config", buildConfig(c.env));
     await next();
   });
 
-  // GET / — 对齐 Ao.get("/")：{ ok: true, service, version }
+  // Vc 中间件 — 对齐 L11976-11986：lazy-once migration + octokit/store/d1/ai
+  app.use("*", async (c, next) => {
+    const config = c.var.config;
+    const db = c.env.SCHEDULES_DB;
+    await ensureMigrated(db);
+    c.set("d1", db);
+    c.set("store", createKvStore(db));
+    c.set("ai", c.env.AI ?? null);
+    if (buildOctokit) {
+      c.set("octokit", buildOctokit(config));
+    }
+    await next();
+  });
+
+  // Ao — GET / + GET /health（L11993-12001）
   app.get("/", (c) => {
     const version = c.var?.config?.version ?? "1.0.0";
     return c.json({ ok: true, service: "githubclaw-core", version });
   });
-
-  // GET /health — 对齐 Ao.get("/health")
   app.get("/health", (c) => {
     const version = c.var?.config?.version ?? "1.0.0";
     return c.json({ ok: true, service: "githubclaw-core", version });
   });
 
-  // onError — 对齐 Jc(e, t)
+  // bu — POST /github/webhook（L20049-20068）
+  app.post("/github/webhook", async (c) => {
+    const handler = createGithubWebhookHandler({
+      config: c.var.config,
+      services: { octokit: c.var.octokit, store: c.var.store, d1: c.var.d1, ai: c.var.ai },
+      eventHandlers: githubEventHandlers,
+    });
+    return handler(c);
+  });
+
+  // ou — POST * with secret+path gate（L17932-17955）
+  app.post("*", async (c, next) => {
+    const handler = createTelegramWebhookHandler({
+      config: c.var.config,
+      services: { octokit: c.var.octokit, store: c.var.store, d1: c.var.d1, ai: c.var.ai },
+      bot,
+    });
+    return handler(c, next);
+  });
+
+  // Jc onError — 对齐 L11987-11992
   app.onError((err, c) => {
     if (err instanceof ConfigError) {
       console.error("[ConfigError]", err.message);

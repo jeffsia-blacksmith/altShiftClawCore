@@ -22,6 +22,9 @@ const result = await build({
   minify: true,
   write: false,
   legalComments: "none",
+  // @octokit/webhooks-methods exports node (createHmac) + web (crypto.subtle) 分支；
+  // Workers 运行时只有 Web Crypto（crypto.subtle），所以选 browser 分支。
+  conditions: ["browser"],
   // 旧 bundle 用 alias:{crypto:empty.js} 绕过 tweetnacl 的 Node crypto fallback；
   // src-v2 不再内联 tweetnacl，无需该 alias。
 });

@@ -1,14 +1,12 @@
 // guardrails-v2.mjs — src-v2 护栏（Phase R）
-// R0 阶段：对齐旧 bundle 现有护栏中 src-v2 已实现的部分。
-//   - /health → 200 { ok:true, service:"githubclaw-core" }
-//   - /       → 200 { ok:true }
-//   - 404 routing
-//   - i18n: t() key 解析 + en/zh leaf-key parity（808×2）
+// R0: /health, /, 404 routing, i18n parity
+// R1: github webhook bad/valid signature, telegram webhook path fall-through + bad secret
 // 后续阶段随实现推进逐步补 characterization 护栏（§10.5）。
 import { build } from "esbuild";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { makeD1 } from "./lib/mock.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, "../src-v2/worker.js");
@@ -23,13 +21,14 @@ await build({
   write: true,
   outfile: OUT,
   legalComments: "none",
+  conditions: ["browser"],
 });
 
 const mod = await import(`file://${OUT}`);
 const handler = mod.default.fetch;
+const scheduled = mod.default.scheduled;
 
 const MOCK_ENV = {
-  // R0 guardrail mock env — 对齐旧 guardrails.mjs MOCK_ENV（健康检查无需完整配置）
   GITHUB_OWNER: "test-owner",
   GITHUB_REPO: "test-repo",
   GITHUB_WEBHOOK_SECRET: "test-secret",
@@ -39,7 +38,7 @@ const MOCK_ENV = {
   TELEGRAM_WEBHOOK_PATH: "/telegram/webhook",
   TELEGRAM_MAX_MESSAGE_LENGTH: "4096",
   CLAW_SYS_GITHUB_TOKEN: "ghp_fake",
-  SCHEDULES_DB: { prepare: () => ({ bind: () => ({}), run: async () => ({}), first: async () => null, all: async () => [] }) },
+  SCHEDULES_DB: makeD1(),
 };
 
 let pass = 0, fail = 0;
@@ -78,8 +77,69 @@ await hit("GET / → 200 (root alias)", "/", {}, async (res) => {
 
 console.log("guardrails-v2: 404 routing");
 await hit("GET /__nonexistent__ → 404", "/__nonexistent__", {}, async (res) => {
-  if (res.status === 200) throw new Error("should not be 200");
-  if (res.status < 400 || res.status >= 500) throw new Error(`expected 4xx, got ${res.status}`);
+  if (res.status !== 404) throw new Error(`expected 404, got ${res.status}`);
+});
+
+console.log("guardrails-v2: /github/webhook signature");
+await hit("POST /github/webhook bad signature → 400 {ok:false}", "/github/webhook", {
+  method: "POST",
+  headers: {
+    "x-github-delivery": "test-id",
+    "x-github-event": "ping",
+    "x-hub-signature-256": "sha256=invalid",
+    "content-type": "application/json",
+  },
+  body: "{}",
+}, async (res) => {
+  if (res.status !== 400) throw new Error(`expected 400, got ${res.status}`);
+  const b = await json(res);
+  if (b.ok !== false) throw new Error(`expected ok:false, got ${JSON.stringify(b)}`);
+  if (typeof b.error !== "string" || !b.error) throw new Error(`expected error string, got ${b.error}`);
+});
+
+await hit("POST /github/webhook ping (empty sig) → 400 (no 5xx)", "/github/webhook", {
+  method: "POST",
+  headers: {
+    "x-github-delivery": "test-id",
+    "x-github-event": "ping",
+    "content-type": "application/json",
+  },
+  body: "{}",
+}, async (res) => {
+  if (res.status >= 500) throw new Error(`expected < 500, got ${res.status}`);
+  if (res.status !== 400) throw new Error(`expected 400 for empty sig with secret set, got ${res.status}`);
+  const b = await json(res);
+  if (b.ok !== false) throw new Error(`expected ok:false (signature mismatch), got ${JSON.stringify(b)}`);
+});
+
+console.log("guardrails-v2: /telegram/webhook path + secret");
+await hit("POST /telegram/other-path → 404 (path fall-through)", "/telegram/other-path", {
+  method: "POST",
+  headers: { "x-telegram-bot-api-secret-token": "tg-secret", "content-type": "application/json" },
+  body: JSON.stringify({ update_id: 1 }),
+}, async (res) => {
+  if (res.status !== 404) throw new Error(`expected 404 fall-through, got ${res.status}`);
+});
+
+await hit("POST /telegram/webhook bad secret → 401 {ok:false}", "/telegram/webhook", {
+  method: "POST",
+  headers: { "x-telegram-bot-api-secret-token": "WRONG", "content-type": "application/json" },
+  body: JSON.stringify({ update_id: 1 }),
+}, async (res) => {
+  if (res.status !== 401) throw new Error(`expected 401, got ${res.status}`);
+  const b = await json(res);
+  if (b.ok !== false) throw new Error(`expected ok:false, got ${JSON.stringify(b)}`);
+  if (b.error !== "Invalid secret") throw new Error(`expected "Invalid secret", got ${b.error}`);
+});
+
+await hit("POST /telegram/webhook valid secret → 200 {ok:true}", "/telegram/webhook", {
+  method: "POST",
+  headers: { "x-telegram-bot-api-secret-token": "tg-secret", "content-type": "application/json" },
+  body: JSON.stringify({ update_id: 1, message: { message_id: 1, from: { id: 1 }, chat: { id: 1, type: "private" }, date: 1, text: "/start" } }),
+}, async (res) => {
+  is(res, 200);
+  const b = await json(res);
+  if (b.ok !== true) throw new Error(`expected {ok:true}, got ${JSON.stringify(b)}`);
 });
 
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
