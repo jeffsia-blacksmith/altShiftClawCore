@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-28（Phase R 启动：R0 bootstrap 完成 —— src-v2/ 骨架就绪，/ + /health 对齐基线，i18n 808×2 复用，build-v2 + guardrails-v2 4/4 绿，基线 14/14 无回归；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-28（Phase R 推进至 R6 —— R0-R6 完成：bootstrap / HTTP+config+D1 / i18n / Telegram+AccessGuard+5命令 / flows / GitHub webhooks / cron empty paths；src-v2 22/22 护栏绿，基线 14/14 无回归。剩 R7 命令+AI dispatch / R8 media / R9 auto-init+parity+swap；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
 
 ---
 
@@ -41,7 +41,7 @@
 | **Phase 2d**       | console 日志 i18n + commit msg 固定英文                                                               | ✅ 完成（4 批次 ~108 console 行 + Simplified 输入 token）                                                                                                          | `83dbb30` `40105fa` `210aadd` `8b5084d` `6ca3e84` `60472e6`                                                                         |
 | **Phase 2e**       | parity check + rebuild bundle + 收尾文档                                                              | ✅ 完成（808=808 leaf 对等、零 placeholder mismatch、bundle 重建）                                                                                                 | `ebf3a20`                                                                                                                                     |
 | **A 续**           | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分                                              | ⏸️**暂缓**（大概率不做，见 §5 存档）                                                                                                                      | —                                                                                                                                              |
-| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | 🔄 R0 完成（bootstrap：src-v2/ 骨架 + / + /health + i18n 复用 + build-v2/guardrails-v2，4/4 护栏绿，基线 14/14 无回归）                          | （本提交）                                                                                                                                     |
+| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | 🔄 R0-R6 完成（R0 bootstrap / R1 HTTP+config+D1 / R2 i18n / R3 Telegram+AccessGuard+5命令 / R4 flows / R5 GitHub webhooks / R6 cron empty paths；src-v2 22/22 护栏绿，基线 14/14 无回归）。剩 R7 命令+AI dispatch / R8 media / R9 auto-init+parity+swap | （本提交）                                                                                                                                     |
 
 **量化（最新，2026-07-22 Phase 2e 收尾）：** `src/index.js` 22,805 → **20,333 行**；bundle 605,818 → **629,928 bytes**（i18n t() 调用 + log.* 命名空间占用，net 略增）；**i18n leaf-key 对等 533 → 808（en = zh，零 placeholder mismatch）**；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件。**业务码 CJK 残留 = 40 行，全部为 KEEP 业务逻辑**（内容匹配 regex、输入判别 map、中文数字 parser、zh 标点分隔符、刻意保留的 Simplified AI prompt 范例）。`GitHubClawCore/index.js` 已重建。
 
