@@ -10,8 +10,9 @@ import { createGithubWebhookHandler } from "./github-webhook.js";
 import { createTelegramWebhookHandler } from "./telegram-webhook.js";
 import { createBot } from "../telegram/bot.js";
 import { buildOctokit as defaultBuildOctokit } from "../github/octokit.js";
+import { registerAllWebhookHandlers } from "../github/webhooks/index.js";
 
-export function createApp({ githubEventHandlers = {}, buildOctokit = defaultBuildOctokit } = {}) {
+export function createApp({ buildOctokit = defaultBuildOctokit } = {}) {
   const app = new Hono();
 
   // oc 中间件 — 对齐 L9297-9300：buildConfig(env) → c.var.config
@@ -49,10 +50,19 @@ export function createApp({ githubEventHandlers = {}, buildOctokit = defaultBuil
 
   // bu — POST /github/webhook（L20049-20068）
   app.post("/github/webhook", async (c) => {
+    const config = c.var.config;
+    const services = {
+      octokit: c.var.octokit,
+      store: c.var.store,
+      d1: c.var.d1,
+      ai: c.var.ai,
+      config,
+    };
+    const registerHandlers = (webhooks) => registerAllWebhookHandlers(webhooks, services);
     const handler = createGithubWebhookHandler({
-      config: c.var.config,
-      services: { octokit: c.var.octokit, store: c.var.store, d1: c.var.d1, ai: c.var.ai },
-      eventHandlers: githubEventHandlers,
+      config,
+      services,
+      registerHandlers,
     });
     return handler(c);
   });

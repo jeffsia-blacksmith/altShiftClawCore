@@ -9,13 +9,12 @@
 
 import { Webhooks } from "@octokit/webhooks";
 
-export function createGithubWebhookHandler({ config, services, eventHandlers = {} }) {
+export function createGithubWebhookHandler({ config, services, registerHandlers = null }) {
   const webhooks = new Webhooks({ secret: config.github?.webhookSecret ?? "" });
 
-  // R5 将注册 issue_comment / workflow_run / installation 等 handler。
-  // 对齐 Og 的 .on() 注册；R1 暂无注册（ping/unknown 走默认 200 路径）。
-  for (const [name, handler] of Object.entries(eventHandlers)) {
-    webhooks.on(name, handler);
+  // R5+ 注册 event handlers（对齐 Og 的 .on() 注册集合）
+  if (registerHandlers) {
+    registerHandlers(webhooks);
   }
 
   return async (c) => {

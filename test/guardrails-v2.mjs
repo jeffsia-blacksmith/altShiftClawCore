@@ -6,6 +6,7 @@ import { build } from "esbuild";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { createHmac } from "node:crypto";
 import {
   makeD1,
   installMockFetch,
@@ -350,6 +351,90 @@ await hitTg("POST /new → enterName reply + flow state awaiting_name", guardedE
     pass++;
   } catch (e) {
     console.error(`  ✗ switch_issue: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+console.log("guardrails-v2: GitHub webhook event dispatch");
+// 用真实 HMAC-SHA256 签名验证 issue_comment.created 路由到 Telegram relay
+{
+  const env = baseEnv();
+  // issue body 含 telegram-meta chat_id=111（对齐护栏 guardedEnv 的 chat id）
+  const issueBody = `<!-- telegram-meta: {"chat_id":111,"msg_id":50} -->\n\n\`\`\`json\n{"name":"Test","description":"d"}\n\`\`\``;
+  const payload = JSON.stringify({
+    action: "created",
+    issue: { number: 7, title: "Test issue", body: issueBody, html_url: "https://github.com/test-owner/test-repo/issues/7" },
+    comment: { id: 99, body: "Hello from GitHub", html_url: "https://github.com/test-owner/test-repo/issues/7#issuecomment-99" },
+    sender: { login: "human-user", type: "User" },
+  });
+  const sig = "sha256=" + createHmac("sha256", env.GITHUB_WEBHOOK_SECRET).update(payload).digest("hex");
+  const tgReplies = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(tgReplies)]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/github/webhook", {
+      method: "POST",
+      headers: {
+        "x-github-delivery": "deliv-1",
+        "x-github-event": "issue_comment",
+        "x-hub-signature-256": sig,
+        "content-type": "application/json",
+      },
+      body: payload,
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const b = await json(res);
+    if (b.ok !== true) throw new Error(`expected {ok:true}, got ${JSON.stringify(b)}`);
+    // relay 应发 1 条 Telegram 消息（body-only "Hello from GitHub"）
+    if (tgReplies.length < 1) throw new Error(`expected >=1 telegram relay, got ${tgReplies.length}`);
+    const text = tgReplies[0].text ?? "";
+    if (!text.includes("Hello from GitHub"))
+      throw new Error(`relay text missing comment body: ${text}`);
+    console.log("  ✓ issue_comment.created (valid sig) → 200 + Telegram relay");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ issue_comment.created dispatch: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
+// issues.opened → 200，无副作用
+{
+  const env = baseEnv();
+  const payload = JSON.stringify({
+    action: "opened",
+    issue: { number: 8, title: "New issue", body: "" },
+    sender: { login: "human-user", type: "User" },
+  });
+  const sig = "sha256=" + createHmac("sha256", env.GITHUB_WEBHOOK_SECRET).update(payload).digest("hex");
+  const mock = installMockFetch([]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/github/webhook", {
+      method: "POST",
+      headers: {
+        "x-github-delivery": "deliv-2",
+        "x-github-event": "issues",
+        "x-hub-signature-256": sig,
+        "content-type": "application/json",
+      },
+      body: payload,
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const b = await json(res);
+    if (b.ok !== true) throw new Error(`expected {ok:true}, got ${JSON.stringify(b)}`);
+    console.log("  ✓ issues.opened (valid sig) → 200 {ok:true}");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ issues.opened: ${e.message}`);
     fail++;
   } finally {
     mock.restore();
