@@ -19,6 +19,8 @@
     "content-type": "^1.0.5",
     "tweetnacl": "^1.0.3",
     "hono": "4.12.32",
-    "@octokit/webhooks": "14.2.0"
+    "@octokit/webhooks": "14.2.0",
+    "grammy": "1.45.1",
+    "octokit": "5.0.5"
   }
 }

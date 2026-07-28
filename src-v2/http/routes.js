@@ -8,8 +8,10 @@ import { createKvStore, ensureMigrated } from "../db/d1.js";
 import { languageMiddleware } from "../i18n/language.js";
 import { createGithubWebhookHandler } from "./github-webhook.js";
 import { createTelegramWebhookHandler } from "./telegram-webhook.js";
+import { createBot } from "../telegram/bot.js";
+import { buildOctokit as defaultBuildOctokit } from "../github/octokit.js";
 
-export function createApp({ bot = null, githubEventHandlers = {}, buildOctokit = null } = {}) {
+export function createApp({ githubEventHandlers = {}, buildOctokit = defaultBuildOctokit } = {}) {
   const app = new Hono();
 
   // oc 中间件 — 对齐 L9297-9300：buildConfig(env) → c.var.config
@@ -57,9 +59,18 @@ export function createApp({ bot = null, githubEventHandlers = {}, buildOctokit =
 
   // ou — POST * with secret+path gate（L17932-17955）
   app.post("*", async (c, next) => {
+    const config = c.var.config;
+    const services = {
+      octokit: c.var.octokit,
+      store: c.var.store,
+      d1: c.var.d1,
+      ai: c.var.ai,
+      config,
+    };
+    const bot = createBot({ config, services });
     const handler = createTelegramWebhookHandler({
-      config: c.var.config,
-      services: { octokit: c.var.octokit, store: c.var.store, d1: c.var.d1, ai: c.var.ai },
+      config,
+      services,
       bot,
     });
     return handler(c, next);
