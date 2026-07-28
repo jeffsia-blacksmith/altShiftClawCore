@@ -102,6 +102,15 @@ export const gh = {
       return { body: JSON.stringify({ id: 100, body: parsed.body ?? "", issue_url: "x" }) };
     },
   }),
+  // POST /repos/{owner}/{repo}/issues — create issue, return assigned number
+  createIssue: (number) => ({
+    match: (url) => /\/repos\/[^/]+\/[^/]+\/issues$/.test(url) && !/\/issues\//.test(url.split("?")[0]),
+    response: ({ body }) => {
+      let parsed = {};
+      try { parsed = JSON.parse(body); } catch {}
+      return { body: JSON.stringify({ number, title: parsed.title ?? "x", body: parsed.body ?? "" }) };
+    },
+  }),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

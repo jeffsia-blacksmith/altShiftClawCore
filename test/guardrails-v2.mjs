@@ -710,6 +710,61 @@ console.log("guardrails-v2: Media relay + album queue");
   }
 }
 
+console.log("guardrails-v2: Auto-init (installation.created + initGitHubClaw)");
+// 15. installation.created with INIT_GITHUB_CLAW=true → welcome + first lobster + autoInitCreated
+{
+  const env = baseEnv({
+    TELEGRAM_ALLOWED_FROM_ID: "111",
+    TELEGRAM_ALLOWED_CHAT_ID: "111",
+    TELEGRAM_CHAT_ID: "111",
+    INIT_GITHUB_CLAW: "true",
+  });
+  const tgReplies = [];
+  const mock = installMockFetch([
+    tg.getMe(),
+    tg.sendMessage(tgReplies),
+    gh.createIssue(1),
+  ]);
+  const ctx = capturingCtx();
+  try {
+    const payload = JSON.stringify({
+      action: "created",
+      installation: { id: 1, account: { login: "test-owner", type: "Organization" } },
+      repositories: [{ full_name: "test-owner/test-repo" }],
+      sender: { login: "test-owner", type: "User" },
+    });
+    const sig = "sha256=" + createHmac("sha256", env.GITHUB_WEBHOOK_SECRET).update(payload).digest("hex");
+    const req = new Request("https://test.dev/github/webhook", {
+      method: "POST",
+      headers: {
+        "x-github-delivery": "deliv-init",
+        "x-github-event": "installation",
+        "x-hub-signature-256": sig,
+        "content-type": "application/json",
+      },
+      body: payload,
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    // 2 Telegram messages: welcome + autoInitCreated
+    if (tgReplies.length < 2) throw new Error(`expected >=2 tg messages, got ${tgReplies.length}`);
+    // active-issue should be set to the created issue number (1)
+    const active = env.SCHEDULES_DB.getKv("active-issue:111");
+    if (active !== "1") throw new Error(`active-issue:111 expected "1", got ${active}`);
+    // init done flag set
+    if (env.SCHEDULES_DB.getKv("init_github_claw_done") !== "true")
+      throw new Error("init_github_claw_done not set");
+    console.log("  ✓ installation.created (initGitHubClaw=true) → welcome + first lobster + autoInitCreated");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ auto-init: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
