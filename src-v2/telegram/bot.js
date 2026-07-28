@@ -17,7 +17,11 @@ import { registerWorkflowControls } from "./commands/workflow-controls.js";
 import { registerSkills } from "./commands/skills.js";
 import { registerTemplates } from "./commands/templates.js";
 import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flow.js";
+import { registerEdit, registerEditCallbacks, handleEditText } from "./flows/edit-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
+import { registerLlm, handleLlmText } from "./flows/llm/llm.js";
+import { registerVersion } from "./commands/version.js";
+import { registerSchedules } from "./commands/schedules.js";
 import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
 import { t, glang } from "../i18n/index.js";
 
@@ -54,16 +58,22 @@ export function createBot({ config, services }) {
   registerWorkflowControls(commands);
   registerSkills(commands);
   registerTemplates(commands);
+  registerVersion(commands);
+  registerSchedules(commands);
+  registerLlm(commands);
   registerNew(commands);
+  registerEdit(commands);
+  registerEditCallbacks(commands);
   registerFlowCancel(commands);
   registerFlowCallbacks(commands);
   bot.use(commands);
 
-  // 4. message:text 续接 — 对齐 su.on("message:text") 的 Ke 分支（L17831）
-  // 若存在 new-flow 状态，文本由 flow 消费；否则留给后续阶段的 comment-on-issue 路径。
+  // 4. message:text 续接 — 对齐 su.on("message:text")（L17810-17840）
+  // 优先级：new-flow (handleFlowText) → edit-flow (handleEditText) → llm (handleLlmText) → comment-on-issue（R9b）
   bot.on("message:text", async (ctx, next) => {
-    const consumed = await handleFlowText(ctx);
-    if (consumed) return;
+    if (await handleFlowText(ctx)) return;
+    if (await handleEditText(ctx)) return;
+    if (await handleLlmText(ctx)) return;
     await next();
   });
 

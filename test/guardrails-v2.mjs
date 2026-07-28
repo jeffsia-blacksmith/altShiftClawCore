@@ -765,6 +765,36 @@ console.log("guardrails-v2: Auto-init (installation.created + initGitHubClaw)");
   }
 }
 
+console.log("guardrails-v2: Batch A — /version /schedules /llm /edit");
+// /version → hardcoded "🦞 altShiftClawCore v<version>"
+await hitTg("POST /version → hardcoded version string", guardedEnv, tgUpdate("/version"), [], async (res, replies) => {
+  is(res, 200);
+  if (replies.length !== 1) throw new Error(`expected 1 reply, got ${replies.length}`);
+  const text = replies[0].text ?? "";
+  if (!text.startsWith("🦞 altShiftClawCore v")) throw new Error(`wrong version text: ${text}`);
+  if (!text.includes("0.2.24")) throw new Error(`missing version 0.2.24: ${text}`);
+});
+
+// /schedules with no schedules → empty list reply (schedule.thisChatListEmpty = "No schedules currently.")
+await hitTg("POST /schedules (no schedules) → empty list reply", guardedEnv, tgUpdate("/schedules"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "schedules" });
+});
+
+// /llm no active issue → hardcoded "⚠️ No Lobster selected"
+await hitTg("POST /llm (no active) → hardcoded no-lobster reply", guardedEnv, tgUpdate("/llm"), [], async (res, replies) => {
+  is(res, 200);
+  if (replies.length !== 1) throw new Error(`expected 1 reply, got ${replies.length}`);
+  const text = replies[0].text ?? "";
+  if (!text.includes("No Lobster selected")) throw new Error(`missing "No Lobster selected": ${text}`);
+});
+
+// /edit no active issue → newFlow.noActiveLobster
+await hitTg("POST /edit (no active) → noActiveLobster reply", guardedEnv, tgUpdate("/edit"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "lobster" });
+});
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
