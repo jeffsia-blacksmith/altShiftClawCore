@@ -3,7 +3,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
-import { getActiveIssue, setActiveIssue } from "../../db/kv-state.js";
+import { setActiveIssue } from "../../db/kv-state.js";
 import { initEditFlow } from "./edit-flow.js";
 import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } from "../../github/branches.js";
 

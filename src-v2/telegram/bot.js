@@ -20,12 +20,12 @@ import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flo
 import { registerEdit, registerEditCallbacks, handleEditText } from "./flows/edit-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
 import { registerLlm, handleLlmText } from "./flows/llm/llm.js";
-import { registerSkillCallbacks, handleSkillEnvText, getSkillState } from "./flows/skills-callbacks.js";
-import { registerTemplateCallbacks, handleTemplateEnvText, getTplState } from "./flows/templates-callbacks.js";
+import { registerSkillCallbacks, handleSkillEnvText } from "./flows/skills-callbacks.js";
+import { registerTemplateCallbacks, handleTemplateEnvText } from "./flows/templates-callbacks.js";
 import { registerVersion } from "./commands/version.js";
 import { registerSchedules } from "./commands/schedules.js";
 import { registerScheduleCallbacks, handleScheduleText } from "./flows/schedule-flow.js";
-import { registerLineBotCallbacks, handleLineText, getLineState } from "./flows/line-bot.js";
+import { registerLineBotCallbacks, handleLineText } from "./flows/line-bot.js";
 import { registerTemplateResetCallbacks } from "./flows/template-reset-callbacks.js";
 import { handleCommentOnIssue } from "./comment-on-issue.js";
 import { handleNaturalLanguageCommand } from "./ai-inference.js";

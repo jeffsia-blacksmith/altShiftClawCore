@@ -4,7 +4,7 @@
 
 import { t, glang } from "../i18n/index.js";
 import { getActiveIssue } from "../db/kv-state.js";
-import { getFlowState, clearFlowState } from "./flows/state.js";
+import { getFlowState } from "./flows/state.js";
 import { getSchedState } from "./flows/schedule-flow.js";
 import { getLlmState } from "./flows/llm/state.js";
 import { getSkillState } from "./flows/skills-callbacks.js";

@@ -2,7 +2,7 @@
 // 行为对齐旧 bundle pg/vg/yg/xg/mg/Cg/_g/Pg/fg/Rg/Tg/Mg（L19487-19940）+ workflow_notifications CRUD。
 // R9 完整版：D1 记录 + Telegram 完成通知。
 
-import { t, glang, i18nT } from "../../i18n/index.js";
+import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 
 const WORKFLOW_PATHS = {

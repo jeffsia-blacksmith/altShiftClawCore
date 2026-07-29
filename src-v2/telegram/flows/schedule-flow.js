@@ -8,8 +8,7 @@ import {
   createSchedule, getSchedule, listSchedulesForIssue, listSchedulesForChat,
   updateSchedule, deleteSchedule,
 } from "../../db/schedules.js";
-import { getActiveIssue, setActiveIssue } from "../../db/kv-state.js";
-import { getFlowState, clearFlowState } from "./state.js";
+import { clearFlowState } from "./state.js";
 import { scheduleRuleDescription, scheduleCardNotify, scheduleRuleTypeLabel } from "../edge-replies.js";
 
 const PREFIX = "schedule-flow:";
