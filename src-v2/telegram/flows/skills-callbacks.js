@@ -6,7 +6,7 @@ import { InlineKeyboard } from "grammy";
 
 const PREFIX = "skill-install:";
 
-async function getSkillState(store, chatId) {
+export async function getSkillState(store, chatId) {
   const raw = await store.get(`${PREFIX}${chatId}`);
   if (!raw) return null;
   try { return JSON.parse(raw); } catch { return null; }

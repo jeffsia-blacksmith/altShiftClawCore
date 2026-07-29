@@ -20,10 +20,15 @@ import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flo
 import { registerEdit, registerEditCallbacks, handleEditText } from "./flows/edit-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
 import { registerLlm, handleLlmText } from "./flows/llm/llm.js";
-import { registerSkillCallbacks, handleSkillEnvText } from "./flows/skills-callbacks.js";
-import { registerTemplateCallbacks, handleTemplateEnvText } from "./flows/templates-callbacks.js";
+import { registerSkillCallbacks, handleSkillEnvText, getSkillState } from "./flows/skills-callbacks.js";
+import { registerTemplateCallbacks, handleTemplateEnvText, getTplState } from "./flows/templates-callbacks.js";
 import { registerVersion } from "./commands/version.js";
 import { registerSchedules } from "./commands/schedules.js";
+import { registerScheduleCallbacks, handleScheduleText } from "./flows/schedule-flow.js";
+import { registerLineBotCallbacks, handleLineText, getLineState } from "./flows/line-bot.js";
+import { registerTemplateResetCallbacks } from "./flows/template-reset-callbacks.js";
+import { handleCommentOnIssue } from "./comment-on-issue.js";
+import { handleNaturalLanguageCommand } from "./ai-inference.js";
 import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
 import { t, glang } from "../i18n/index.js";
 
@@ -70,16 +75,22 @@ export function createBot({ config, services }) {
   registerFlowCallbacks(commands);
   registerSkillCallbacks(commands);
   registerTemplateCallbacks(commands);
+  registerScheduleCallbacks(commands);
+  registerLineBotCallbacks(commands);
+  registerTemplateResetCallbacks(commands);
   bot.use(commands);
 
-  // 4. message:text 续接 — 对齐 su.on("message:text")（L17810-17840）
-  // 优先级：skill-env → template-env → new-flow → edit-flow → llm → comment-on-issue（R9b）
+  // 4. message:text 续接 — 对齐 su.on("message:text")（L17810-17897）
+  // 优先级：skill-env → template-env → new-flow → edit-flow → llm → schedule → LINE → comment-on-issue → AI natural-lang
   bot.on("message:text", async (ctx, next) => {
     if (await handleSkillEnvText(ctx)) return;
     if (await handleTemplateEnvText(ctx)) return;
     if (await handleFlowText(ctx)) return;
     if (await handleEditText(ctx)) return;
     if (await handleLlmText(ctx)) return;
+    if (await handleScheduleText(ctx)) return;
+    if (await handleLineText(ctx)) return;
+    if (await handleCommentOnIssue(ctx)) return;
     await next();
   });
 

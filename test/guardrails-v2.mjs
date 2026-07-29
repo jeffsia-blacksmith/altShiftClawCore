@@ -856,6 +856,49 @@ console.log("guardrails-v2: Batch B — skills/templates callbacks");
   finally { mock.restore(); }
 }
 
+console.log("guardrails-v2: Batch C+D — schedule flow + template_reset + current_edit");
+// schedule_flow_cancel:current → clears state + cancelSetupMessage
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("schedule-flow:111", JSON.stringify({ step: "awaiting_prompt", issueNumber: 7 }));
+  const cbAnswers = [], edits = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage([]), tg.answerCallback(cbAnswers), tg.editMessageText(edits)]);
+  const ctx = capturingCtx();
+  try {
+    const update = { update_id: 60, callback_query: { id: "c1", from: { id: 111 }, message: { message_id: 50, chat: { id: 111, type: "private" }, date: 1, text: "x" }, chat_instance: "x", data: "schedule_flow_cancel:current" } };
+    const req = new Request("https://test.dev/telegram/webhook", { method: "POST", headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" }, body: JSON.stringify(update) });
+    const res = await handler(req, env, ctx); await ctx.drain();
+    is(res, 200);
+    if (env.SCHEDULES_DB.getKv("schedule-flow:111") !== null) throw new Error("schedule-flow state not cleared");
+    if (edits.length < 1) throw new Error("expected editMessageText");
+    console.log("  ✓ schedule_flow_cancel:current → state cleared + cancelSetupMessage");
+    pass++;
+  } catch (e) { console.error(`  ✗ schedule_flow_cancel: ${e.message}`); fail++; } finally { mock.restore(); }
+}
+
+// current_edit:<issueNum> → sets active issue + enterEditAnswer toast
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  const cbAnswers = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage([]), tg.answerCallback(cbAnswers)]);
+  const ctx = capturingCtx();
+  try {
+    const update = { update_id: 61, callback_query: { id: "c2", from: { id: 111 }, message: { message_id: 51, chat: { id: 111, type: "private" }, date: 1, text: "x" }, chat_instance: "x", data: "current_edit:7" } };
+    const req = new Request("https://test.dev/telegram/webhook", { method: "POST", headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" }, body: JSON.stringify(update) });
+    const res = await handler(req, env, ctx); await ctx.drain();
+    is(res, 200);
+    if (env.SCHEDULES_DB.getKv("active-issue:111") !== "7") throw new Error("active-issue not set to 7");
+    console.log("  ✓ current_edit:7 → active-issue set + enterEditAnswer toast");
+    pass++;
+  } catch (e) { console.error(`  ✗ current_edit: ${e.message}`); fail++; } finally { mock.restore(); }
+}
+
+// message:text with no active issue → system.no_active_issue
+await hitTg("POST text (no active issue) → no_active_issue reply", baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" }), tgUpdate("hello there"), [], async (res, replies) => {
+  is(res, 200);
+  assertReply(replies, { contains: "active" });
+});
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {

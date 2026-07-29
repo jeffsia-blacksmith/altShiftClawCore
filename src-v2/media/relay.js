@@ -52,21 +52,64 @@ export async function handleSingleMedia(ctx, file) {
   const { owner, repo } = config.github;
   const lang = ctx.language ?? glang();
 
-  // R8 最小：active issue + branch 存在时走 metadata comment；完整 git 上传在 R8b
-  // 旧 bundle 在 branchExists 时走 getFile→download→createOrUpdateFile→createComment→finalize
-  // R8 暂只建 metadata comment（无 branch 时旧 bundle 也走此路径 L16816-16833）
+  // 检查 issue-<n> 分支是否存在
+  let branchExists = false;
+  try { await octokit.rest.git.getRef({ owner, repo, ref: `heads/issue-${active}` }); branchExists = true; } catch {}
+
+  if (!branchExists) {
+    // 无分支 → metadata-only comment
+    try {
+      const label = file.label ?? t(`mediaLabel.${file.field}`, {}, lang);
+      const content = file.caption?.trim() || "";
+      const body = `🦞 ${label}${content ? `\n\n${content}` : ""}`;
+      await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
+    } catch (e) { console.error("[media:single]", e); await ctx.reply(t("core.unknownError", {}, lang)); }
+    return;
+  }
+
+  // 有分支 → 完整 git 上传
   try {
-    const label = file.label ?? t(`mediaLabel.${file.field}`, {}, lang);
-    const content = file.caption?.trim() || "";
-    const body = `🦞 ${label}${content ? `\n\n${content}` : ""}`;
-    await octokit.rest.issues.createComment({
-      owner,
-      repo,
-      issue_number: active,
-      body,
+    // 1. getFile（通过 Telegram API）
+    const fileResp = await ctx.api.getFile(file.fileId);
+    const filePath = fileResp.file_path;
+    // 2. 下载
+    const downloadUrl = `${config.telegram.apiBaseUrl ?? "https://api.telegram.org"}/file/bot${config.telegram.botToken}/${filePath}`;
+    const dlResp = await fetch(downloadUrl);
+    const buf = await dlResp.arrayBuffer();
+    const base64 = Buffer.from(buf).toString("base64");
+    // 3. 文件名
+    const storedName = `${Date.now()}_${file.fileId.replace(/[^a-zA-Z0-9.]/g, "_")}${file.ext ?? ""}`;
+    const tempPath = `assets/telegram/${storedName}`;
+    // 4. 上传 temp
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner, repo, path: tempPath, message: `chore: upload telegram ${file.field} ${storedName}`,
+      content: base64, branch: `issue-${active}`,
     });
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/issue-${active}/${tempPath}`;
+    // 5. 建 pending comment
+    const meta = { chat_id: chatId, msg_id: ctx.message?.message_id, user_id: ctx.from?.id, username: ctx.from?.username, chat_type: ctx.chat?.type, ts: new Date().toISOString() };
+    const mediaMeta = `<!-- githubclaw-media-meta: {"stage":"pending","kind":"single","temp_paths":["${tempPath}"],"final_paths":[]} -->`;
+    const link = file.field === "photo" ? `![${file.label}](${rawUrl})` : `[${file.label} — ${file.fileName ?? file.fileId}](${rawUrl})`;
+    const commentBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${mediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${link}${file.caption ? `\n\n${file.caption}` : ""}\n\n${t("core.relativeLocation", { path: tempPath }, lang)}`;
+    const created = await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body: commentBody });
+    // 6. 上传 final + 更新 comment
+    const finalPath = `artifacts/${created.data.id}/${storedName}`;
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner, repo, path: finalPath, message: `chore: attach telegram ${file.field} to comment #${created.data.id}`,
+      content: base64, branch: `issue-${active}`,
+    });
+    const finalRawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/issue-${active}/${finalPath}`;
+    const finalLink = file.field === "photo" ? `![${file.label}](${finalRawUrl})` : `[${file.label} — ${file.fileName ?? file.fileId}](${finalRawUrl})`;
+    const finalMediaMeta = `<!-- githubclaw-media-meta: {"stage":"finalized","kind":"single","temp_paths":["${tempPath}"],"final_paths":["${finalPath}"]} -->`;
+    const finalizedBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${finalMediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${finalLink}${file.caption ? `\n\n${file.caption}` : ""}\n\n${t("core.relativeLocation", { path: finalPath }, lang)}`;
+    await octokit.rest.issues.updateComment({ owner, repo, comment_id: created.data.id, body: finalizedBody });
+    // 7. 清理 temp
+    try {
+      const tempContent = await octokit.rest.repos.getContent({ owner, repo, path: tempPath, ref: `issue-${active}` });
+      await octokit.rest.repos.deleteFile({ owner, repo, path: tempPath, message: `chore: cleanup temp ${file.field}`, sha: tempContent.data.sha, branch: `issue-${active}` });
+    } catch (e) { console.error("[media:single] cleanup temp failed:", e); }
   } catch (e) {
-    console.error("[media:single]", e);
+    console.error("[media:single git upload]", e);
     await ctx.reply(t("core.unknownError", {}, lang));
   }
 }

@@ -8,7 +8,7 @@ import { InlineKeyboard } from "grammy";
 
 const PREFIX = "template-install:";
 
-async function getTplState(store, chatId) {
+export async function getTplState(store, chatId) {
   const raw = await store.get(`${PREFIX}${chatId}`);
   if (!raw) return null;
   try { return JSON.parse(raw); } catch { return null; }
