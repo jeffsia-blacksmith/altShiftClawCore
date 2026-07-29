@@ -64,13 +64,25 @@ export function registerTemplates(composer) {
     const installedStatus = await Promise.all(
       catalog.map(async (c) => ({ name: c.name, installed: await isTemplateInstalled(octokit, owner, repo, c.name) })),
     );
-    await setTemplateInstallState(store, chatId, { templateName: "", step: "selecting" });
+    await setTemplateInstallState(store, chatId, { templateName: "", step: "selecting", page: 0 });
     const { InlineKeyboard } = await import("grammy");
     const kb = new InlineKeyboard();
-    for (const c of installedStatus.slice(0, 20)) {
+    const installedSet = new Set(installedStatus.filter((c) => c.installed).map((c) => c.name));
+    const pageSize = 8;
+    const page = 0;
+    const start = page * pageSize;
+    const slice = installedStatus.slice(start, start + pageSize);
+    let col = 0;
+    slice.forEach((c, i) => {
       const label = c.installed ? `✅ ${c.name}` : `📦 ${c.name}`;
-      kb.text(label, `templates_pick:${c.name}`).row();
-    }
+      kb.text(label, `templates_pick:${start + i}`);
+      col++;
+      if (col >= 2) { kb.row(); col = 0; }
+    });
+    if (col > 0) kb.row();
+    if (page > 0) kb.text(t("kb.prevPage", {}, lang), `templates_page:${page - 1}`);
+    if (start + pageSize < installedStatus.length) kb.text(t("kb.nextPage", {}, lang), `templates_page:${page + 1}`);
+    kb.row().text(t("kb.cancel", {}, lang), "templates_cancel:0");
     await ctx.reply(t("templates.selectInstallTo", {}, lang), { reply_markup: kb });
   });
 }

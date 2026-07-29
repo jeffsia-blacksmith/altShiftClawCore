@@ -55,16 +55,16 @@ function extractRequestId(title) {
 }
 
 // 发 Telegram 通知
-async function sendNotify(ctx, env, requestId, text, lang) {
+async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefined) {
   const notif = await getNotificationByRequestId(env.d1, requestId);
   if (!notif || notif.channel !== "telegram" || !notif.chat_id) return;
   const { Bot } = await import("grammy");
   const bot = new Bot(env.config.telegram.botToken, { client: { apiRoot: env.config.telegram.apiBaseUrl ?? "https://api.telegram.org" } });
   try {
     if (notif.message_id) {
-      await bot.api.editMessageText(notif.chat_id, notif.message_id, text, { parse_mode: "MarkdownV2" });
+      await bot.api.editMessageText(notif.chat_id, notif.message_id, text, { parse_mode: "MarkdownV2", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
     } else {
-      await bot.api.sendMessage(notif.chat_id, text, { parse_mode: "MarkdownV2" });
+      await bot.api.sendMessage(notif.chat_id, text, { parse_mode: "MarkdownV2", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
     }
     await updateNotification(env.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() });
   } catch (e) {
@@ -163,16 +163,29 @@ export function registerWorkflowRunHandlers(webhooks, env) {
         text = skillsNotifyText(sourceType, conclusion, name, target, lang);
       } else if (path === WORKFLOW_PATHS.templates) {
         text = templatesNotifyText(conclusion, name, lang);
-        // line-bot 模板安装成功 → 启动 LINE 流（R9 minimal：仅通知）
+        // line-bot 模板安装成功 → 启动 LINE 流
         if (sourceId === "line-bot" && conclusion === "success") {
           text = t("line.postInstallPrompt", { name }, lang);
+          // persist LINE flow state + send with continue/skip keyboard
+          if (notif.chat_id) {
+            try {
+              await env.store.put(`linebot-setup:${notif.chat_id}`, JSON.stringify({ step: "POST_INSTALL_PROMPT", issueNumber: notif.issue_number, promptMessageId: null }), { expirationTtl: 900 });
+            } catch (e) { console.error("[workflow_run line-bot state] failed:", e); }
+          }
         }
       } else if (path === WORKFLOW_PATHS.lineBot) {
         text = lineBotNotifyText(conclusion, name, null, lang);
       } else {
         return;
       }
-      await sendNotify({ env }, env, requestId, text, lang);
+      let lineBotKeyboard = undefined;
+      if (path === WORKFLOW_PATHS.templates && sourceId === "line-bot" && conclusion === "success" && notif.chat_id) {
+        const { InlineKeyboard } = await import("grammy");
+        lineBotKeyboard = new InlineKeyboard()
+          .text(t("line.continue_setup", {}, lang), "linebot_setup_continue:current")
+          .text(t("line.skip", {}, lang), "linebot_setup_skip:current");
+      }
+      await sendNotify({ env }, env, requestId, text, lang, lineBotKeyboard);
       // skills 成功 + 有 issue_number → 建 issue comment
       if ((path === WORKFLOW_PATHS.skills || path === WORKFLOW_PATHS.removeSkill) && conclusion === "success" && notif.issue_number) {
         try {

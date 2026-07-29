@@ -358,7 +358,59 @@ export async function handleLlmText(ctx) {
     await ctx.reply("⚠️ Model name cannot be empty. Please enter it again.");
     return true;
   }
-  // R9 minimal: 跳过 llmValidateModel（需 provider API 调用），直接 finish
+  // Validate model against provider API（对齐旧 bundle llmValidateModel）
+  if (state.apiKey) {
+    try {
+      const valid = await validateModel(state.provider, state.apiKey, model);
+      if (!valid) {
+        await ctx.reply(`❌ Validation failed: provider ${state.provider} cannot find model "${model}". Please check the model name and try again.`);
+        return true;
+      }
+    } catch (e) {
+      console.error("[llm] model validation failed:", e.message);
+      // 如果验证 API 不可用，继续接受模型（graceful fallback）
+    }
+  }
   await finishLlm(ctx, chatId, state, model);
+  return true;
+}
+
+// validateModel — 查询 provider API 验证模型是否存在
+async function validateModel(provider, apiKey, model) {
+  const headers = { "Content-Type": "application/json" };
+  if (provider === "openai" || provider === "openrouter") {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+    const url = provider === "openrouter" ? "https://openrouter.ai/api/v1/models" : "https://api.openai.com/v1/models";
+    const resp = await fetch(url, { headers });
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const data = await resp.json();
+    const models = (data.data ?? []).map((m) => m.id);
+    return models.includes(model);
+  }
+  if (provider === "anthropic") {
+    headers["x-api-key"] = apiKey;
+    headers["anthropic-version"] = "2023-06-01";
+    const resp = await fetch(`https://api.anthropic.com/v1/models`, { headers });
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const data = await resp.json();
+    const models = (data.data ?? []).map((m) => m.id);
+    return models.includes(model);
+  }
+  if (provider === "groq") {
+    headers["Authorization"] = `Bearer ${apiKey}`;
+    const resp = await fetch("https://api.groq.com/openai/v1/models", { headers });
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const data = await resp.json();
+    const models = (data.data ?? []).map((m) => m.id);
+    return models.includes(model);
+  }
+  if (provider === "google") {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (!resp.ok) throw new Error(`API returned ${resp.status}`);
+    const data = await resp.json();
+    const models = (data.models ?? []).map((m) => m.name?.replace("models/", "") ?? m.name);
+    return models.includes(model);
+  }
+  // Unknown provider → skip validation
   return true;
 }

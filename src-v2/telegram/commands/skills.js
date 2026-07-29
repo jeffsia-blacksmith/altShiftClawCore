@@ -74,16 +74,27 @@ export function registerSkills(composer) {
         issueNumber: active,
         issueTitle,
         installedSkills: installed,
+        page: 0,
       });
-      // 简化键盘：列前 20 个技能，每个一行；R7 入口不区分已装/未装视觉
       const { InlineKeyboard } = await import("grammy");
       const kb = new InlineKeyboard();
       const installedSet = new Set(installed);
-      for (const s of catalog.slice(0, 20)) {
+      const pageSize = 8;
+      const page = 0;
+      const start = page * pageSize;
+      const slice = catalog.slice(start, start + pageSize);
+      let col = 0;
+      for (const s of slice) {
         const displayName = skillCatalogReply(s.name, lang) ?? s.name;
         const label = installedSet.has(s.name) ? `✅ ${displayName}` : `📦 ${displayName}`;
-        kb.text(label, `skills_pick:${s.name}`).row();
+        kb.text(label, `skills_pick:${s.name}`);
+        col++;
+        if (col >= 2) { kb.row(); col = 0; }
       }
+      if (col > 0) kb.row();
+      if (page > 0) kb.text(t("kb.prevPage", {}, lang), `skills_page:${page - 1}`);
+      if (start + pageSize < catalog.length) kb.text(t("kb.nextPage", {}, lang), `skills_page:${page + 1}`);
+      kb.row().text(t("kb.cancel", {}, lang), "skills_cancel:0");
       const target = issueTitle ? `🦞 ${issueTitle} #${active}` : `🦞 #${active}`;
       await ctx.reply(t("skills.select_install", { target }, lang), { reply_markup: kb });
     } catch (e) {

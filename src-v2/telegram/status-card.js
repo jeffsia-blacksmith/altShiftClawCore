@@ -77,7 +77,19 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
       let status = "missing";
       if (!workflowExists) status = "missing";
       else if (!workflowEnabled) status = "disabled";
-      else status = "idle"; // 完整版查 workflow runs；R9 用 idle
+      else {
+        // 查 workflow runs 检测 running 状态（对齐旧 bundle s_ L6367-6386）
+        try {
+          const { data: runs } = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 5 });
+          const activeRun = runs.workflow_runs?.find((r) => r.status !== "completed");
+          if (activeRun) {
+            status = "running";
+            workflowHtmlUrl = activeRun.html_url ?? workflowHtmlUrl;
+          } else {
+            status = "idle";
+          }
+        } catch { status = "idle"; }
+      }
       return { file: `issue-${issueNumber}.yml`, path: `.github/workflows/issue-${issueNumber}.yml`, url: workflowHtmlUrl, id: workflowId, exists: workflowExists, enabled: workflowEnabled, state: workflowState, branchExists, status };
     })(),
     // 7. LLM settings

@@ -36,6 +36,19 @@ function deployConfirmKeyboard(lang) {
     .row()
     .text(t("kb.editParams", {}, lang), "linebot_edit_params:0");
 }
+function cancelOnlyKeyboard(lang) {
+  return new InlineKeyboard().text(t("kb.cancel", {}, lang), "linebot_setup_skip:0");
+}
+function confirmDetailLines(state, lang) {
+  return [
+    t("line.confirm_deploy_title", {}, lang),
+    `LINE Bot ID: \`${state.lineBotId ?? ""}\``,
+    `Channel ID: \`${state.lineChannelId ?? ""}\``,
+    t("line.confirm_reply_msg", { value: state.lineDefaultReplyMessage ?? "" }, lang),
+    t("line.confirm_lobster", { value: state.issueNumber ?? "" }, lang),
+    t("line.confirm_timezone", { value: state.defaultUtcOffset ?? "+8" }, lang),
+  ].join("\n");
+}
 
 export function registerLineBotCallbacks(composer) {
   // linebot_setup_continue:0 — post_install_prompt → ask_bot_id
@@ -46,8 +59,8 @@ export function registerLineBotCallbacks(composer) {
     const state = await getLineState(store, chatId);
     if (!state) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
     await ctx.answerCallbackQuery();
-    await setLineState(store, chatId, { ...state, step: "AWAITING_LINE_BOT_ID" });
-    await ctx.editMessageText(t("line.ask_bot_id", {}, lang), { reply_markup: skipKeyboard(lang) });
+    await setLineState(store, chatId, { ...state, step: "AWAITING_LINE_BOT_ID", promptMessageId: ctx.callbackQuery?.message?.message_id });
+    await ctx.reply(t("line.ask_bot_id", {}, lang), { reply_markup: cancelOnlyKeyboard(lang) });
   });
 
   // linebot_setup_skip:0 — cancel/skip
@@ -67,6 +80,11 @@ export function registerLineBotCallbacks(composer) {
     const lang = ctx.language ?? glang();
     const state = await getLineState(store, chatId);
     if (!state) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
+    // P1-12：bot_id / channel_id 为必填，不允许跳过
+    if (state.step === "AWAITING_LINE_BOT_ID" || state.step === "AWAITING_LINE_CHANNEL_ID") {
+      await ctx.answerCallbackQuery(t("line.missing_required", {}, lang));
+      return;
+    }
     await ctx.answerCallbackQuery();
     // R9 minimal：根据当前 step 跳到下一个或 confirm
     const stepOrder = ["AWAITING_LINE_BOT_ID", "AWAITING_LINE_CHANNEL_ID", "AWAITING_LINE_REPLY_MSG", "AWAITING_LINE_ISSUE_NUMBER", "AWAITING_LINE_UTC_OFFSET"];
@@ -74,21 +92,22 @@ export function registerLineBotCallbacks(composer) {
     if (idx < 0) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
     if (state.editMode) {
       await setLineState(store, chatId, { ...state, step: "POST_INSTALL_CONFIRM" });
-      await ctx.editMessageText(t("line.confirm_deploy_title", {}, lang), { reply_markup: deployConfirmKeyboard(lang) });
+      await ctx.reply(confirmDetailLines(state, lang), { reply_markup: deployConfirmKeyboard(lang) });
       return;
     }
     const nextStep = stepOrder[idx + 1];
     if (!nextStep) {
       await setLineState(store, chatId, { ...state, step: "POST_INSTALL_CONFIRM" });
-      await ctx.editMessageText(t("line.confirm_deploy_title", {}, lang), { reply_markup: deployConfirmKeyboard(lang) });
+      await ctx.reply(confirmDetailLines(state, lang), { reply_markup: deployConfirmKeyboard(lang) });
       return;
     }
-    await setLineState(store, chatId, { ...state, step: nextStep });
+    await setLineState(store, chatId, { ...state, step: nextStep, promptMessageId: ctx.callbackQuery?.message?.message_id });
+    const nextIsRequired = nextStep === "AWAITING_LINE_BOT_ID" || nextStep === "AWAITING_LINE_CHANNEL_ID";
     const key = nextStep === "AWAITING_LINE_CHANNEL_ID" ? "line.ask_channel_id"
       : nextStep === "AWAITING_LINE_REPLY_MSG" ? "line.ask_reply_msg"
       : nextStep === "AWAITING_LINE_ISSUE_NUMBER" ? "line.ask_issue_number"
       : "line.ask_utc_offset";
-    await ctx.editMessageText(t(key, {}, lang), { reply_markup: skipKeyboard(lang) });
+    await ctx.reply(t(key, {}, lang), { reply_markup: nextIsRequired ? cancelOnlyKeyboard(lang) : skipKeyboard(lang) });
   });
 
   // linebot_deploy_confirm:0
@@ -147,7 +166,7 @@ export function registerLineBotCallbacks(composer) {
       .text(t("line.edit_ask_utc_offset", {}, lang), "linebot_edit:utc_offset")
       .text(t("kb.back", {}, lang), "linebot_edit_back:0");
     await setLineState(store, chatId, { ...state, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("line.edit_select_field", {}, lang), { reply_markup: kb });
+    await ctx.reply(t("line.edit_select_field", {}, lang), { reply_markup: kb });
   });
 
   // linebot_edit:<field>
@@ -168,8 +187,9 @@ export function registerLineBotCallbacks(composer) {
     };
     const f = fieldMap[field];
     if (!f) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
-    await setLineState(store, chatId, { ...state, step: f.step, editMode: true });
-    await ctx.editMessageText(t(f.key, {}, lang), { reply_markup: skipKeyboard(lang) });
+    const isRequired = field === "bot_id" || field === "channel_id";
+    await setLineState(store, chatId, { ...state, step: f.step, editMode: true, editField: field, promptMessageId: ctx.callbackQuery?.message?.message_id });
+    await ctx.reply(t(f.key, {}, lang), { reply_markup: isRequired ? cancelOnlyKeyboard(lang) : skipKeyboard(lang) });
   });
 
   // linebot_edit_back:0
@@ -181,7 +201,7 @@ export function registerLineBotCallbacks(composer) {
     if (!state) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
     await ctx.answerCallbackQuery();
     await setLineState(store, chatId, { ...state, step: "POST_INSTALL_CONFIRM", editMode: false });
-    await ctx.editMessageText(t("line.confirm_deploy_title", {}, lang), { reply_markup: deployConfirmKeyboard(lang) });
+    await ctx.reply(confirmDetailLines(state, lang), { reply_markup: deployConfirmKeyboard(lang) });
   });
 }
 
@@ -199,6 +219,22 @@ export async function handleLineText(ctx) {
   const idx = stepOrder.indexOf(state.step);
   if (idx < 0) return false;
   const trimmed = text.trim();
+  // P1-13：字段格式校验
+  const validationStep = state.editMode ? state.editField && {
+    bot_id: "AWAITING_LINE_BOT_ID", channel_id: "AWAITING_LINE_CHANNEL_ID", utc_offset: "AWAITING_LINE_UTC_OFFSET",
+  }[state.editField] : state.step;
+  if (validationStep === "AWAITING_LINE_BOT_ID" && !/^@[\w.-]+$/.test(trimmed)) {
+    await ctx.reply(t("line.error_bot_id_format", {}, lang));
+    return true;
+  }
+  if (validationStep === "AWAITING_LINE_CHANNEL_ID" && !/^\d+$/.test(trimmed)) {
+    await ctx.reply(t("line.error_channel_id_format", {}, lang));
+    return true;
+  }
+  if (validationStep === "AWAITING_LINE_UTC_OFFSET" && !/^[+-]\d{2}:\d{2}$/.test(trimmed)) {
+    await ctx.reply(t("line.error_timezone_format", {}, lang));
+    return true;
+  }
   const fieldMap = {
     AWAITING_LINE_BOT_ID: "lineBotId", AWAITING_LINE_CHANNEL_ID: "lineChannelId",
     AWAITING_LINE_REPLY_MSG: "lineDefaultReplyMessage", AWAITING_LINE_ISSUE_NUMBER: "issueNumber",
@@ -209,20 +245,21 @@ export async function handleLineText(ctx) {
   try { await ctx.api.deleteMessage(chatId, ctx.message.message_id); } catch {}
   if (state.editMode) {
     await setLineState(store, chatId, { ...newState, step: "POST_INSTALL_CONFIRM" });
-    await ctx.reply(t("line.confirm_deploy_title", {}, lang), { reply_markup: deployConfirmKeyboard(lang) });
+    await ctx.reply(confirmDetailLines(newState, lang), { reply_markup: deployConfirmKeyboard(lang) });
     return true;
   }
   const nextStep = stepOrder[idx + 1];
   if (!nextStep) {
     await setLineState(store, chatId, { ...newState, step: "POST_INSTALL_CONFIRM" });
-    await ctx.reply(t("line.confirm_deploy_title", {}, lang), { reply_markup: deployConfirmKeyboard(lang) });
+    await ctx.reply(confirmDetailLines(newState, lang), { reply_markup: deployConfirmKeyboard(lang) });
     return true;
   }
   await setLineState(store, chatId, { ...newState, step: nextStep });
+  const nextIsRequired = nextStep === "AWAITING_LINE_BOT_ID" || nextStep === "AWAITING_LINE_CHANNEL_ID";
   const key = nextStep === "AWAITING_LINE_CHANNEL_ID" ? "line.ask_channel_id"
     : nextStep === "AWAITING_LINE_REPLY_MSG" ? "line.ask_reply_msg"
     : nextStep === "AWAITING_LINE_ISSUE_NUMBER" ? "line.ask_issue_number"
     : "line.ask_utc_offset";
-  await ctx.reply(t(key, {}, lang), { reply_markup: skipKeyboard(lang) });
+  await ctx.reply(t(key, {}, lang), { reply_markup: nextIsRequired ? cancelOnlyKeyboard(lang) : skipKeyboard(lang) });
   return true;
 }

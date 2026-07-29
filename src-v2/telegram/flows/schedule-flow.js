@@ -10,6 +10,7 @@ import {
 } from "../../db/schedules.js";
 import { getActiveIssue, setActiveIssue } from "../../db/kv-state.js";
 import { getFlowState, clearFlowState } from "./state.js";
+import { scheduleRuleDescription, scheduleCardNotify, scheduleRuleTypeLabel } from "../edge-replies.js";
 
 const PREFIX = "schedule-flow:";
 
@@ -192,27 +193,43 @@ function payloadKeyboard(lang) {
     .text(t("kb.skip", {}, lang), "schedule_payload_skip:current")
     .text(t("kb.cancelSetup", {}, lang), "schedule_flow_cancel:current");
 }
-function scheduleCardKeyboard(id, issueNumber, active, lang) {
+function scheduleCardKeyboard(id, issueNumber, active, lang, source = "issue") {
+  const suffix = source === "chat" ? "|chat" : "";
   const k = new InlineKeyboard();
-  k.text(t("kb.changeTask", {}, lang), `schedule_edit_prompt:${id}`);
-  k.text(t("kb.changeTime", {}, lang), `schedule_edit_time:${id}`).row();
-  k.text(t("kb.changePayload", {}, lang), `schedule_edit_payload:${id}`);
-  k.text(active ? t("kb.pause", {}, lang) : t("kb.enable", {}, lang), `schedule_toggle:${id}`).row();
-  k.text(t("kb.delete", {}, lang), `schedule_delete:${id}`)
-    .text(t("kb.backToScheduleList", {}, lang), `manage_schedule:${issueNumber}`);
+  k.text(t("kb.changeTask", {}, lang), `schedule_edit_prompt:${id}${suffix}`);
+  k.text(t("kb.changeTime", {}, lang), `schedule_edit_time:${id}${suffix}`).row();
+  k.text(t("kb.changePayload", {}, lang), `schedule_edit_payload:${id}${suffix}`);
+  k.text(active ? t("kb.pause", {}, lang) : t("kb.enable", {}, lang), `schedule_toggle:${id}${suffix}`).row();
+  k.text(t("kb.delete", {}, lang), `schedule_delete:${id}${suffix}`);
+  if (source === "chat") {
+    k.text(t("kb.backToAllSchedules", {}, lang), "schedule_chat_list:current").row();
+  } else {
+    k.text(t("kb.backToScheduleList", {}, lang), `manage_schedule:${issueNumber}`);
+  }
   return k;
 }
 
-// Nl — 排程卡片文本
+// Bs — chat-source standalone card keyboard (delete + back only)
+function scheduleChatCardKeyboard(id, lang) {
+  return new InlineKeyboard()
+    .text(t("kb.delete", {}, lang), `schedule_delete:${id}|chat`)
+    .text(t("kb.backToAllSchedules", {}, lang), "schedule_chat_list:current");
+}
+
+// Nl — 排程卡片文本（完整版，含 rule description + notify）
 function scheduleCardText(title, issueNumber, sched, lang) {
+  const L = lang;
+  const ruleDesc = (scheduleRuleDescription(sched, L) || sched.ruleType) ?? "";
+  const notifyLabel = scheduleCardNotify(sched.shouldNotify, L);
   const lines = [
-    t("schedule.card.detailTitle", { name: title, issueNumber }, lang),
-    t("schedule.card.id", { id: sched.id }, lang),
-    t("schedule.card.status", { status: sched.status === "paused" ? t("schedule.statusPaused", {}, lang) : t("schedule.statusActive", {}, lang) }, lang),
-    t("schedule.card.rule", { rule: sched.ruleType ?? "" }, lang),
-    t("schedule.card.nextRun", { nextRun: sched.nextRunAt ?? t("core.notSet", {}, lang) }, lang),
-    t("schedule.card.task", { prompt: sched.prompt ?? "" }, lang),
-    t("schedule.card.payload", { payload: sched.eventData ?? t("core.notSet", {}, lang) }, lang),
+    t("schedule.card.detailTitle", { name: title, issueNumber }, L),
+    t("schedule.card.id", { id: sched.id }, L),
+    t("schedule.card.status", { status: sched.status === "paused" ? t("schedule.statusPaused", {}, L) : t("schedule.statusActive", {}, L) }, L),
+    t("schedule.card.rule", { rule: `${scheduleRuleTypeLabel(sched.ruleType, L)} (${ruleDesc})` }, L),
+    t("schedule.card.nextRun", { nextRun: sched.nextRunAt ?? t("core.notSet", {}, L) }, L),
+    t("schedule.card.task", { prompt: sched.prompt ?? "" }, L),
+    t("schedule.card.payload", { payload: sched.eventData ?? t("core.notSet", {}, L) }, L),
+    notifyLabel,
   ];
   return lines.join("\n");
 }
@@ -250,6 +267,67 @@ function parseSchedCallbackData(data) {
   return { scheduleId: parts[0], source: parts.length > 1 ? "chat" : "issue" };
 }
 
+// _i — check if issue is closed
+async function isIssueClosed(octokit, owner, repo, issueNumber) {
+  try {
+    const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: issueNumber });
+    return data.state === "closed";
+  } catch { return false; }
+}
+
+// Dn — chat schedule list text（对齐旧 bundle Dn L13430-13440）
+function buildChatScheduleListText(schedules, lang) {
+  if (schedules.length === 0) return t("schedule.thisChatListEmpty", {}, lang);
+  const lines = [t("schedule.thisChatListTitle", {}, lang)];
+  schedules.forEach((s, i) => {
+    const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
+    lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
+    lines.push(`   🆔 ${s.id}`);
+    lines.push(`   ⏭️ ${s.nextRunAt ?? ""}`);
+  });
+  lines.push(t("schedule.thisChatListHint", {}, lang));
+  return lines.join("\n");
+}
+
+// Bn — chat schedule list keyboard
+function buildChatScheduleKeyboard(schedules, lang) {
+  if (schedules.length === 0) return undefined;
+  const kb = new InlineKeyboard();
+  for (const s of schedules.slice(0, 20)) {
+    const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
+    const label = `${s.prompt ?? ""}｜${ruleDesc}`.slice(0, 36);
+    kb.text(label, `schedule_chat_open:${s.id}`).row();
+  }
+  return kb;
+}
+
+// Ol — issue schedule list text（对齐旧 bundle Ol L13392-13403）
+function buildIssueScheduleListText(schedules, title, issueNumber, lang) {
+  if (schedules.length === 0) return t("schedule.listEmpty", {}, lang);
+  const lines = [t("schedule.listTitle", { name: title ?? "", issueNumber }, lang)];
+  schedules.forEach((s, i) => {
+    const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
+    lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
+    lines.push(`   🆔 ${s.id}`);
+    lines.push(`   ⏭️ ${s.nextRunAt ?? ""}`);
+  });
+  lines.push(t("schedule.listManageHint", {}, lang));
+  return lines.join("\n");
+}
+
+// ja — issue schedule list keyboard（open buttons + new schedule）
+function buildIssueScheduleKeyboard(schedules, issueNumber, lang) {
+  const kb = new InlineKeyboard();
+  for (const s of schedules.slice(0, 20)) {
+    const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
+    const label = `${s.prompt ?? ""}｜${ruleDesc}`.slice(0, 36);
+    kb.text(label, `schedule_open:${s.id}`).row();
+  }
+  kb.text(t("kb.setSchedule", {}, lang), `set_schedule:${issueNumber}`)
+    .text(t("kb.manageSchedule", {}, lang), `manage_schedule:${issueNumber}`);
+  return kb;
+}
+
 function parseIssueNum(data) {
   const part = data.split(":")[1];
   if (!part) return null;
@@ -260,35 +338,40 @@ function parseIssueNum(data) {
 export function registerScheduleCallbacks(composer) {
   // set_schedule:<issueNum>
   composer.callbackQuery(/^set_schedule:/, async (ctx) => {
-    const { store, d1, config } = ctx.services;
+    const { store, d1, config, octokit } = ctx.services;
     const { owner, repo } = config.github;
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     const n = parseIssueNum(ctx.callbackQuery.data);
     if (!n) { await ctx.answerCallbackQuery(t("core.invalidIssueNumber", {}, lang)); return; }
+    // 验证 issue 存在且未关闭
+    let issueTitle = "";
+    try {
+      const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: n });
+      if (data.state === "closed") { await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)); return; }
+      issueTitle = data.title;
+    } catch { await ctx.answerCallbackQuery(t("schedule.flow.issueNotFoundOrClosed", {}, lang)); return; }
     if (chatId) await clearFlowState(store, chatId);
     await setSchedState(store, chatId, { step: "awaiting_prompt", issueNumber: n });
     await ctx.answerCallbackQuery();
-    await ctx.reply(t("schedule.setupTaskPrompt", { name: "", issueNumber: n }, lang), { reply_markup: cancelKeyboard(lang) });
+    await ctx.reply(t("schedule.setupTaskPrompt", { name: issueTitle, issueNumber: n }, lang), { reply_markup: cancelKeyboard(lang) });
   });
 
   // manage_schedule:<issueNum>
   composer.callbackQuery(/^manage_schedule:/, async (ctx) => {
-    const { d1, config } = ctx.services;
+    const { d1, config, octokit } = ctx.services;
     const { owner, repo, repoFullName } = config.github;
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     const n = parseIssueNum(ctx.callbackQuery.data);
     if (!n) { await ctx.answerCallbackQuery(t("core.invalidIssueNumber", {}, lang)); return; }
+    await ctx.answerCallbackQuery();
     const list = await listSchedulesForIssue(d1, repoFullName, n).catch(() => []);
-    if (list.length === 0) {
-      await ctx.editMessageText(t("schedule.listEmpty", {}, lang));
-      return;
-    }
-    const lines = [t("schedule.listTitle", { name: "", issueNumber: n }, lang)];
-    list.forEach((s) => { lines.push(`🆔 ${s.id} ⏭️ ${s.nextRunAt ?? ""}`); });
-    lines.push(t("schedule.listManageHint", {}, lang));
-    await ctx.editMessageText(lines.join("\n"));
+    let title = "";
+    try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: n }); title = data.title; } catch {}
+    const text = buildIssueScheduleListText(list, title, n, lang);
+    const kb = buildIssueScheduleKeyboard(list, n, lang);
+    await ctx.reply(text, { reply_markup: kb });
   });
 
   // schedule_open:<id>
@@ -303,27 +386,34 @@ export function registerScheduleCallbacks(composer) {
     let title = "";
     try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: sched.issueNumber }); title = data.title; } catch {}
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(scheduleCardText(title, sched.issueNumber, sched, lang), { reply_markup: scheduleCardKeyboard(id, sched.issueNumber, sched.status !== "paused", lang) });
+    await ctx.reply(scheduleCardText(title, sched.issueNumber, sched, lang), { reply_markup: scheduleCardKeyboard(id, sched.issueNumber, sched.status !== "paused", lang) });
   });
 
   // schedule_edit_prompt|time|payload:<id>
   composer.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payload):/, async (ctx) => {
-    const { store, d1 } = ctx.services;
+    const { store, d1, octokit, config } = ctx.services;
+    const { owner, repo } = config.github;
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     const { scheduleId, source } = parseSchedCallbackData(ctx.callbackQuery.data);
     const sched = await getSchedule(d1, scheduleId);
     if (!sched) { await ctx.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, lang)); return; }
+    // closed-issue guard
+    if (source === "chat") {
+      const closed = await isIssueClosed(octokit, owner, repo, sched.issueNumber);
+      if (closed) { await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)); return; }
+    }
     const which = ctx.callbackQuery.data.match(/schedule_edit_(\w+):/)[1];
     const step = `awaiting_edit_${which}`;
+    if (chatId) await clearFlowState(store, chatId);
     await setSchedState(store, chatId, { step, scheduleId, issueNumber: sched.issueNumber, source });
     await ctx.answerCallbackQuery();
     let replyKey, replyParams;
-    if (which === "prompt") { replyKey = "schedule.editTaskPrompt"; replyParams = { name: sched.prompt ?? "" }; }
-    else if (which === "time") { replyKey = "schedule.editTimePrompt"; replyParams = { name: sched.prompt ?? "" }; }
-    else { replyKey = "schedule.editPayloadPrompt"; replyParams = { name: sched.prompt ?? "", current: sched.eventData ?? t("core.notSet", {}, lang) }; }
+    if (which === "prompt") { replyKey = "schedule.editTaskPrompt"; replyParams = { name: sched.id }; }
+    else if (which === "time") { replyKey = "schedule.editTimePrompt"; replyParams = { name: sched.id }; }
+    else { replyKey = "schedule.editPayloadPrompt"; replyParams = { name: sched.id, current: sched.eventData ?? t("core.notSet", {}, lang) }; }
     const kb = which === "payload" ? payloadKeyboard(lang) : cancelKeyboard(lang);
-    await ctx.editMessageText(t(replyKey, replyParams, lang), { reply_markup: kb });
+    await ctx.reply(t(replyKey, replyParams, lang), { reply_markup: kb });
   });
 
   // schedule_flow_cancel:current
@@ -333,7 +423,7 @@ export function registerScheduleCallbacks(composer) {
     const lang = ctx.language ?? glang();
     if (chatId) await clearSchedState(store, chatId);
     await ctx.answerCallbackQuery(t("schedule.flow.cancelSetupToast", {}, lang));
-    await ctx.editMessageText(t("schedule.flow.cancelSetupMessage", {}, lang));
+    try { await ctx.editMessageText(t("schedule.flow.cancelSetupMessage", {}, lang)); } catch { await ctx.reply(t("schedule.flow.cancelSetupMessage", {}, lang)); }
   });
 
   // schedule_payload_skip:current
@@ -367,30 +457,37 @@ export function registerScheduleCallbacks(composer) {
 
   // schedule_toggle:<id>
   composer.callbackQuery(/^schedule_toggle:/, async (ctx) => {
-    const { d1, config } = ctx.services;
+    const { d1, octokit, config } = ctx.services;
     const { owner, repo } = config.github;
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
-    const { scheduleId } = parseSchedCallbackData(ctx.callbackQuery.data);
+    const { scheduleId, source } = parseSchedCallbackData(ctx.callbackQuery.data);
     const sched = await getSchedule(d1, scheduleId);
     if (!sched) { await ctx.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, lang)); return; }
+    // closed-issue guard for chat source
+    if (source === "chat") {
+      const closed = await isIssueClosed(octokit, owner, repo, sched.issueNumber);
+      if (closed) { await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)); return; }
+    }
     if (sched.status === "active") {
       await updateSchedule(d1, scheduleId, { status: "paused" });
       await ctx.answerCallbackQuery(t("schedule.flow.pausedToast", {}, lang));
     } else {
       const nextRunAt = computeNextRun({ ruleType: sched.ruleType, rulePayload: sched.rulePayload, now: new Date() });
-      await updateSchedule(d1, scheduleId, { status: "active", nextRunAt, lastError: null });
+      const updated = await updateSchedule(d1, scheduleId, { status: "active", nextRunAt, lastError: null });
+      if (!updated) { await ctx.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, lang)); return; }
       await ctx.answerCallbackQuery(t("schedule.flow.activatedToast", {}, lang));
     }
     const updated = await getSchedule(d1, scheduleId);
     let title = "";
     try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: updated.issueNumber }); title = data.title; } catch {}
-    await ctx.editMessageText(scheduleCardText(title, updated.issueNumber, updated, lang), { reply_markup: scheduleCardKeyboard(scheduleId, updated.issueNumber, updated.status !== "paused", lang) });
+    await ctx.reply(scheduleCardText(title, updated.issueNumber, updated, lang), { reply_markup: scheduleCardKeyboard(scheduleId, updated.issueNumber, updated.status !== "paused", lang, source) });
   });
 
   // schedule_delete:<id>
   composer.callbackQuery(/^schedule_delete:/, async (ctx) => {
-    const { d1, config } = ctx.services;
+    const { d1, config, octokit } = ctx.services;
+    const { owner, repo, repoFullName } = config.github;
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     const { scheduleId, source } = parseSchedCallbackData(ctx.callbackQuery.data);
@@ -399,10 +496,17 @@ export function registerScheduleCallbacks(composer) {
     await deleteSchedule(d1, scheduleId);
     await ctx.answerCallbackQuery(t("schedule.flow.deletedToast", {}, lang));
     if (source === "chat") {
-      const list = await listSchedulesForChat(d1, config.github.repoFullName, chatId).catch(() => []);
-      await ctx.editMessageText(list.length === 0 ? t("schedule.thisChatListEmpty", {}, lang) : t("schedule.thisChatListTitle", {}, lang));
+      const list = await listSchedulesForChat(d1, repoFullName, chatId).catch(() => []);
+      const text = buildChatScheduleListText(list, lang);
+      const kb = buildChatScheduleKeyboard(list, lang);
+      await ctx.reply(text, kb ? { reply_markup: kb } : undefined);
     } else {
-      await ctx.editMessageText(t("schedule.listEmpty", {}, lang));
+      const list = await listSchedulesForIssue(d1, repoFullName, sched.issueNumber).catch(() => []);
+      let title = "";
+      try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: sched.issueNumber }); title = data.title; } catch {}
+      const text = buildIssueScheduleListText(list, title, sched.issueNumber, lang);
+      const kb = buildIssueScheduleKeyboard(list, sched.issueNumber, lang);
+      await ctx.reply(text, { reply_markup: kb });
     }
   });
 
@@ -412,9 +516,11 @@ export function registerScheduleCallbacks(composer) {
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     if (!chatId) return;
+    await ctx.answerCallbackQuery();
     const list = await listSchedulesForChat(d1, config.github.repoFullName, chatId).catch(() => []);
-    const text = list.length === 0 ? t("schedule.thisChatListEmpty", {}, lang) : t("schedule.thisChatListTitle", {}, lang);
-    await ctx.editMessageText(text);
+    const text = buildChatScheduleListText(list, lang);
+    const kb = buildChatScheduleKeyboard(list, lang);
+    await ctx.reply(text, kb ? { reply_markup: kb } : undefined);
   });
 
   // schedule_chat_open:<id>
@@ -427,9 +533,16 @@ export function registerScheduleCallbacks(composer) {
     const sched = await getSchedule(d1, id);
     if (!sched) { await ctx.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, lang)); return; }
     let title = "";
-    try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: sched.issueNumber }); title = data.title; } catch {}
+    let isClosed = false;
+    try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: sched.issueNumber }); title = data.title; isClosed = data.state === "closed"; } catch {}
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(scheduleCardText(title, sched.issueNumber, sched, lang), { reply_markup: scheduleCardKeyboard(id, sched.issueNumber, sched.status !== "paused", lang) });
+    if (isClosed) {
+      // closed issue → standalone card with delete-only keyboard
+      const text = `${scheduleCardText(title, sched.issueNumber, sched, lang)}\n${t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)}`;
+      await ctx.reply(text, { reply_markup: scheduleChatCardKeyboard(id, lang) });
+    } else {
+      await ctx.reply(scheduleCardText(title, sched.issueNumber, sched, lang), { reply_markup: scheduleCardKeyboard(id, sched.issueNumber, sched.status !== "paused", lang, "chat") });
+    }
   });
 
   // schedule_chat_delete:<id>
@@ -443,7 +556,9 @@ export function registerScheduleCallbacks(composer) {
     await deleteSchedule(d1, id);
     await ctx.answerCallbackQuery(t("schedule.flow.deletedToast", {}, lang));
     const list = await listSchedulesForChat(d1, config.github.repoFullName, chatId).catch(() => []);
-    await ctx.editMessageText(list.length === 0 ? t("schedule.thisChatListEmpty", {}, lang) : t("schedule.thisChatListTitle", {}, lang));
+    const text = buildChatScheduleListText(list, lang);
+    const kb = buildChatScheduleKeyboard(list, lang);
+    await ctx.reply(text, kb ? { reply_markup: kb } : undefined);
   });
 }
 

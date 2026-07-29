@@ -141,8 +141,21 @@ export function createBot({ config, services }) {
   bot.on("message:audio", singleMediaHandler("audio"));
   bot.on("message:document", singleMediaHandler("document"));
 
-  // 6. 全局错误捕获 — 对齐 n.catch（L17928）
-  bot.catch((err) => console.error("[Bot Error]", err.error));
+  // 6. 全局错误捕获 — 对齐 n.catch（L17928）+ per-callback error reply
+  bot.catch(async (err) => {
+    const ctx = err.ctx;
+    console.error("[Bot Error]", err.error);
+    // 尝试回复用户错误信息
+    try {
+      if (ctx?.callbackQuery) {
+        await ctx.answerCallbackQuery(`❌ ${err.error?.message ?? "Error"}`).catch(() => {});
+      }
+      if (ctx?.chat?.id) {
+        const lang = ctx.language ?? "en";
+        await ctx.reply(t("core.unknownError", {}, lang)).catch(() => {});
+      }
+    } catch {}
+  });
 
   return bot;
 }

@@ -226,13 +226,26 @@ export async function dispatchCodingAgent(payload, env) {
     });
     return { issueNumber: issue.number, progressCommentId };
   } catch (e) {
-    if (progressCommentId != null && /could not be found|not found/i.test(e?.message ?? "")) {
+    const errMsg = e?.message ?? "";
+    const isNotFound = /could not be found|not found/i.test(errMsg);
+    const isDisabled = /disabled/i.test(errMsg) && !isNotFound;
+    if (progressCommentId != null && isNotFound) {
       await octokit.rest.issues.deleteComment({ owner, repo, comment_id: progressCommentId }).catch(() => {});
     } else if (progressCommentId != null) {
-      const errorBody = buildProgressCommentBody(
-        `${t("core.dispatchFailed", {}, glang())}\n${t("core.dispatchErrorLine", { error: e?.message ?? t("core.unknownError", {}, glang()) }, glang())}`,
-        requestTelegramMeta,
-      );
+      const lang = glang();
+      let errorBody;
+      if (isDisabled) {
+        // Workflow disabled → resting message（对齐旧 bundle fE/bE L19216-19224）
+        errorBody = buildProgressCommentBody(
+          `${t("core.restingMessage1", {}, lang)}\n${t("core.restingMessage2", {}, lang)}\n${t("core.restingMessage3", {}, lang)}`,
+          requestTelegramMeta,
+        );
+      } else {
+        errorBody = buildProgressCommentBody(
+          `${t("core.dispatchFailed", { name: t("system.source_name", {}, lang) }, lang)}\n${t("core.dispatchErrorLine", { error: errMsg || t("core.unknownError", {}, lang) }, lang)}`,
+          requestTelegramMeta,
+        );
+      }
       await octokit.rest.issues.updateComment({ owner, repo, comment_id: progressCommentId, body: errorBody }).catch(() => {});
     }
     throw e;
