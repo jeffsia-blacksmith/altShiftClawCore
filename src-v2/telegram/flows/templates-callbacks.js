@@ -238,6 +238,11 @@ export function registerTemplateCallbacks(composer) {
         owner, repo, workflow_id: "templates.yml", ref: "main",
         inputs: { template_name: tplName, request_id: requestId },
       });
+      try {
+        const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
+        const { d1 } = ctx.services;
+        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/templates.yml", sourceId: tplName, chatId });
+      } catch (e) { console.error("[templates confirm] D1 notification record failed:", e); }
     } catch (e) { console.error("[templates install] dispatch failed:", e); }
     await clearTplState(store, chatId);
     await ctx.editMessageText(t("templates.installing_progress", { name: tplName }, lang), { reply_markup: { inline_keyboard: [] } });

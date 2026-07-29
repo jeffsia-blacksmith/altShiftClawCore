@@ -154,7 +154,7 @@ function buildStatusCardText(e, lang) {
     const fileLink = e.workflow.url
       ? `[${O(e.workflow.file)}](${e.workflow.url})`
       : O(e.workflow.file);
-    lines.push(`\\- ${O(t("core.llmProviderLabel", { }, L))}: ${fileLink}`); // actually "File:" — use hardcoded
+    lines.push(`\\- File: ${fileLink}`);
     // Simplified: Status line
     let statusText;
     if (!e.workflow.enabled || e.workflow.status === "disabled") {

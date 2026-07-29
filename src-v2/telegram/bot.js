@@ -91,6 +91,16 @@ export function createBot({ config, services }) {
     if (await handleScheduleText(ctx)) return;
     if (await handleLineText(ctx)) return;
     if (await handleCommentOnIssue(ctx)) return;
+    // AI 自然语言工作流派工（对齐旧 bundle RT 路径）
+    const text = ctx.message?.text;
+    if (text && text.startsWith("/")) {
+      const parts = text.slice(1).split(/\s+/);
+      const commandName = parts[0];
+      const argsText = parts.slice(1).join(" ");
+      if (commandName && !["start","help","list","current","status","close","clear","enable","disable","workflow","skills","templates","version","schedules","llm","new","edit","cancel"].includes(commandName)) {
+        if (await handleNaturalLanguageCommand(ctx, commandName, argsText)) return;
+      }
+    }
     await next();
   });
 

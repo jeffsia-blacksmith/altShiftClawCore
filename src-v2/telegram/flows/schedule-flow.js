@@ -25,16 +25,163 @@ async function clearSchedState(store, chatId) {
   await store.delete(`${PREFIX}${chatId}`);
 }
 
-// Wn — 下次运行时间计算（R9 minimal：仅 every_N_minutes + once）
-function computeNextRun({ ruleType, rulePayload, now = new Date() }) {
-  if (ruleType === "once") return null;
-  if (ruleType === "every_N_minutes") {
-    const m = rulePayload?.minutes ?? 1;
-    return new Date(now.getTime() + m * 60000).toISOString();
-  }
-  // 其余 ruleType（daily/hourly/cron/weekly...）在 R9b 完整实现；fallback +1h
-  return new Date(now.getTime() + 3600000).toISOString();
+// Wn — 下次运行时间计算（完整版，对齐旧 bundle Wn L13750-13778 + helpers L13510-13748）
+// 时区：Asia/Taipei (UTC+8)
+const TZ_OFFSET = 28800000; // 8h in ms
+
+function toLocalParts(date = new Date()) {
+  const d = new Date(date.getTime() + TZ_OFFSET);
+  return {
+    year: d.getUTCFullYear(), month: d.getUTCMonth() + 1, day: d.getUTCDate(),
+    hour: d.getUTCHours(), minute: d.getUTCMinutes(), second: d.getUTCSeconds(),
+    weekday: d.getUTCDay(),
+  };
 }
+function fromLocalParts(parts) {
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour ?? 0, parts.minute ?? 0, parts.second ?? 0) - TZ_OFFSET);
+}
+function addDays(parts, n) {
+  const d = fromLocalParts(parts);
+  return toLocalParts(new Date(d.getTime() + n * 86400000));
+}
+function addMinutes(date, n) { return new Date(date.getTime() + n * 60000); }
+function addHours(date, n) { return new Date(date.getTime() + n * 3600000); }
+
+function parseNum(v) {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") { const n = parseInt(v.trim(), 10); return isNaN(n) ? null : n; }
+  return null;
+}
+function parseHour(v) { const h = parseNum(v); return (h != null && h >= 0 && h <= 23) ? h : null; }
+function parseMinute(v) { if (v == null || v === "") return 0; const m = parseNum(v); return (m != null && m >= 0 && m <= 59) ? m : null; }
+
+// cron field parser
+function parseCronField(s, min, max, allow7As0 = false) {
+  const str = String(s ?? "").trim();
+  if (!str) throw new Error("cron field cannot be empty");
+  const set = new Set();
+  const addRange = (a, b, step = 1) => { for (let d = a; d <= b; d += step) set.add(d); };
+  for (const part of str.split(",")) {
+    const p = part.trim();
+    if (!p) continue;
+    const [rangePart, stepPart] = p.split("/");
+    const step = stepPart ? parseInt(stepPart, 10) : 1;
+    if (rangePart === "*") { addRange(min, max, step); continue; }
+    if (rangePart.includes("-")) {
+      const [a, b] = rangePart.split("-");
+      let va = parseInt(a, 10), vb = parseInt(b, 10);
+      if (allow7As0 && va === 7) va = 0;
+      if (allow7As0 && vb === 7) vb = 0;
+      addRange(va, vb, step); continue;
+    }
+    let v = parseInt(rangePart, 10);
+    if (allow7As0 && v === 7) v = 0;
+    if (stepPart) addRange(v, max, step); else set.add(v);
+  }
+  return [...set].sort((a, b) => a - b);
+}
+
+export function computeNextRun({ ruleType, rulePayload, now = new Date() }) {
+  const rp = rulePayload && typeof rulePayload === "object" ? rulePayload : (typeof rulePayload === "string" ? safeJsonParse(rulePayload) : {});
+  if (/^every_\d+_minutes$/.test(ruleType)) {
+    const m = parseInt(ruleType.match(/^every_(\d+)_minutes$/)?.[1] ?? "1", 10);
+    return addMinutes(now, m).toISOString();
+  }
+  switch (ruleType) {
+    case "interval": {
+      const m = parseNum(rp.minutes) ?? 1;
+      return addMinutes(now, m).toISOString();
+    }
+    case "minutely": {
+      const interval = parseNum(rp.interval_minutes) ?? 1;
+      let parts = toLocalParts(now);
+      let d = fromLocalParts({ ...parts, second: 0 });
+      while (parts.minute % interval !== 0 || d.getTime() <= now.getTime()) {
+        d = addMinutes(d, 1);
+        parts = toLocalParts(d);
+      }
+      return d.toISOString();
+    }
+    case "daily": {
+      const h = parseHour(rp.hour) ?? 0;
+      const m = parseMinute(rp.minute) ?? 0;
+      const parts = toLocalParts(now);
+      let d = fromLocalParts({ year: parts.year, month: parts.month, day: parts.day, hour: h, minute: m });
+      if (d.getTime() <= now.getTime()) {
+        const next = addDays(parts, 1);
+        d = fromLocalParts({ year: next.year, month: next.month, day: next.day, hour: h, minute: m });
+      }
+      return d.toISOString();
+    }
+    case "hourly": {
+      const interval = parseNum(rp.interval_hours) ?? 1;
+      const m = parseMinute(rp.minute) ?? 0;
+      const parts = toLocalParts(now);
+      let h = parts.hour;
+      let d = fromLocalParts({ year: parts.year, month: parts.month, day: parts.day, hour: h, minute: m });
+      while (h % interval !== 0 || d.getTime() <= now.getTime()) {
+        h++; d = addHours(d, 1); const np = toLocalParts(d); h = np.hour;
+      }
+      return d.toISOString();
+    }
+    case "weekly": {
+      const weekdays = Array.isArray(rp.weekdays) ? rp.weekdays.map(Number).filter(n => n >= 0 && n <= 6)
+        : (rp.weekday != null ? [Number(rp.weekday)] : []);
+      if (weekdays.length === 0) throw new Error("Invalid weekly schedule");
+      const wd = new Set(weekdays);
+      const h = parseHour(rp.hour) ?? 0;
+      const m = parseMinute(rp.minute) ?? 0;
+      const parts = toLocalParts(now);
+      for (let i = 0; i < 7; i++) {
+        const day = addDays(parts, i);
+        if (!wd.has(day.weekday)) continue;
+        const d = fromLocalParts({ year: day.year, month: day.month, day: day.day, hour: h, minute: m });
+        if (d.getTime() > now.getTime()) return d.toISOString();
+      }
+      const next = addDays(parts, 7);
+      return fromLocalParts({ year: next.year, month: next.month, day: next.day, hour: h, minute: m }).toISOString();
+    }
+    case "weekday":
+      return computeNextRun({ ruleType: "weekly", rulePayload: { weekdays: [1,2,3,4,5], hour: rp.hour, minute: rp.minute }, now });
+    case "weekenday":
+      return computeNextRun({ ruleType: "weekly", rulePayload: { weekdays: [0,6], hour: rp.hour, minute: rp.minute }, now });
+    case "once": {
+      if (!rp.run_at) return null;
+      const d = new Date(rp.run_at);
+      if (isNaN(d.getTime())) return null;
+      return d.toISOString();
+    }
+    case "cron": {
+      const expr = typeof rp.expression === "string" ? rp.expression.trim() : "";
+      const fields = expr.split(/\s+/);
+      if (fields.length !== 5) throw new Error("Invalid cron expression");
+      const [fMin, fHour, fDom, fMonth, fDow] = fields;
+      const minutes = parseCronField(fMin, 0, 59);
+      const hours = parseCronField(fHour, 0, 23);
+      const months = parseCronField(fMonth, 1, 12);
+      const domSet = new Set(parseCronField(fDom, 1, 31));
+      const dowSet = new Set(parseCronField(fDow, 0, 6, true));
+      const domWild = fDom === "*";
+      const dowWild = fDow === "*";
+      const startParts = toLocalParts(new Date(now.getTime() + 60000));
+      for (let i = 0; i < 366 * 5; i++) {
+        const day = i === 0 ? startParts : addDays(startParts, i);
+        if (!months.includes(day.month)) continue;
+        const domOk = domWild && dowWild ? true : (!domWild && !dowWild ? domSet.has(day.day) || dowSet.has(day.weekday) : domWild ? dowSet.has(day.weekday) : domSet.has(day.day));
+        if (!domOk) continue;
+        for (const h of hours) for (const m of minutes) {
+          const d = fromLocalParts({ year: day.year, month: day.month, day: day.day, hour: h, minute: m });
+          if (d.getTime() > now.getTime()) return d.toISOString();
+        }
+      }
+      throw new Error(`Cannot compute next cron run: ${expr}`);
+    }
+    default:
+      return new Date(now.getTime() + 3600000).toISOString();
+  }
+}
+
+function safeJsonParse(s) { try { return JSON.parse(s) ?? {}; } catch { return {}; } }
 
 // 键盘 builders
 function cancelKeyboard(lang) {

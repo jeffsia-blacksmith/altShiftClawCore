@@ -14,6 +14,12 @@ const WORKFLOW_PATHS = {
 };
 
 // workflow_notifications CRUD（对齐 src/modules/workflow-notifications.js）
+export async function createWorkflowNotification(d1, data) {
+  await d1.prepare(
+    `INSERT INTO workflow_notifications (request_id, workflow_path, source_id, issue_number, chat_id, channel, status, created_at, updated_at)
+     VALUES (?,?,?,?,?,?, 'pending', datetime('now'), datetime('now'))`,
+  ).bind(requestId, workflowPath, sourceId ?? null, issueNumber ?? null, chatId ?? null, channel).run();
+}
 async function getNotificationByRequestId(d1, requestId) {
   const row = await d1.prepare("SELECT * FROM workflow_notifications WHERE request_id = ? LIMIT 1").bind(requestId).first();
   return row;

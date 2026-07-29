@@ -112,6 +112,10 @@ export function registerLineBotCallbacks(composer) {
           default_utc_offset: state.defaultUtcOffset ?? "+8",
         },
       });
+      try {
+        const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
+        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/install-line-bot.yml", sourceId: "line-bot", issueNumber: state.issueNumber, chatId });
+      } catch (e) { console.error("[line deploy] D1 notification record failed:", e); }
     } catch (e) { console.error("[line deploy] dispatch failed:", e); }
     if (chatId) await clearLineState(store, chatId);
     try { await ctx.editMessageText(t("line.deploying_message", { id: state.lineBotId }, lang), { reply_markup: { inline_keyboard: [] } }); } catch {}

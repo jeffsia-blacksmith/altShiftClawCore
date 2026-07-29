@@ -92,8 +92,13 @@ export async function handleCommentOnIssue(ctx) {
     try { processingMsg = await ctx.reply(t("system.processing", {}, lang)); } catch {}
   }
 
-  // !acceptsDispatch → resting 或 noTaskMessage
+  // !acceptsDispatch → 仍然建 issue comment（对齐旧 bundle su L17853: ALWAYS create comment）
+  // 但不写 artifacts/jsonl；回复 resting/noTaskMessage
   if (!acceptsDispatch) {
+    const body = buildCommentBody(ctx, text, lang);
+    try {
+      await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
+    } catch (e) { console.error("[comment-on-issue] createComment (no-dispatch) failed:", e); }
     const { buildRestingReply, buildMissingSetupReply } = await import("./edge-replies.js");
     if (!branchExists || !workflowExists) {
       await ctx.reply(buildMissingSetupReply(lang));

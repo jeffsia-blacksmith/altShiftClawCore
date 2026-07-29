@@ -203,3 +203,67 @@ export async function osCreateFinalize(ctx, state) {
 
   return { issue: { number: issueNumber, title: created.title }, mode: "create" };
 }
+
+// Os edit finalize — 编辑现有龙虾（对齐旧 bundle Os edit L7424-7486）
+export async function osEditFinalize(ctx, state) {
+  const { octokit, store, d1, config } = ctx.services;
+  const { owner, repo, repoFullName } = config.github;
+  const chatId = ctx.chat?.id;
+  const issueNumber = Number.isInteger(state.issueNumber) ? state.issueNumber : null;
+  if (!issueNumber || issueNumber <= 0) throw new Error("edit finalize requires issueNumber");
+
+  const meta = state.originalTelegramMeta ?? buildTelegramMeta(ctx);
+  const agentProfile = buildAgentProfile(state);
+  const body = buildIssueBody(meta, agentProfile);
+
+  // 查现有 issue_metadata template
+  let existingTemplate = null;
+  try {
+    const row = await d1.prepare("SELECT template FROM issue_metadata WHERE repo = ? AND issue_number = ? LIMIT 1").bind(repoFullName, issueNumber).first();
+    existingTemplate = row?.template ?? null;
+  } catch {}
+
+  const templateChain = [state.template, existingTemplate, "default"].filter(Boolean);
+  const personality = config.personality || "";
+
+  // 同步 workflow yml（对齐 sT — 尝试链中模板）
+  for (const tpl of templateChain) {
+    try { await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl); break; } catch {}
+  }
+
+  // 更新 issue title/body
+  const { data: updated } = await octokit.rest.issues.update({ owner, repo, issue_number: issueNumber, title: state.name ?? "", body });
+  let result = { number: updated.number, title: updated.title };
+
+  // 切换 workflow enable/disable
+  if (typeof state.workflowEnabled === "boolean") {
+    try {
+      const { data: wfList } = await octokit.rest.actions.listRepoWorkflows({ owner, repo });
+      const wf = wfList.workflows.find((w) => w.path === `.github/workflows/issue-${issueNumber}.yml`);
+      if (wf) {
+        if (state.workflowEnabled) await octokit.rest.actions.enableWorkflow({ owner, repo, workflow_id: wf.id });
+        else await octokit.rest.actions.disableWorkflow({ owner, repo, workflow_id: wf.id });
+      }
+    } catch (e) { console.warn("[Os edit] setWorkflowState failed:", e.message); }
+  }
+
+  // 如果 resetTemplate → 重建 orphan 分支
+  let finalTemplate = existingTemplate ?? "default";
+  if (state.resetTemplate) {
+    const tpl = state.template || "default";
+    try {
+      const files = await readTemplateFiles(octokit, owner, repo, tpl, personality);
+      await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: reset issue #${issueNumber} template (template: ${tpl})`);
+      await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl);
+      finalTemplate = tpl;
+    } catch (e) { console.warn("[Os edit] templateReset failed:", e.message); }
+  }
+
+  // D1 upsert issue_metadata
+  await upsertIssueTemplate(d1, repoFullName, issueNumber, finalTemplate);
+
+  // setActiveIssue
+  if (chatId) await store.put(`active-issue:${chatId}`, String(issueNumber));
+
+  return { issue: result, mode: "edit" };
+}

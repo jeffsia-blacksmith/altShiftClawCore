@@ -144,10 +144,15 @@ export async function persistScheduleRun(db, id, { lastRunAt, lastError, nextRun
   });
 }
 
+function safeParseJSON(s) {
+  if (!s || typeof s !== "string") return null;
+  try { return JSON.parse(s) ?? {}; } catch { return {}; }
+}
+
 function camelSchedule(row) {
   return {
     id: row.id, repo: row.repo, issueNumber: row.issue_number, chatId: row.chat_id,
-    prompt: row.prompt, eventData: row.event_data, ruleType: row.rule_type, rulePayload: row.rule_payload,
+    prompt: row.prompt, eventData: row.event_data, ruleType: row.rule_type, rulePayload: safeParseJSON(row.rule_payload),
     timezone: row.timezone, nextRunAt: row.next_run_at, shouldNotify: !!row.should_notify,
     status: row.status, lastRunAt: row.last_run_at, lastError: row.last_error,
     lockedUntil: row.locked_until, cancelledAt: row.cancelled_at,

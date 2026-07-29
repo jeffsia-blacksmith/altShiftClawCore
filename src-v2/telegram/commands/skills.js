@@ -19,7 +19,7 @@ async function listInstalledSkills(octokit, owner, repo, issueNumber) {
     const { data } = await octokit.rest.repos.getContent({
       owner,
       repo,
-      path: `issue-${issueNumber}`,
+      path: `.agents/skills`,
       ref: `issue-${issueNumber}`,
     });
     if (!Array.isArray(data)) return [];
@@ -82,7 +82,7 @@ export function registerSkills(composer) {
       for (const s of catalog.slice(0, 20)) {
         const displayName = skillCatalogReply(s.name, lang) ?? s.name;
         const label = installedSet.has(s.name) ? `✅ ${displayName}` : `📦 ${displayName}`;
-        kb.text(label, `skill_select:${s.name}`).row();
+        kb.text(label, `skills_pick:${s.name}`).row();
       }
       const target = issueTitle ? `🦞 ${issueTitle} #${active}` : `🦞 #${active}`;
       await ctx.reply(t("skills.select_install", { target }, lang), { reply_markup: kb });

@@ -67,6 +67,15 @@ export function createApp({ buildOctokit = defaultBuildOctokit } = {}) {
     return handler(c);
   });
 
+  // yu — GET /api/active-issue（L20070-20075）
+  app.get("/api/active-issue", (c) => {
+    const store = c.var.store;
+    const chatId = Number(c.req.query("chat_id") ?? 0);
+    if (!chatId) return c.json({ error: "chat_id required" }, 400);
+    const active = store ? store.get(`active-issue:${chatId}`) : null;
+    return c.json({ issueNumber: active ?? null });
+  });
+
   // ou — POST * with secret+path gate（L17932-17955）
   app.post("*", async (c, next) => {
     const config = c.var.config;

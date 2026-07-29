@@ -61,7 +61,7 @@ export function buildConfig(env) {
       botToken: optString(e, "TELEGRAM_BOT_TOKEN"),
       webhookSecret: optString(e, "TELEGRAM_WEBHOOK_SECRET"),
       apiBaseUrl: optString(e, "TELEGRAM_API_BASE_URL"),
-      webhookPath: optString(e, "TELEGRAM_WEBHOOK_PATH"),
+      webhookPath: (() => { const p = optString(e, "TELEGRAM_WEBHOOK_PATH"); return p ? (p.startsWith("/") ? p : `/${p}`) : null; })(),
       defaultChatId: optInt(e, "TELEGRAM_CHAT_ID"),
       accessMode: "open",
       maxMessageLength: optInt(e, "TELEGRAM_MAX_MESSAGE_LENGTH") ?? 4096,
@@ -83,8 +83,8 @@ export function buildConfig(env) {
       webhookPath: "/github/webhook",
     },
     scheduleStorage: { database: optBinding(e, "SCHEDULES_DB") },
-    scheduleTimeUnderstanding: { model: null, ai: optBinding(e, "AI") },
-    workflowInputInference: { model: null, ai: optBinding(e, "AI") },
+    scheduleTimeUnderstanding: { model: optString(e, "SCHEDULE_TIME_UNDERSTANDING_MODEL") ?? "@cf/openai/gpt-oss-20b", ai: optBinding(e, "AI") },
+    workflowInputInference: { model: optString(e, "WORKFLOW_INPUT_INFERENCE_MODEL") ?? "@cf/openai/gpt-oss-20b", ai: optBinding(e, "AI") },
     version: DEFAULT_VERSION,
   };
 }

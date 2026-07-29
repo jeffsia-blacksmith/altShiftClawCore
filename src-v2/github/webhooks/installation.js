@@ -5,6 +5,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { setActiveIssue } from "../../db/kv-state.js";
+import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } from "../branches.js";
 
 const INIT_DONE_KEY = "init_github_claw_done";
 
@@ -26,25 +27,45 @@ function buildWelcomeText(env) {
 }
 
 // kE — 创建第一只龙虾（对齐 L19372-19404）
-// R9 最小：octokit.issues.create + setActiveIssue；orphan 分支 / workflow 写入在 R9b 或留作 /new 流复用
 async function createFirstLobster(env, chatId) {
-  const { octokit, store, config } = env;
-  const { owner, repo } = config.github;
+  const { octokit, store, d1, config } = env;
+  const { owner, repo, repoFullName } = config.github;
   const title = config.github.repo ?? "Default Lobster";
+  const profileName = config.profileName ?? title;
   const meta = { chat_id: chatId, source: "auto-init" };
-  const body = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n\n\`\`\`json\n{"name":"${title}","description":"${t("system.defaultLobsterDescription", {}, glang())}"}\n\`\`\``;
+  const body = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n\n\`\`\`json\n${JSON.stringify({ name: title, description: t("system.defaultLobsterDescription", { name: profileName }, glang()) }, null, 2)}\n\`\`\``;
   const { data } = await octokit.rest.issues.create({ owner, repo, title, body });
   const issueNumber = data.number;
   await setActiveIssue(store, issueNumber, chatId);
-  // R9b: orphan 分支 issue-<n> + workflow issue-<n>.yml 写入（复用 /new finalize 逻辑）
+  const template = "default";
+  const personality = config.personality || "";
+  try {
+    const files = await readTemplateFiles(octokit, owner, repo, template, personality);
+    if (files.length > 0) {
+      await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: init issue #${issueNumber} orphan branch (template: ${template})`);
+      await syncWorkflowFile(octokit, owner, repo, issueNumber, template);
+    }
+  } catch (e) {
+    console.warn("[auto-init] template branch/workflow setup skipped:", e.message);
+  }
+  try { await upsertIssueTemplate(d1, repoFullName, issueNumber, template); } catch (e) { console.warn("[auto-init] D1 metadata upsert skipped:", e.message); }
   return { number: issueNumber, title };
 }
 
 // EE — 标记 init 完成（对齐 L19405-19414）
 async function markInitDone(env) {
   await env.store.put(INIT_DONE_KEY, "true");
-  // R9b: 设 repo variable INIT_GITHUB_CLAW=false（需 octokit repos.createUpdateOrgVariable
-  //   或 actions.createRepoVariable；R9 最小用 store flag 幂等即可）
+  const { octokit } = env;
+  const { owner, repo } = env.config.github;
+  try {
+    await octokit.rest.actions.updateRepoVariable({ owner, repo, name: "INIT_GITHUB_CLAW", value: "false" });
+  } catch (e) {
+    if (/404|not found/i.test(e.message ?? "")) {
+      await octokit.rest.actions.createRepoVariable({ owner, repo, name: "INIT_GITHUB_CLAW", value: "false" });
+    } else {
+      console.error("[auto-init] set repo variable failed:", e.message);
+    }
+  }
 }
 
 export function registerInstallationHandlers(webhooks, env) {

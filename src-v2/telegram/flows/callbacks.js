@@ -168,6 +168,16 @@ export function registerFlowCallbacks(composer) {
       issue_number: num,
       state: "closed",
     });
+    // 清理排程（对齐旧 bundle vp L5673-5685）
+    let scheduleLine = "";
+    try {
+      const { deleteSchedulesByIssue } = await import("../../db/schedules.js");
+      const { d1 } = ctx.services;
+      const deleted = await deleteSchedulesByIssue(d1, config.github.repoFullName, num);
+      scheduleLine = deleted > 0
+        ? t("core.closeClearedSchedules", { count: deleted }, lang)
+        : t("core.closeNoSchedulesToClear", {}, lang);
+    } catch (e) { console.error("[close] schedule cleanup failed:", e); }
     // active-issue 重分配：若关闭的是当前 active，切到下一个开 issue
     const active = await getActiveIssue(store, chatId);
     let nextLine;
@@ -188,6 +198,7 @@ export function registerFlowCallbacks(composer) {
     const text = [
       t("core.closeTargetSuccess", { target: lobsterLabel(closed.number, closed.title, lang) }, lang),
       "",
+      scheduleLine,
       "",
       nextLine,
     ].join("\n");

@@ -170,13 +170,33 @@ async function osEditFinalize(ctx, state) {
   const { owner, repo } = config.github;
   const lang = ctx.language ?? glang();
   const issueNumber = state.issueNumber;
-  // 1. 更新 issue title + body
+
+  // 查现有 issue_metadata template
+  let existingTemplate = null;
+  try {
+    const row = await d1.prepare("SELECT template FROM issue_metadata WHERE repo = ? AND issue_number = ? LIMIT 1").bind(config.github.repoFullName, issueNumber).first();
+    existingTemplate = row?.template ?? null;
+  } catch {}
+
+  const templateChain = [state.template, existingTemplate, "default"].filter(Boolean);
+
+  // 1. 同步 workflow yml（对齐 sT — 每次 edit 都同步）
+  for (const tpl of templateChain) {
+    try {
+      const { syncWorkflowFile } = await import("../../github/branches.js");
+      await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl);
+      break;
+    } catch {}
+  }
+
+  // 2. 更新 issue title + body
   const meta = state.originalTelegramMeta ?? { chat_id: ctx.chat?.id };
   const body = buildIssueBody(meta, { name: state.name, description: state.description });
   const { data: updated } = await octokit.rest.issues.update({
     owner, repo, issue_number: issueNumber, title: state.name, body,
   });
-  // 2. workflow enable/disable
+
+  // 3. workflow enable/disable
   if (typeof state.workflowEnabled === "boolean") {
     try {
       const { data: wfList } = await octokit.rest.actions.listRepoWorkflows({ owner, repo });
@@ -192,36 +212,27 @@ async function osEditFinalize(ctx, state) {
       console.error("[edit finalize] workflow toggle failed:", e);
     }
   }
-  // 3. resetTemplate — 重写 issue-<n> 分支（完整实现：Er + ai + Sr + Vr）
+
+  // 4. resetTemplate — 重建 orphan 分支
+  let finalTemplate = existingTemplate ?? "default";
   if (state.resetTemplate && state.template) {
     try {
       const { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } = await import("../../github/branches.js");
       const files = await readTemplateFiles(octokit, owner, repo, state.template, config.personality || "");
-      // 重写 issue-<n> 分支（创建新 orphan commit 替换内容）
-      const branchName = `issue-${issueNumber}`;
-      // 读取当前分支 ref sha
-      let refSha;
-      try {
-        const { data: ref } = await octokit.rest.git.getRef({ owner, repo, ref: `heads/${branchName}` });
-        refSha = ref.object.sha;
-      } catch {}
-      // createTree + createCommit with parent (update, not orphan)
-      const treeItems = files.map((f) => ({ path: f.path, mode: "100644", type: "blob", content: f.content }));
-      const { data: tree } = await octokit.rest.git.createTree({ owner, repo, tree: treeItems });
-      const { data: commit } = await octokit.rest.git.createCommit({
-        owner, repo, message: `chore: reset issue #${issueNumber} template (template: ${state.template})`,
-        tree: tree.sha, parents: refSha ? [refSha] : [],
-      });
-      // 更新 ref
-      await octokit.rest.git.updateRef({ owner, repo, ref: `heads/${branchName}`, sha: commit.sha });
-      // 同步 workflow yml
+      await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: reset issue #${issueNumber} template (template: ${state.template})`);
       await syncWorkflowFile(octokit, owner, repo, issueNumber, state.template);
-      // 更新 D1 映射
-      await upsertIssueTemplate(d1, config.github.repoFullName, issueNumber, state.template);
+      finalTemplate = state.template;
     } catch (e) {
       console.error("[edit finalize] template reset failed:", e);
     }
   }
+
+  // 5. D1 upsert issue_metadata（每次 edit 都持久化，对齐 Vr L7486）
+  try {
+    const { upsertIssueTemplate } = await import("../../github/branches.js");
+    await upsertIssueTemplate(d1, config.github.repoFullName, issueNumber, finalTemplate);
+  } catch (e) { console.error("[edit finalize] D1 upsert failed:", e); }
+
   const chatId = ctx.chat?.id;
   if (chatId != null) {
     await setActiveIssue(store, issueNumber, chatId);
@@ -251,6 +262,11 @@ async function nsFinalizeReply(ctx, result, mode) {
 // /edit 命令入口
 export function registerEdit(composer) {
   composer.command("edit", async (ctx) => {
+    await initEditFlow(ctx);
+  });
+}
+
+export async function initEditFlow(ctx) {
     const { octokit, store, config } = ctx.services;
     const { owner, repo } = config.github;
     const lang = ctx.language ?? glang();
@@ -285,7 +301,6 @@ export function registerEdit(composer) {
     await setFlowState(store, chatId, state);
     const prompt = renderEditPrompt({ step: "awaiting_name", name: state.name, description: state.description, workflowEnabled: state.workflowEnabled, lang });
     await ctx.reply(prompt.text, { reply_markup: prompt.reply_markup });
-  });
 }
 
 // edit callbacks
@@ -302,6 +317,10 @@ export function registerEditCallbacks(composer) {
     }
     const step = ctx.callbackQuery.data.slice("edit_keep_field:".length);
     if (state.isSubmitting) return;
+    if (step !== state.step) {
+      await ctx.answerCallbackQuery(t("newFlow.formExpiredEdit", {}, lang));
+      return;
+    }
     if (step === "awaiting_name") {
       await setFlowState(store, chatId, { ...state, step: "awaiting_description" });
       await ctx.answerCallbackQuery(t("newFlow.nameKept", {}, lang));

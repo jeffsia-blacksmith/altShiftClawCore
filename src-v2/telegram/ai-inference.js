@@ -4,16 +4,22 @@
 
 import { t, glang } from "../i18n/index.js";
 
-// slugify 工作流文件名
+// slugify 工作流文件名（对齐旧 bundle Gn L12973-12975: [A-Za-z][A-Za-z0-9_-]* → normalize -/_ to _）
 function slugify(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const base = name.replace(/\.ya?ml$/, "");
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(base)) return base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return base.toLowerCase().replace(/[-_]+/g, "_");
 }
 function workflowFileSlug(path) {
   const base = path.split("/").pop().replace(/\.ya?ml$/, "");
   return slugify(base);
 }
+function workflowNameSlug(name) {
+  return slugify(name);
+}
 
 // nl — 成功回复
+function escapeMdV2(s) { return String(s).replace(/([_*\[\]()~`>#+=|{}.!\\-])/g, "\\$1"); }
 function buildTriggeredReply(workflowName, inputs, lang) {
   const lines = [t("core.workflowTriggered", { name: workflowName }, lang), ""];
   const nonEmpty = Object.entries(inputs).filter(([, v]) => v !== "" && v != null);
@@ -21,8 +27,8 @@ function buildTriggeredReply(workflowName, inputs, lang) {
     lines.push(t("core.workflowNoInputs", {}, lang));
   } else {
     for (const [k, v] of nonEmpty) {
-      const isSecret = /(^|[_-])(secret|token|password|key|api_key)/i.test(k);
-      lines.push(`\\- ${k}: ${isSecret ? "[REDACTED]" : String(v)}`);
+      const isSecret = /(^|[_-])(secret|token|password|passphrase|api[_-]?key|access[_-]?key|private[_-]?key)([_-]|$)/i.test(k);
+      lines.push(`\\- ${escapeMdV2(k)}: ${isSecret ? "[REDACTED]" : escapeMdV2(String(v))}`);
     }
   }
   return lines.join("\n");
@@ -35,7 +41,7 @@ function buildMissingReply(workflowName, missing, lang) {
     "",
     t("core.workflowMissingRequiredInputs", {}, lang),
   ];
-  for (const m of missing) lines.push(`\\- ${m}`);
+  for (const m of missing) lines.push(`\\- ${escapeMdV2(m)}`);
   lines.push("", t("core.workflowProvideInputsPrompt", {}, lang));
   return lines.join("\n");
 }
@@ -60,7 +66,7 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
     return false;
   }
   const slug = slugify(commandName);
-  const match = workflows.find((w) => workflowFileSlug(w.path) === slug);
+  const match = workflows.find((w) => workflowFileSlug(w.path) === slug || workflowNameSlug(w.name) === slug);
   if (!match) return false;
 
   // 取工作流 inputs（从 yaml 文件解析；R9 完整：用 Workers AI 推导）
@@ -70,15 +76,52 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
     const { data: wfFile } = await octokit.rest.repos.getContent({ owner, repo, path: match.path, ref: defaultBranch });
     if (wfFile.content) workflowSource = Buffer.from(wfFile.content, "base64").toString("utf8");
   } catch {}
-  // 从 yaml 解析 workflow_dispatch inputs（简化：正则提取）
-  const inputsMatch = workflowSource.match(/workflow_dispatch:\s*\n((?:\s+\w+:.*\n?)+)/);
+  // 从 yaml 解析 workflow_dispatch inputs（indent-aware parser，对齐旧 bundle Um L12977-13038）
+  const inputsMatch = workflowSource.match(/workflow_dispatch\s*:\s*\n/);
   if (inputsMatch) {
-    const inputBlock = inputsMatch[1];
-    const inputRegex = /(\w+):\s*\n\s+description:\s*["']?([^"'\n]+)["']?\s*\n(?:\s+required:\s*(true|false)\s*\n)?(?:\s+default:\s*["']?([^"'\n]+)["']?)?/g;
-    let m;
-    while ((m = inputRegex.exec(inputBlock)) !== null) {
-      workflowInputs.push({ name: m[1], description: m[2] || "", required: m[3] === "true", defaultValue: m[4] ?? null });
+    const afterDispatch = workflowSource.slice(inputsMatch.index + inputsMatch[0].length);
+    // 收集同缩进级别的 inputs: 块
+    const lines = afterDispatch.split("\n");
+    let inputBlockLines = [];
+    let inInputs = false;
+    let inputIndent = -1;
+    for (const line of lines) {
+      if (line.trim() === "") { if (inInputs) break; continue; }
+      const indent = line.match(/^(\s*)/)[1].length;
+      if (!inInputs) {
+        // 寻找 inputs: 行
+        if (/^\s*inputs\s*:/.test(line)) {
+          inInputs = true;
+          inputIndent = indent;
+        }
+        // 如果遇到同级非 inputs 键，停止
+        if (indent === 0 || (indent <= (workflowSource.match(/^(\s*)on/m)?.[1].length ?? 0) && !/^\s*inputs/.test(line) && !/^\s*$/.test(line))) break;
+      } else {
+        // 在 inputs 块内
+        if (indent <= inputIndent && line.trim() !== "") break;
+        inputBlockLines.push(line);
+      }
     }
+    // 解析每个 input key
+    let currentInput = null;
+    for (const line of inputBlockLines) {
+      const inputKeyMatch = line.match(/^(\s+)(\w+)\s*:\s*\n?$/);
+      if (inputKeyMatch) {
+        if (currentInput) workflowInputs.push(currentInput);
+        currentInput = { name: inputKeyMatch[2], description: "", required: false, defaultValue: null, type: "string" };
+      } else if (currentInput) {
+        const fieldMatch = line.match(/^\s+(\w+)\s*:\s*(.*)$/);
+        if (fieldMatch) {
+          const [, key, val] = fieldMatch;
+          const v = val.trim().replace(/^["']|["']$/g, "");
+          if (key === "description") currentInput.description = v;
+          else if (key === "required") currentInput.required = v === "true";
+          else if (key === "default") currentInput.defaultValue = v || null;
+          else if (key === "type") currentInput.type = v;
+        }
+      }
+    }
+    if (currentInput) workflowInputs.push(currentInput);
   }
 
   // AI 推导 inputs（如果 AI binding 可用）
@@ -88,7 +131,7 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
     try {
       const systemPrompt = t("aiPrompt.parser.systemPrompt", {}, lang);
       const userPrompt = buildUserPrompt(match.name, match.path, workflowInputs, workflowSource, argsText, lang);
-      const model = "meta/llama-4-scout-17b-16e-instruct";
+      const model = config.workflowInputInference?.model ?? "@cf/openai/gpt-oss-20b";
       const resp = await ai.run(model, {
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
         response_format: { type: "json_schema", json_schema: buildInputSchema(workflowInputs) },
@@ -99,8 +142,15 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
       if (typeof resp === "string") aiText = resp;
       else if (resp?.result?.response) aiText = resp.result.response;
       else if (resp?.response) aiText = resp.response;
+      else if (resp?.text) aiText = resp.text;
+      else if (resp?.output_text) aiText = resp.output_text;
       else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
-      const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+      const cleaned = aiText.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+      // 提取 JSON 对象（balanced braces）
+      const jsonStart = cleaned.indexOf("{");
+      const jsonEnd = cleaned.lastIndexOf("}");
+      const jsonStr = jsonStart >= 0 && jsonEnd > jsonStart ? cleaned.slice(jsonStart, jsonEnd + 1) : cleaned;
+      const parsed = JSON.parse(jsonStr);
       if (parsed.inputs && typeof parsed.inputs === "object") inputs = parsed.inputs;
     } catch (e) {
       console.error("[AI inference] failed, using defaults:", e.message);

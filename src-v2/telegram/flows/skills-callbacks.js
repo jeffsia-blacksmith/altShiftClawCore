@@ -307,6 +307,12 @@ export function registerSkillCallbacks(composer) {
         owner, repo, workflow_id: "skills.yml", ref: "main",
         inputs: { skill_name: skillName, issue_number: String(state.issueNumber), request_id: requestId },
       });
+      // D1 workflow notification record（对齐旧 bundle Gt）
+      try {
+        const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
+        const { d1 } = ctx.services;
+        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/skills.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId });
+      } catch (e) { console.error("[skills confirm] D1 notification record failed:", e); }
     } catch (e) { console.error("[skills install] dispatch failed:", e); }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.installing", {}, lang));

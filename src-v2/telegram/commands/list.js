@@ -65,7 +65,14 @@ export function registerList(composer) {
       }
     } catch (err) {
       console.error("[/list]", err);
-      await ctx.reply(ctx.t("core.listErrorGeneric"));
+      const status = err?.status ?? err?.response?.status;
+      if (status === 401 || status === 403) {
+        await ctx.reply(ctx.t("core.listErrorUnauthorized"));
+      } else if (status === 404) {
+        await ctx.reply(ctx.t("core.listErrorNotFound"));
+      } else {
+        await ctx.reply(ctx.t("core.listErrorGeneric"));
+      }
     }
   });
 }

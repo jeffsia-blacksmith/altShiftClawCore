@@ -9,15 +9,15 @@ import { listSchedulesForChat } from "../../db/schedules.js";
 // Ml(r) — issue 标题或 lobsterHash
 function scheduleItemLabel(r, issueTitle, lang) {
   return issueTitle
-    ? `${issueTitle} (#${r.issue_number})`
-    : t("core.lobsterHash", { issueNumber: r.issue_number }, lang);
+    ? `${issueTitle} (#${r.issueNumber})`
+    : t("core.lobsterHash", { issueNumber: r.issueNumber }, lang);
 }
 
 // $n(r) — ruleType | prompt 截断
 function scheduleRuleSummary(r) {
   const prompt = (r.prompt ?? "").slice(0, 20);
   const ellipsis = (r.prompt ?? "").length > 20 ? "…" : "";
-  return `${r.rule_type ?? ""} | ${prompt}${ellipsis}`;
+  return `${r.ruleType ?? ""} | ${prompt}${ellipsis}`;
 }
 
 // Dn(l) — 列表文本
@@ -27,21 +27,21 @@ function buildSchedulesListText(schedules, issueTitles, lang) {
   }
   const lines = [t("schedule.thisChatListTitle", {}, lang)];
   schedules.forEach((r, i) => {
-    const title = issueTitles.get(r.issue_number);
+    const title = issueTitles.get(r.issueNumber);
     lines.push(`${i + 1}. ${scheduleItemLabel(r, title, lang)}｜${scheduleRuleSummary(r)}`);
     lines.push(`   🆔 ${r.id}`);
-    lines.push(`   ⏭️ ${r.next_run_at ?? ""}`);
+    lines.push(`   ⏭️ ${r.nextRunAt ?? ""}`);
   });
   lines.push(t("schedule.thisChatListHint", {}, lang));
   return lines.join("\n");
 }
 
 // Bn(l) — 列表键盘
-function buildSchedulesKeyboard(schedules) {
+function buildSchedulesKeyboard(schedules, lang) {
   if (schedules.length === 0) return undefined;
   const kb = new InlineKeyboard();
   for (const r of schedules.slice(0, 20)) {
-    const label = `${scheduleItemLabel(r, undefined, "en")} ${scheduleRuleSummary(r)}`.slice(0, 36);
+    const label = `${scheduleItemLabel(r, undefined, lang)} ${scheduleRuleSummary(r)}`.slice(0, 36);
     kb.text(label, `schedule_chat_open:${r.id}`).row();
   }
   return kb;
@@ -58,7 +58,7 @@ export function registerSchedules(composer) {
       const schedules = await listSchedulesForChat(d1, repoFullName, chatId);
       // 富化 issue 标题
       const issueTitles = new Map();
-      const uniqueIssues = [...new Set(schedules.map((s) => s.issue_number))];
+      const uniqueIssues = [...new Set(schedules.map((s) => s.issueNumber))];
       await Promise.all(
         uniqueIssues.map(async (n) => {
           try {
@@ -70,7 +70,7 @@ export function registerSchedules(composer) {
         }),
       );
       const text = buildSchedulesListText(schedules, issueTitles, lang);
-      const keyboard = buildSchedulesKeyboard(schedules);
+      const keyboard = buildSchedulesKeyboard(schedules, lang);
       await ctx.reply(text, keyboard ? { reply_markup: keyboard } : undefined);
     } catch (e) {
       console.error("[/schedules]", e);

@@ -8,12 +8,32 @@ import { parseTelegramMeta, stripTelegramMeta } from "./meta.js";
 import { escapeMarkdownV2 } from "../../telegram/markdown.js";
 import { dispatchCodingAgent } from "../../coding-agent/dispatch.js";
 
+// Zk — relay skip conditions（对齐旧 bundle L18804-18833）
+function shouldSkipRelay(payload) {
+  const body = payload.comment?.body ?? "";
+  // 1. comment 有自己的 telegram-meta → bot echo，跳过
+  if (/<!--\s*telegram-meta:/.test(body)) return true;
+  // 2. comment 有 line-meta source → LINE bot 评论，跳过
+  if (/<!--\s*line-meta:/.test(body)) return true;
+  // 3. comment 有 schedule-flow source → 排程流评论，跳过
+  if (/<!--\s*telegram-meta:.*"source"\s*:\s*"schedule-flow"/.test(body)) return true;
+  // 4. issue body 无 telegram-meta → 无法 relay，跳过
+  const issueBody = payload.issue?.body ?? "";
+  if (!/<!--\s*telegram-meta:/.test(issueBody)) return true;
+  return false;
+}
+
 // relay：把 comment body（body-only，MarkdownV2 转义）发到 issue body 的 telegram-meta chat_id
 // 完整版：检测图片引用 → sendPhoto + caption；否则 sendMessage
 async function relayCommentToTelegram(payload, env) {
   const issue = payload.issue;
   const comment = payload.comment;
   if (!issue || !comment) return;
+  // skip conditions（对齐 Zk）
+  if (shouldSkipRelay(payload)) {
+    console.log("[relay] skip: comment has own meta / line / schedule / no issue meta");
+    return;
+  }
   const meta = parseTelegramMeta(issue.body);
   if (!meta || !meta.chat_id) {
     console.error("[relay] no telegram-meta chat_id in issue body, skip");

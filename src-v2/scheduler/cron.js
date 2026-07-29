@@ -6,6 +6,7 @@
 import { buildConfig } from "../config.js";
 import { buildOctokit } from "../github/octokit.js";
 import { fetchDueSchedules, acquireScheduleLock, persistScheduleRun, updateSchedule } from "../db/schedules.js";
+import { computeNextRun } from "../telegram/flows/schedule-flow.js";
 
 function parseScheduledTime(event) {
   const t = event?.scheduledTime ?? Date.now();
@@ -21,19 +22,9 @@ function computeNextRunState(sched, now) {
   if (sched.ruleType === "once") {
     return { status: "cancelled", nextRunAt: sched.nextRunAt, cancelledAt: now.toISOString() };
   }
-  // recurring — compute new nextRunAt
   let nextRunAt = sched.nextRunAt;
   try {
-    if (sched.ruleType === "every_N_minutes") {
-      const m = sched.rulePayload?.minutes ?? 1;
-      nextRunAt = new Date(now.getTime() + m * 60000).toISOString();
-    } else if (sched.ruleType === "interval") {
-      const m = sched.rulePayload?.minutes ?? 1;
-      nextRunAt = new Date(now.getTime() + m * 60000).toISOString();
-    } else {
-      // 其他 ruleType fallback +1h
-      nextRunAt = new Date(now.getTime() + 3600000).toISOString();
-    }
+    nextRunAt = computeNextRun({ ruleType: sched.ruleType, rulePayload: sched.rulePayload, now });
   } catch {
     nextRunAt = new Date(now.getTime() + 3600000).toISOString();
   }

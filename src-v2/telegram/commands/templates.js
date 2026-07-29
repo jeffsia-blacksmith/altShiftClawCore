@@ -69,7 +69,7 @@ export function registerTemplates(composer) {
     const kb = new InlineKeyboard();
     for (const c of installedStatus.slice(0, 20)) {
       const label = c.installed ? `✅ ${c.name}` : `📦 ${c.name}`;
-      kb.text(label, `template_select:${c.name}`).row();
+      kb.text(label, `templates_pick:${c.name}`).row();
     }
     await ctx.reply(t("templates.selectInstallTo", {}, lang), { reply_markup: kb });
   });
