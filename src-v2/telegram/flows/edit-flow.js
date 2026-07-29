@@ -192,8 +192,36 @@ async function osEditFinalize(ctx, state) {
       console.error("[edit finalize] workflow toggle failed:", e);
     }
   }
-  // 3. resetTemplate — 重写 issue-<n> 分支（R9 minimal：仅记录，分支重写在 R9b）
-  // 4. setActiveIssue + clearFlowState
+  // 3. resetTemplate — 重写 issue-<n> 分支（完整实现：Er + ai + Sr + Vr）
+  if (state.resetTemplate && state.template) {
+    try {
+      const { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } = await import("../../github/branches.js");
+      const files = await readTemplateFiles(octokit, owner, repo, state.template, config.personality || "");
+      // 重写 issue-<n> 分支（创建新 orphan commit 替换内容）
+      const branchName = `issue-${issueNumber}`;
+      // 读取当前分支 ref sha
+      let refSha;
+      try {
+        const { data: ref } = await octokit.rest.git.getRef({ owner, repo, ref: `heads/${branchName}` });
+        refSha = ref.object.sha;
+      } catch {}
+      // createTree + createCommit with parent (update, not orphan)
+      const treeItems = files.map((f) => ({ path: f.path, mode: "100644", type: "blob", content: f.content }));
+      const { data: tree } = await octokit.rest.git.createTree({ owner, repo, tree: treeItems });
+      const { data: commit } = await octokit.rest.git.createCommit({
+        owner, repo, message: `chore: reset issue #${issueNumber} template (template: ${state.template})`,
+        tree: tree.sha, parents: refSha ? [refSha] : [],
+      });
+      // 更新 ref
+      await octokit.rest.git.updateRef({ owner, repo, ref: `heads/${branchName}`, sha: commit.sha });
+      // 同步 workflow yml
+      await syncWorkflowFile(octokit, owner, repo, issueNumber, state.template);
+      // 更新 D1 映射
+      await upsertIssueTemplate(d1, config.github.repoFullName, issueNumber, state.template);
+    } catch (e) {
+      console.error("[edit finalize] template reset failed:", e);
+    }
+  }
   const chatId = ctx.chat?.id;
   if (chatId != null) {
     await setActiveIssue(store, issueNumber, chatId);
@@ -215,7 +243,9 @@ async function nsFinalizeReply(ctx, result, mode) {
   } else {
     await ctx.reply(text);
   }
-  // status card (ks) 在 R7+ 完整实现；R9 暂跳过
+  // status card
+  const { sendStatusCard } = await import("../status-card.js");
+  if (result.issue?.number) await sendStatusCard(ctx, result.issue.number);
 }
 
 // /edit 命令入口
@@ -375,10 +405,30 @@ export function registerEditCallbacks(composer) {
       await ctx.editMessageText(prompt.text, { reply_markup: prompt.reply_markup });
       return;
     }
-    // create 模式由 new-flow.js 处理；这里仅 edit 路径
+    // create 模式：触发 Os create finalize
     if (state.mode === "create") {
-      // 交给 new-flow 的 template 选择逻辑（R4 已注册同一 callback；这里 return 避免重复处理）
-      // 注意：grammY 第一个匹配的 callbackQuery handler 执行后默认不继续，所以这里不处理 create
+      const newState = { ...state, template: tpl, isSubmitting: true };
+      await setFlowState(store, chatId, newState);
+      await ctx.answerCallbackQuery(t("newFlow.templateSelected", {}, lang));
+      try {
+        await ctx.editMessageText(t("newFlow.creatingPleaseWait", {}, lang));
+      } catch {}
+      try {
+        const { osCreateFinalize } = await import("../../github/branches.js");
+        const result = await osCreateFinalize(ctx, newState);
+        // Ns finalize reply (create mode → reply new message)
+        const replyText = t("newFlow.createdLobster", { title: result.issue?.title ?? "", number: result.issue?.number ?? "" }, lang);
+        await ctx.reply(replyText);
+        // 清除 new-flow 状态
+        await clearFlowState(store, chatId);
+        // 发 status card
+        const { sendStatusCard } = await import("../status-card.js");
+        await sendStatusCard(ctx, result.issue.number);
+      } catch (e) {
+        console.error("[new template select create] finalize failed:", e);
+        await ctx.reply(t("newFlow.errorCreateFailed", {}, lang));
+        await clearFlowState(store, chatId);
+      }
       return;
     }
   });

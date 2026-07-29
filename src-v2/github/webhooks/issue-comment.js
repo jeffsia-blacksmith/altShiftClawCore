@@ -9,6 +9,7 @@ import { escapeMarkdownV2 } from "../../telegram/markdown.js";
 import { dispatchCodingAgent } from "../../coding-agent/dispatch.js";
 
 // relay：把 comment body（body-only，MarkdownV2 转义）发到 issue body 的 telegram-meta chat_id
+// 完整版：检测图片引用 → sendPhoto + caption；否则 sendMessage
 async function relayCommentToTelegram(payload, env) {
   const issue = payload.issue;
   const comment = payload.comment;
@@ -18,15 +19,26 @@ async function relayCommentToTelegram(payload, env) {
     console.error("[relay] no telegram-meta chat_id in issue body, skip");
     return;
   }
-  const bodyOnly = stripTelegramMeta(comment.body || "").trim() || t("core.blank", {}, glang());
-  // 旧 bundle pu 用 body-only（relayBodyOnly=true），截断到 maxMessageLength
+  let bodyOnly = stripTelegramMeta(comment.body || "").trim() || t("core.blank", {}, glang());
+  // 检测图片引用（markdown ![alt](url) 或 artifact 图片路径）
+  const imageMatch = bodyOnly.match(/!\[([^\]]*)\]\(([^)]+)\)/);
   const maxLen = env.config.telegram.maxMessageLength ?? 4096;
-  const text = escapeMarkdownV2(bodyOnly.slice(0, maxLen));
-  // 用 grammY Api 直接发；botToken + apiRoot 来自 config
+  bodyOnly = bodyOnly.slice(0, maxLen);
+  const text = escapeMarkdownV2(bodyOnly);
   const { Bot } = await import("grammy");
   const bot = new Bot(env.config.telegram.botToken, {
     client: { apiRoot: env.config.telegram.apiBaseUrl ?? "https://api.telegram.org" },
   });
+  if (imageMatch && imageMatch[2]) {
+    // 有图片 → sendPhoto with caption
+    try {
+      await bot.api.sendPhoto(meta.chat_id, imageMatch[2], { caption: text, parse_mode: "MarkdownV2" });
+      return;
+    } catch (e) {
+      console.error("[relay] sendPhoto failed, fallback to sendMessage:", e.message);
+    }
+  }
+  // 纯文本 → sendMessage
   await bot.api.sendMessage(meta.chat_id, text, { parse_mode: "MarkdownV2" });
 }
 

@@ -74,10 +74,57 @@ export async function handleCommentOnIssue(ctx) {
   // 建 issue comment
   const body = buildCommentBody(ctx, text, lang);
   try {
-    await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
+    const { data: comment } = await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
+    // 写 user.md artifact（Zr）
+    const branch = `issue-${active}`;
+    const artifactPath = `artifacts/${comment.id}/user.md`;
+    const artifactContent = `${text.trim() || "(empty)"}\n`;
+    let artifactSha;
+    try {
+      const { data: existing } = await octokit.rest.repos.getContent({ owner, repo, path: artifactPath, ref: branch });
+      artifactSha = existing.sha;
+    } catch {}
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner, repo, path: artifactPath,
+      message: `chore: update issue #${active} comment #${comment.id} user artifact`,
+      content: Buffer.from(artifactContent).toString("base64"), branch,
+      ...(artifactSha ? { sha: artifactSha } : {}),
+    });
+    // 写 issue.jsonl（xn）
+    const jsonlPath = "issue.jsonl";
+    let jsonlSha, jsonlContent = "";
+    try {
+      const { data: existing } = await octokit.rest.repos.getContent({ owner, repo, path: jsonlPath, ref: branch });
+      if (existing.content) jsonlContent = Buffer.from(existing.content, "base64").toString("utf8");
+      jsonlSha = existing.sha;
+    } catch {}
+    const entry = {
+      role: "user",
+      source: t("system.source_name", {}, lang),
+      issue_number: active,
+      comment_id: comment.id,
+      github_comment_url: comment.html_url ?? null,
+      telegram: {
+        chat_id: ctx.chat?.id ?? null,
+        message_id: ctx.message?.message_id ?? null,
+        user_id: ctx.from?.id ?? null,
+        username: ctx.from?.username ?? null,
+      },
+      content: text,
+      created_at: new Date().toISOString(),
+    };
+    const newLine = JSON.stringify(entry) + "\n";
+    const stripped = jsonlContent.replace(/\r?\n*$/g, "");
+    const newContent = stripped === "" ? newLine : `${stripped}\n${newLine}`;
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner, repo, path: jsonlPath,
+      message: `chore: update issue #${active} conversation log`,
+      content: Buffer.from(newContent).toString("base64"), branch,
+      ...(jsonlSha ? { sha: jsonlSha } : {}),
+    });
     await ctx.reply(t("system.messageReceived", {}, lang));
   } catch (e) {
-    console.error("[comment-on-issue] createComment failed:", e);
+    console.error("[comment-on-issue] createComment/artifact failed:", e);
     await ctx.reply(t("core.unknownError", {}, lang));
   }
   return true;

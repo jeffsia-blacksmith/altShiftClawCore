@@ -63,10 +63,53 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
   const match = workflows.find((w) => workflowFileSlug(w.path) === slug);
   if (!match) return false;
 
-  // 取工作流 inputs（从 yaml 文件解析；R9 minimal：假设无 inputs）
-  // R9 minimal：无 AI 推导，直接用空 inputs
-  const workflowInputs = []; // 完整版需解析 yaml workflow_dispatch inputs
-  const inputs = {};
+  // 取工作流 inputs（从 yaml 文件解析；R9 完整：用 Workers AI 推导）
+  let workflowInputs = [];
+  let workflowSource = "";
+  try {
+    const { data: wfFile } = await octokit.rest.repos.getContent({ owner, repo, path: match.path, ref: defaultBranch });
+    if (wfFile.content) workflowSource = Buffer.from(wfFile.content, "base64").toString("utf8");
+  } catch {}
+  // 从 yaml 解析 workflow_dispatch inputs（简化：正则提取）
+  const inputsMatch = workflowSource.match(/workflow_dispatch:\s*\n((?:\s+\w+:.*\n?)+)/);
+  if (inputsMatch) {
+    const inputBlock = inputsMatch[1];
+    const inputRegex = /(\w+):\s*\n\s+description:\s*["']?([^"'\n]+)["']?\s*\n(?:\s+required:\s*(true|false)\s*\n)?(?:\s+default:\s*["']?([^"'\n]+)["']?)?/g;
+    let m;
+    while ((m = inputRegex.exec(inputBlock)) !== null) {
+      workflowInputs.push({ name: m[1], description: m[2] || "", required: m[3] === "true", defaultValue: m[4] ?? null });
+    }
+  }
+
+  // AI 推导 inputs（如果 AI binding 可用）
+  const ai = ctx.services?.ai;
+  let inputs = {};
+  if (ai && workflowInputs.length > 0 && argsText?.trim()) {
+    try {
+      const systemPrompt = t("aiPrompt.parser.systemPrompt", {}, lang);
+      const userPrompt = buildUserPrompt(match.name, match.path, workflowInputs, workflowSource, argsText, lang);
+      const model = "meta/llama-4-scout-17b-16e-instruct";
+      const resp = await ai.run(model, {
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: userPrompt }],
+        response_format: { type: "json_schema", json_schema: buildInputSchema(workflowInputs) },
+        max_tokens: 1024,
+        temperature: 0,
+      });
+      let aiText = "";
+      if (typeof resp === "string") aiText = resp;
+      else if (resp?.result?.response) aiText = resp.result.response;
+      else if (resp?.response) aiText = resp.response;
+      else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
+      const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+      if (parsed.inputs && typeof parsed.inputs === "object") inputs = parsed.inputs;
+    } catch (e) {
+      console.error("[AI inference] failed, using defaults:", e.message);
+    }
+  }
+  // 用 defaults 填充未推导的 inputs
+  for (const wi of workflowInputs) {
+    if (!(wi.name in inputs) && wi.defaultValue != null) inputs[wi.name] = wi.defaultValue;
+  }
   const missingRequired = workflowInputs.filter((i) => i.required && !i.defaultValue).map((i) => i.name);
 
   if (missingRequired.length > 0) {
@@ -84,4 +127,46 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
     await ctx.reply(t("core.triggerWorkflowFailed", { name: match.name, error: e.message ?? t("core.unknownError", {}, lang) }, lang), { parse_mode: "MarkdownV2" });
   }
   return true;
+}
+
+// buildUserPrompt — 对齐 __（L12432-12461）
+function buildUserPrompt(workflowName, workflowPath, inputs, source, msg, lang) {
+  const inputLines = inputs.length === 0
+    ? t("aiPrompt.parser.noInputs", {}, lang)
+    : inputs.map((i) => `- ${i.name}\n  - required: ${i.required}\n  - type: ${i.type || "string"}\n  - default: ${i.defaultValue ?? "(none)"}\n  - description: ${i.description || "(none)"}`).join("\n");
+  const yamlTrimmed = (source ?? "").slice(0, 12000);
+  return [
+    `workflow name: ${workflowName}`,
+    `workflow file: ${workflowPath.split("/").pop()}`,
+    `workflow path: ${workflowPath}`,
+    "",
+    "workflow inputs:",
+    inputLines,
+    "",
+    "workflow yaml:",
+    yamlTrimmed || "(unavailable)",
+    "",
+    "key=value rule:",
+    `- ${t("aiPrompt.parser.rule1", {}, lang)}`,
+    `- ${t("aiPrompt.parser.rule2", {}, lang)}`,
+    "",
+    "user message:",
+    msg || "(empty)",
+  ].join("\n");
+}
+
+// buildInputSchema — 对齐 T_（L12462-12484）
+function buildInputSchema(inputs) {
+  const properties = {};
+  const inputProps = {};
+  for (const i of inputs) {
+    inputProps[i.name] = { type: i.type === "boolean" ? "boolean" : "string", description: i.description || t("aiPrompt.parser.paramDescription", { name: i.name }, "en") };
+  }
+  properties.inputs = { type: "object", properties: inputProps, additionalProperties: false, description: t("aiPrompt.parser.inputsDescription", {}, "en") };
+  properties.missingRequired = { type: "array", items: { type: "string", enum: inputs.map((i) => i.name) }, description: t("aiPrompt.parser.missingRequiredDescription", {}, "en") };
+  return {
+    name: "workflow_inputs",
+    schema: { type: "object", properties, required: ["inputs", "missingRequired"], additionalProperties: false },
+    strict: true,
+  };
 }

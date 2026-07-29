@@ -86,14 +86,31 @@ export async function handleFlowText(ctx) {
 
   // 其他 step 的文本处理在后续子批次接入；这里为避免误吞用户输入，回复引导
   if (state.step === "awaiting_description") {
-    // create 模式 → awaiting_template（R4 子批次将接 octokit 查 templates）
-    // 暂存 description，回复模板选择占位
+    // create 模式 → awaiting_template；列已装模板，显示选择键盘
     const trimmed = text.trim();
     const newState = { ...state, step: "awaiting_template", description: trimmed };
     await setFlowState(store, chatId, newState);
     const lang = ctx.language ?? glang();
-    const kb = new InlineKeyboard().text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
-    await ctx.reply(t("newFlow.selectTemplate", {}, lang), { reply_markup: kb });
+    // 读取已装模板列表
+    let templates = [];
+    try {
+      const { data } = await ctx.services.octokit.rest.repos.getContent({
+        owner: ctx.services.config.github.owner, repo: ctx.services.config.github.repo,
+        path: "templates", ref: "main",
+      });
+      if (Array.isArray(data)) templates = data.filter((d) => d.type === "dir").map((d) => d.name).sort();
+    } catch {}
+    if (templates.length === 0) {
+      await ctx.reply(t("newFlow.noTemplatesInstalled", {}, lang));
+      return true;
+    }
+    const kb = new InlineKeyboard();
+    for (const tpl of templates.slice(0, 20)) {
+      kb.text(`📦 ${tpl}`, `new_template_select:${tpl}`).row();
+    }
+    kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
+    const promptText = `${t("newFlow.selectTemplate", {}, lang)}\n${t("newFlow.selectTemplateHint", {}, lang)}`;
+    await ctx.reply(promptText, { reply_markup: kb });
     return true;
   }
 

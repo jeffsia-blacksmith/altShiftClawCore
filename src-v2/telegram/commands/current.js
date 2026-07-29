@@ -4,6 +4,7 @@
 // active 路径（Hp/gp/qd 复杂渲染）在 R3 仅做最小占位，R7+ 补全。
 
 import { getActiveIssue } from "../../db/kv-state.js";
+import { sendStatusCard } from "../status-card.js";
 
 async function currentStatusHandler(ctx) {
   const { store } = ctx.services;
@@ -14,8 +15,8 @@ async function currentStatusHandler(ctx) {
       await ctx.reply(ctx.t("core.noTrackedLobster"));
       return;
     }
-    // R7+ 接入完整 info card（Hp 7 路 octokit/D1 + gp MarkdownV2 渲染 + qd action keyboard）
-    await ctx.reply(ctx.t("core.statusError"));
+    // 发完整信息卡
+    await sendStatusCard(ctx, active);
   } catch (err) {
     console.error("[/current|/status]", err);
     await ctx.reply(ctx.t("core.statusError"));

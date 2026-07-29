@@ -5,8 +5,8 @@
 
 import { buildConfig } from "../config.js";
 import { buildOctokit } from "../github/octokit.js";
+import { fetchDueSchedules, acquireScheduleLock, persistScheduleRun, updateSchedule } from "../db/schedules.js";
 
-// $E(event) — 对齐 L20095-20101：解析 scheduledTime，校验
 function parseScheduledTime(event) {
   const t = event?.scheduledTime ?? Date.now();
   const d = typeof t === "number" ? new Date(t) : new Date(t);
@@ -16,23 +16,62 @@ function parseScheduledTime(event) {
   return d;
 }
 
-// Cp(db, {now}) — 查到期 schedules（对齐 L5686-5704）
-// R6 简化：直接用 D1 prepare；mock 支持该 SQL 形态
-async function fetchDueSchedules(db, now) {
-  const iso = now.toISOString();
-  const { results } = await db
-    .prepare(
-      `SELECT id, repo, issue_number, chat_id, prompt, next_run_at, status, locked_until
-       FROM schedules
-       WHERE status = ?
-         AND next_run_at <= ?
-         AND (locked_until IS NULL OR locked_until < ?)
-       ORDER BY next_run_at ASC, created_at ASC
-       LIMIT ?`,
-    )
-    .bind("active", iso, iso, 100)
-    .all();
-  return results ?? [];
+// DE — next-run / cancel compute（对齐 L20113-20120）
+function computeNextRunState(sched, now) {
+  if (sched.ruleType === "once") {
+    return { status: "cancelled", nextRunAt: sched.nextRunAt, cancelledAt: now.toISOString() };
+  }
+  // recurring — compute new nextRunAt
+  let nextRunAt = sched.nextRunAt;
+  try {
+    if (sched.ruleType === "every_N_minutes") {
+      const m = sched.rulePayload?.minutes ?? 1;
+      nextRunAt = new Date(now.getTime() + m * 60000).toISOString();
+    } else if (sched.ruleType === "interval") {
+      const m = sched.rulePayload?.minutes ?? 1;
+      nextRunAt = new Date(now.getTime() + m * 60000).toISOString();
+    } else {
+      // 其他 ruleType fallback +1h
+      nextRunAt = new Date(now.getTime() + 3600000).toISOString();
+    }
+  } catch {
+    nextRunAt = new Date(now.getTime() + 3600000).toISOString();
+  }
+  return { status: sched.status, nextRunAt, cancelledAt: null };
+}
+
+// FE — scheduled prompt body（对齐 L20087-20094 + cm L6664-6667）
+function buildScheduledPrompt(sched) {
+  const meta = {
+    source: "scheduled-trigger",
+    schedule_id: sched.id,
+    event_source: "cron",
+    ...(sched.eventData ? { event_data: sched.eventData } : {}),
+  };
+  const prompt = (sched.prompt ?? "").trim();
+  return [`<!-- telegram-meta: ${JSON.stringify(meta)} -->`, prompt].filter(Boolean).join("\n");
+}
+
+// Zr — write artifacts/<commentId>/user.md to issue-<n> branch
+async function writeUserArtifact(octokit, owner, repo, issueNumber, commentId, prompt) {
+  const branch = `issue-${issueNumber}`;
+  const path = `artifacts/${commentId}/user.md`;
+  const content = `${(prompt ?? "").trim() || "(empty)"}\n`;
+  let sha;
+  try {
+    const { data } = await octokit.rest.repos.getContent({ owner, repo, path, ref: branch });
+    sha = data.sha;
+  } catch {}
+  await octokit.rest.repos.createOrUpdateFileContents({
+    owner, repo, path, message: `chore: update issue #${issueNumber} comment #${commentId} user artifact`,
+    content: Buffer.from(content).toString("base64"), branch, ...(sha ? { sha } : {}),
+  });
+}
+
+// LE — validate comment id
+function validateCommentId(id, scheduleId) {
+  if (typeof id === "number" && Number.isInteger(id) && id > 0) return id;
+  throw new Error(`Scheduled comment for ${scheduleId} did not return a valid GitHub comment id.`);
 }
 
 export async function handleScheduled(event, env, ctx) {
@@ -51,13 +90,45 @@ export async function handleScheduled(event, env, ctx) {
   }
   console.log(`[Scheduled] Found ${due.length} due schedule(s) at ${iso}`);
 
-  // R6b: per-schedule lock (Rp) + next-run compute (DE/Wn) + issue comment (FE) + dispatch (Zr) + persist (Ap)
-  // 当前 R6 最小：仅返回 due 列表形状，避免运行时未实现的 octokit 调用炸
+  const octokit = buildOctokit(config);
   const results = [];
-  const _octokit = buildOctokit(config);
-  void _octokit;
   for (const sched of due) {
-    results.push({ id: sched.id, issueNumber: sched.issue_number, success: true, status: "active", nextRunAt: sched.next_run_at });
+    // 1. 获取锁
+    const locked = await acquireScheduleLock(db, sched.id, sched.nextRunAt, now);
+    if (!locked) {
+      console.log(`[Scheduled] Skip schedule ${sched.id}: lock already acquired or stale state.`);
+      continue;
+    }
+    try {
+      // 2. 计算下次运行状态
+      const nextState = computeNextRunState(locked, now);
+      // 3. 建 issue comment
+      const [owner, repo] = locked.repo.split("/");
+      const commentBody = buildScheduledPrompt(locked);
+      const { data: comment } = await octokit.rest.issues.createComment({
+        owner, repo, issue_number: locked.issueNumber, body: commentBody,
+      });
+      const commentId = validateCommentId(comment.id, locked.id);
+      // 4. 写 user.md artifact
+      await writeUserArtifact(octokit, owner, repo, locked.issueNumber, commentId, locked.prompt);
+      // 5. 持久化完成状态
+      const persisted = await persistScheduleRun(db, locked.id, {
+        status: nextState.status,
+        nextRunAt: nextState.nextRunAt,
+        cancelledAt: nextState.cancelledAt,
+        lastRunAt: now.toISOString(),
+      }, now);
+      if (!persisted) throw new Error(`Failed to persist completion for schedule ${locked.id}.`);
+      results.push({ id: locked.id, issueNumber: locked.issueNumber, success: true, nextRunAt: persisted.nextRunAt, status: persisted.status });
+    } catch (err) {
+      // 错误持久化
+      const errMsg = err instanceof Error ? err.message : String(err);
+      try {
+        await updateSchedule(db, locked.id, { lastError: errMsg, lockedUntil: null });
+      } catch {}
+      console.error(`[Scheduled] Failed to process schedule ${locked.id}:`, errMsg);
+      results.push({ id: locked.id, issueNumber: locked.issueNumber, success: false, error: errMsg });
+    }
   }
   return results;
 }

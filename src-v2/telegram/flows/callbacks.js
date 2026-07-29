@@ -83,7 +83,9 @@ export function registerFlowCallbacks(composer) {
     await setActiveIssue(store, num, chatId);
     await ctx.answerCallbackQuery();
     await ctx.reply(t("core.switchedToLobster", { title: found.title, number: num }, lang));
-    // status card (ks) 在 R5+ 接入完整；R4 暂不渲染
+    // 发 status card
+    const { sendStatusCard } = await import("../status-card.js");
+    await sendStatusCard(ctx, num);
   });
 
   // close_issue_prompt:<n> — 显示确认提示

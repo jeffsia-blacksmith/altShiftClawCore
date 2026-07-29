@@ -324,8 +324,9 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_time") {
-    // R9 minimal：尝试简单解析 "every N minutes" / "once"；否则 fallback
-    const result = parseSimpleTime(text);
+    // AI 时间解析：优先 Workers AI binding，fallback 到 parseSimpleTime
+    const ai = ctx.services.ai;
+    const result = await parseScheduleTime(text, { now: new Date(), ai });
     if (result.status === "resolved") {
       if (result.ruleType === "once" && !result.nextRunAt) {
         await ctx.reply(t("schedule.flow.failedUnderstand", {}, lang));
@@ -388,7 +389,60 @@ export async function handleScheduleText(ctx) {
   return false;
 }
 
-// 简单时间解析（R9 minimal：every N minutes / once）
+// AI 时间解析（对齐旧 bundle Ul L13887-13940 + Wn L13750-13778）
+// 优先用 Workers AI binding；fallback 到 parseSimpleTime
+async function parseScheduleTime(text, { now, ai }) {
+  if (ai) {
+    try {
+      const model = "meta/llama-4-scout-17b-16e-instruct"; // 默认模型
+      const systemPrompt = `You are a schedule parser.
+Convert the user's natural-language schedule into exactly one JSON object.
+Output JSON only. No prose, no markdown.
+
+Allowed resolved rule types (rulePayload shape):
+- once -> rulePayload: {"run_at":"ISO8601"}
+- interval -> rulePayload: {"minutes":N} for "every N minutes"
+- cron -> rulePayload: {"expression":"M H D Mo W"}
+
+Rules:
+- Prefer cron for recurring schedules.
+- Use timezone "Asia/Taipei" for resolved results.
+- If ambiguous, return {"status":"ambiguous","message":"...","candidates":[...]}
+- If cannot parse, return {"status":"unknown","message":"..."}
+
+Current time: ${now.toISOString()}`;
+      const resp = await ai.run(model, {
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: text },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 512,
+        temperature: 0,
+      });
+      // 提取 AI 返回文本
+      let aiText = "";
+      if (typeof resp === "string") aiText = resp;
+      else if (resp?.result?.response) aiText = resp.result.response;
+      else if (resp?.response) aiText = resp.response;
+      else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
+      // 解析 JSON
+      const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+      if (parsed.status === "resolved" && parsed.ruleType && parsed.rulePayload) {
+        const nextRunAt = computeNextRun({ ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, now });
+        return { status: "resolved", ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, nextRunAt };
+      }
+      if (parsed.status === "ambiguous") {
+        return { status: "ambiguous", message: parsed.message ?? "", candidates: parsed.candidates ?? [] };
+      }
+      return { status: "failed" };
+    } catch (e) {
+      console.error("[schedule AI] parse failed, fallback:", e.message);
+    }
+  }
+  // Fallback: 简单解析
+  return parseSimpleTime(text);
+}
 function parseSimpleTime(text) {
   const t = text.toLowerCase().trim();
   const every = t.match(/every\s+(\d+)\s*(min|minute|minutes)/);
