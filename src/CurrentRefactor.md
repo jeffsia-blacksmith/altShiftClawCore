@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-28（Phase R R0-R9 全部完成 —— src-v2 干净重写覆盖 bootstrap / HTTP / i18n / Telegram 命令+flows / GitHub webhooks / cron / media+album / auto-init；31/31 护栏绿，基线 14/14 无回归，i18n 813×2 对等，§6.2 Ys 旧 bug 已修复。swap gate 通过。剩：deep parity smoke + 真正 swap src-v2→src；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-28（Phase R 完整对等重写完成 —— src-v2 5329 行覆盖全部 17 命令 + 61 活跃回调 + 7 webhook 事件 + 5 媒体 + 完整 schedule/llm/skills/templates/LINE/edit/template_reset/current_edit/workflow_run 流；40/40 护栏绿，基线 14/14 无回归，i18n 813×2 对等，§6.2 Ys bug 已修。仅剩旧 bundle 亦不可达的 dead-code env subflow 6 回调未实现 + deep parity smoke + swap；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
 
 ---
 
@@ -41,7 +41,7 @@
 | **Phase 2d**       | console 日志 i18n + commit msg 固定英文                                                               | ✅ 完成（4 批次 ~108 console 行 + Simplified 输入 token）                                                                                                          | `83dbb30` `40105fa` `210aadd` `8b5084d` `6ca3e84` `60472e6`                                                                         |
 | **Phase 2e**       | parity check + rebuild bundle + 收尾文档                                                              | ✅ 完成（808=808 leaf 对等、零 placeholder mismatch、bundle 重建）                                                                                                 | `ebf3a20`                                                                                                                                     |
 | **A 续**           | keyboard builders 抽离 / grammY 替换 / Am 抽离 / Pc 拆分                                              | ⏸️**暂缓**（大概率不做，见 §5 存档）                                                                                                                      | —                                                                                                                                              |
-| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | ✅ R0-R9 完成（bootstrap / HTTP+config+D1 / i18n / Telegram+AccessGuard+5命令 / flows / GitHub webhooks / cron / 命令+AI dispatch / media+album / auto-init）。src-v2 31/31 护栏绿，基线 14/14 无回归，i18n 813×2 对等。swap gate 通过（build+check+guardrails 全绿）。剩：deep parity smoke / 边角 callback flow 完善 / 真正 swap src-v2→src | （本提交） |
+| **Phase R**        | from-scratch 重写（基于锁定基线，干净源码重写 worker）                                                | ✅ 完整对等重写完成。17/17 命令 + 61/61 活跃回调 + 7/7 webhook 事件 + 5/5 媒体 + 完整 schedule/llm/skills/templates/LINE/edit flows。src-v2 40/40 护栏绿，基线 14/14 无回归，i18n 813×2 对等。仅剩 dead-code env subflow（6 回调，旧 bundle 亦不可达）+ deep parity smoke + swap | （本提交） |
 
 **量化（最新，2026-07-22 Phase 2e 收尾）：** `src/index.js` 22,805 → **20,333 行**；bundle 605,818 → **629,928 bytes**（i18n t() 调用 + log.* 命名空间占用，net 略增）；**i18n leaf-key 对等 533 → 808（en = zh，零 placeholder mismatch）**；护栏 6 → **14/14 全绿**；`src/modules/` 4 文件。**业务码 CJK 残留 = 40 行，全部为 KEEP 业务逻辑**（内容匹配 regex、输入判别 map、中文数字 parser、zh 标点分隔符、刻意保留的 Simplified AI prompt 范例）。`GitHubClawCore/index.js` 已重建。
 
