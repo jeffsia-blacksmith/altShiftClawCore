@@ -416,7 +416,18 @@ export function registerEditCallbacks(composer) {
       return;
     }
     const tpl = ctx.callbackQuery.data.slice("new_template_select:".length);
+    if (!tpl) { await ctx.answerCallbackQuery(t("newFlow.invalidTemplateChoice", {}, lang)); return; }
     if (state.mode === "edit" && state.step === "awaiting_template_reset") {
+      // Revalidate template still exists（对齐旧 bundle yl L7796）
+      const { octokit, config } = ctx.services;
+      const { owner, repo } = config.github;
+      let templates = [];
+      try { templates = await listInstalledTemplates(octokit, owner, repo); } catch {}
+      if (!templates.includes(tpl)) {
+        await ctx.answerCallbackQuery(t("newFlow.templateNoLongerExists", {}, lang));
+        await ctx.reply(t("newFlow.templateNotInLobster", { template: tpl }, lang));
+        return;
+      }
       const newState = { ...state, step: "awaiting_workflow_enabled", template: tpl, resetTemplate: true };
       await setFlowState(store, chatId, newState);
       await ctx.answerCallbackQuery(t("newFlow.templateWillReset", {}, lang));

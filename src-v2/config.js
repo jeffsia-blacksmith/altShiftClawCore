@@ -51,6 +51,12 @@ export function buildConfig(env) {
   const e = env ?? {};
   const githubOwner = optString(e, "GITHUB_OWNER");
   const githubRepo = optString(e, "GITHUB_REPO");
+  const botToken = optString(e, "TELEGRAM_BOT_TOKEN");
+  // Strict validation for critical config when bot token is provided
+  // (allows / + /health to boot on empty env, but fails clearly when bot is needed)
+  if (botToken && (!githubOwner || !githubRepo)) {
+    throw new ConfigError("GITHUB_OWNER and GITHUB_REPO are required when TELEGRAM_BOT_TOKEN is set");
+  }
   return {
     language:
       typeof e.CLAW_LANGUAGE === "string" && e.CLAW_LANGUAGE.trim() ? e.CLAW_LANGUAGE.trim() : "en",

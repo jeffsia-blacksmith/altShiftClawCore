@@ -1,18 +1,7 @@
-# Phase R — Deep Parity Audit (Findings + Status)
+# Phase R — Deep Parity Audit (Final Status)
 
-> Generated: 2026-07-29 (commit `local`)
+> Generated: 2026-07-29
 > Method: 4 parallel subagents deep-comparing src-v2 against old bundle `src/index.js`
-> Status: All P0 fixed, most P1 fixed, remaining P2 tracked
-
----
-
-## Severity Legend
-
-- **P0 Critical** — Broken end-to-end, data loss, or dead code
-- **P1 Major** — Behavior regression vs old bundle, wrong UX
-- **P2 Minor** — Cosmetic, missing logging, layout differences
-- ✅ = Fixed
-- ⬜ = Remaining (lower priority)
 
 ---
 
@@ -21,100 +10,80 @@
 | Category | Total | Fixed ✅ | Remaining ⬜ |
 |----------|-------|---------|-------------|
 | P0 Critical | 11 | 11 | 0 |
-| P1 Major | 20 | 16 | 4 |
-| P2 Minor | 15 | 9 | 6 |
-| **Total** | **46** | **36** | **10** |
+| P1 Major | 20 | 20 | 0 |
+| P2 Minor | 15 | 13 | 2 |
+| **Total** | **46** | **44** | **2** |
+
+**All P0 + all P1 resolved.** Only 2 P2 items remain (logging i18n wiring + media album user.md — both low priority).
 
 ---
 
-## P0 — Critical Issues (11/11 Fixed ✅)
+## All P0 Fixed (11/11 ✅)
 
-All P0 issues resolved in commit `4f186b4`.
+| # | Issue | Fix |
+|---|-------|-----|
+| P0-1 | current_edit stub | calls `initEditFlow(ctx)` |
+| P0-2 | AI inference dead code | wired into message:text chain |
+| P0-3 | template_reset naive commit | orphan pipeline (Er+ai+Sr+Vr) |
+| P0-4 | auto-init incomplete | branch+workflow+D1+repo variable |
+| P0-5 | osCreateFinalize edit mode | workflow sync + D1 persist always |
+| P0-6 | AI YAML regex parser | indent-aware parser |
+| P0-7 | computeNextRun 3/10 types | all 10+ rule types with tz math |
+| P0-8 | /schedules snake_case | camelCase reads |
+| P0-9 | /skills installed path | `.agents/skills` |
+| P0-10 | rulePayload not parsed | JSON.parse in camelSchedule |
+| P0-11 | relay no skip conditions | shouldSkipRelay() |
 
-### ✅ P0-1: `current_edit` → calls `initEditFlow(ctx)`
-### ✅ P0-2: AI inference NL trigger wired into message:text chain
-### ✅ P0-3: `template_reset_select` uses orphan pipeline (Er+ai+Sr+Vr+status card)
-### ✅ P0-4: Auto-init creates branch+workflow+D1+repo variable
-### ✅ P0-5: `osCreateFinalize` edit mode with workflow sync + D1 persist
-### ✅ P0-6: AI YAML parser indent-aware
-### ✅ P0-7: `computeNextRun` handles all 10+ rule types
-### ✅ P0-8: `/schedules` camelCase field reads
-### ✅ P0-9: `/skills` installed path → `.agents/skills`
-### ✅ P0-10: `rulePayload` JSON.parse
-### ✅ P0-11: Relay skip conditions (bot echo/line/schedule/no meta)
+## All P1 Fixed (20/20 ✅)
 
----
+| # | Issue | Fix |
+|---|-------|-----|
+| P1-1 | comment-on-issue message loss | always create comment |
+| P1-2 | schedule editMessageText | reply for new messages |
+| P1-3 | schedule no list rendering | numbered lists + keyboards |
+| P1-4 | schedule no closed-issue guard | closed check + delete-only kb |
+| P1-5 | schedule no \|chat suffix | source param + \|chat suffix |
+| P1-6 | callback name mismatch | skills_pick:/templates_pick: |
+| P1-7 | no pagination | 8/page, 2/row, prev/next, cancel |
+| P1-8 | no D1 notification records | createWorkflowNotification() |
+| P1-9 | /edit finalize incomplete | workflow sync + D1 always |
+| P1-10 | close no schedule cleanup | deleteSchedulesByIssue() |
+| P1-11 | line-bot editMessageText | reply + promptMessageId |
+| P1-12 | line-bot skip required fields | cancel-only keyboard |
+| P1-13 | line-bot no validation | bot_id/channel_id/utc_offset regex |
+| P1-14 | line-bot confirm card | detail lines (id/channel/reply/lobster/tz) |
+| P1-15 | workflow-run line-bot post-install | state + continue/skip keyboard |
+| P1-16 | /llm no model validation | validateModel() (5 providers) |
+| P1-17 | /list generic error | 401/403/404 mapping |
+| P1-18 | edit_keep_field no step guard | step === state.step check |
+| P1-19 | no per-callback error handler | bot.catch answers + replies |
+| P1-20 | no MarkdownV2 escaping | escapeMdV2() in AI replies |
 
-## P1 — Major Issues (16/20 Fixed ✅)
+## P2 Fixed (13/15 ✅)
 
-### ✅ P1-1: comment-on-issue always creates comment (no message loss)
-### ✅ P1-2: Schedule callbacks use `reply` instead of `editMessageText`
-- **Fix:** All schedule callbacks (manage_schedule, schedule_open, schedule_edit_*, schedule_toggle, schedule_delete, schedule_chat_*) now use `ctx.reply(...)` for new messages. `schedule_flow_cancel` uses editMessageText with reply fallback.
+| # | Issue | Fix |
+|---|-------|-----|
+| P2-2 | config optional-null | required-throw when bot token set |
+| P2-3 | webhookPath normalization | prepend / |
+| P2-4 | AI model defaults | @cf/openai/gpt-oss-20b |
+| P2-5 | status card File: label | hardcoded "File:" |
+| P2-6 | status card no runs query | listWorkflowRuns running detection |
+| P2-7 | schedule card duplicate fields | removed prompt inline + notifyShort |
+| P2-8 | nextRunAt raw ISO | formatLocalTime() with Asia/Taipei |
+| P2-9 | no template revalidation | revalidate on new_template_select |
+| P2-10 | media no user.md | write artifact for single media |
+| P2-11 | album no jsonl | write issue.jsonl for album |
+| P2-12 | no-branch media no header | telegram-meta + messageFromSource |
+| P2-13 | /api/active-issue missing | GET /api/active-issue route |
+| P2-14 | cross-tree import | inlined workflow_notifications DDL |
+| P2-15 | dispatch error classification | disabled vs not-found vs generic |
 
-### ✅ P1-3: Schedule list rendering + keyboards
-- **Fix:** `manage_schedule`, `schedule_delete`, `schedule_chat_list`, `schedule_chat_delete` now render numbered lists with rule descriptions + inline keyboards (open buttons + new/manage buttons).
+## Remaining (2 ⬜)
 
-### ✅ P1-4: Schedule closed-issue guards
-- **Fix:** `set_schedule` validates issue is open. `schedule_edit_*`, `schedule_toggle`, `schedule_chat_open` check closed state — closed issues get delete-only keyboard + `lobsterClosedDeleteOnly` message.
-
-### ✅ P1-5: Schedule `|chat` suffix for chat-source keyboards
-- **Fix:** `scheduleCardKeyboard` now accepts `source` param, appends `|chat` to all callback data for chat-source cards. Added `scheduleChatCardKeyboard` for standalone chat cards.
-
-### ✅ P1-6: Callback names `skills_pick:`/`templates_pick:`
-### ✅ P1-7: Skills/templates pagination + cancel buttons
-- **Fix:** 8 per page, 2 per row, prev/next page buttons, cancel button. Page stored in install state.
-
-### ✅ P1-8: D1 workflow-notification records in callback dispatch
-### ✅ P1-9: /edit finalize workflow sync + metadata persist
-### ✅ P1-10: close_issue_confirm schedule cleanup
-### ✅ P1-11: Line-bot `reply` instead of `editMessageText` + promptMessageId
-- **Fix:** All step transitions use `ctx.reply(...)`. `promptMessageId` stored in state.
-
-### ✅ P1-12: Line-bot required fields (no skip for bot_id/channel_id)
-- **Fix:** `linebot_input_skip` blocks skip on required fields. `linebot_edit:<field>` uses cancel-only keyboard for required fields.
-
-### ✅ P1-13: Line-bot field validation
-- **Fix:** bot_id (`@[\w.-]+`), channel_id (`\d+`), utc_offset (`[+-]\d{2}:\d{2}`) validation in `handleLineText`.
-
-### ✅ P1-14: Line-bot confirm-deploy card detail lines
-- **Fix:** Confirm card now shows bot ID, channel ID, reply msg, lobster, timezone.
-
-### ✅ P1-15: Workflow-run line-bot post-install flow
-- **Fix:** Post-install now persists LINE flow state + sends with continue/skip keyboard.
-
-### ✅ P1-16: /llm model validation
-- **Fix:** Added `validateModel()` querying provider API (OpenAI/Anthropic/Groq/Google/OpenRouter) to validate model exists. Graceful fallback if API unavailable.
-
-### ✅ P1-17: /list 401/403/404 error mapping
-### ✅ P1-18: edit_keep_field step-match guard
-### ✅ P1-19: Per-callback error handlers
-- **Fix:** `bot.catch` now answers callbackQuery with error message + replies `core.unknownError` to user.
-
-### ✅ P1-20: MarkdownV2 escaping in AI inference replies + secret regex fix
-
----
-
-## P2 — Minor Issues (9/15 Fixed ✅)
-
-### ✅ P2-3: webhookPath `/` normalization
-### ✅ P2-4: AI model defaults from config
-### ✅ P2-5: Status card "File:" label fix
-### ✅ P2-6: Status card workflow-runs query
-- **Fix:** Now queries `listWorkflowRuns` to detect running status.
-
-### ✅ P2-13: `/api/active-issue` route
-### ✅ P2-15: Dispatch error classification (disabled vs not-found)
-- **Fix:** Distinguishes "disabled" (restingMessage1/2/3) from "not found" (delete comment) from generic (dispatchFailed).
-
-### ⬜ P2-1: Systemic logging i18n regression (102 log.* keys not called)
-### ⬜ P2-2: Config required-throw (7 env vars optional-null)
-### ⬜ P2-7: Status card schedule line cleanup (prompt shown twice)
-### ⬜ P2-8: nextRunAt not locale-formatted
-### ⬜ P2-9: new_template_select missing template revalidation
-### ⬜ P2-10: Media missing user.md artifact
-### ⬜ P2-11: Media album missing jsonl write
-### ⬜ P2-12: Media no-branch fallback missing structured header
-### ⬜ P2-14: Cross-tree import (src-v2 → src/modules/)
+| # | Issue | Effort | Priority |
+|---|-------|--------|----------|
+| P2-1 | 102 log.* keys not called in code paths | Large | Low |
+| P2-11b | Album user.md artifact (single done, album pending) | Small | Low |
 
 ---
 
@@ -124,6 +93,6 @@ All P0 issues resolved in commit `4f186b4`.
 - **54 total, 0 failures**
 
 ## Build Status
-- `npm run build:v2`: ✅ (611,818 bytes)
-- i18n parity: ✅ 813×2, 0 real gap
-- Source: ~7,100 lines (vs old 20,195)
+- Build: ✅ 614,509 bytes
+- i18n: ✅ 813×2 parity, 0 real gap
+- Source: ~7,200 lines (vs old 20,195)

@@ -6,6 +6,14 @@ import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { listSchedulesForChat } from "../../db/schedules.js";
 
+// Bt — locale-formatted timestamp
+function formatLocalTime(iso, lang) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
 // Ml(r) — issue 标题或 lobsterHash
 function scheduleItemLabel(r, issueTitle, lang) {
   return issueTitle
@@ -30,7 +38,7 @@ function buildSchedulesListText(schedules, issueTitles, lang) {
     const title = issueTitles.get(r.issueNumber);
     lines.push(`${i + 1}. ${scheduleItemLabel(r, title, lang)}｜${scheduleRuleSummary(r)}`);
     lines.push(`   🆔 ${r.id}`);
-    lines.push(`   ⏭️ ${r.nextRunAt ?? ""}`);
+    lines.push(`   ⏭️ ${formatLocalTime(r.nextRunAt, lang)}`);
   });
   lines.push(t("schedule.thisChatListHint", {}, lang));
   return lines.join("\n");

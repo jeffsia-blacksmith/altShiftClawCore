@@ -6,7 +6,16 @@ import { t, glang } from "../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { listSchedulesForIssue } from "../db/schedules.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as fp } from "./markdown.js";
-import { scheduleRuleTypeLabel, scheduleRuleDescription, scheduleCardNotify, scheduleNotifyLabel } from "./edge-replies.js";
+import { scheduleRuleTypeLabel, scheduleRuleDescription, scheduleCardNotify } from "./edge-replies.js";
+
+// Bt — locale-formatted timestamp (对齐旧 bundle Bt L5178-5181)
+function formatLocalTime(iso, lang) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const locale = lang === "zh-CN" ? "zh-CN" : "en";
+  return d.toLocaleString(locale, { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
 
 // Hp — 7 路并行数据采集
 async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumber) {
@@ -152,10 +161,9 @@ function buildStatusCardText(e, lang) {
         : sch.status === "cancelled" ? t("schedule.schedule_status_cancelled", {}, L)
         : sch.status;
       const notifyLabel = scheduleCardNotify(sch.shouldNotify, L);
-      const notifyShort = scheduleNotifyLabel(sch.shouldNotify, L);
       const desc = scheduleRuleDescription(sch, L);
-      parts.push(`${scheduleRuleTypeLabel(sch.ruleType, L)}：${sch.prompt ?? ""}｜${desc}｜${statusLabel}｜${notifyLabel}｜${notifyShort}`);
-      if (sch.nextRunAt) parts.push(t("schedule.cardNextRun", { time: sch.nextRunAt }, L));
+      parts.push(`${scheduleRuleTypeLabel(sch.ruleType, L)}：${desc}｜${statusLabel}｜${notifyLabel}`);
+      if (sch.nextRunAt) parts.push(t("schedule.cardNextRun", { time: formatLocalTime(sch.nextRunAt, L) }, L));
       if (sch.prompt) parts.push(t("schedule.cardPrompt", { prompt: sch.prompt }, L));
       lines.push(`\\- ${O(parts.join("｜"))}`);
     }

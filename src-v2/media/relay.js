@@ -58,11 +58,14 @@ export async function handleSingleMedia(ctx, file) {
   try { await octokit.rest.git.getRef({ owner, repo, ref: `heads/issue-${active}` }); branchExists = true; } catch {}
 
   if (!branchExists) {
-    // 无分支 → metadata-only comment
+    // 无分支 → metadata-only comment with structured header（对齐旧 bundle Vs + Mk）
     try {
       const label = file.label ?? mediaTypeLabel(file.field, lang);
       const content = file.caption?.trim() || "";
-      const body = `🦞 ${label}${content ? `\n\n${content}` : ""}`;
+      const meta = { chat_id: chatId, msg_id: ctx.message?.message_id, user_id: ctx.from?.id, username: ctx.from?.username, chat_type: ctx.chat?.type, ts: new Date().toISOString() };
+      const senderName = ctx.from?.first_name ?? "Unknown";
+      const chatName = ctx.chat?.title ?? ctx.chat?.type ?? "private";
+      const body = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n\n${t("core.messageFromSource", { sender: senderName, chat: chatName }, lang)}\n\n---\n\n🦞 ${label}${content ? `\n\n${content}` : ""}`;
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
     } catch (e) { console.error("[media:single]", e); await ctx.reply(t("core.unknownError", {}, lang)); }
     return;
@@ -104,6 +107,22 @@ export async function handleSingleMedia(ctx, file) {
     const finalMediaMeta = `<!-- githubclaw-media-meta: {"stage":"finalized","kind":"single","temp_paths":["${tempPath}"],"final_paths":["${finalPath}"]} -->`;
     const finalizedBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${finalMediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${finalLink}${file.caption ? `\n\n${file.caption}` : ""}\n\n${t("core.relativeLocation", { path: finalPath }, lang)}`;
     await octokit.rest.issues.updateComment({ owner, repo, comment_id: created.data.id, body: finalizedBody });
+    // 6b. 写 user.md artifact（Zr — 对齐旧 bundle L16897）
+    try {
+      const userArtifactPath = `artifacts/${created.data.id}/user.md`;
+      const userArtifactContent = `${file.caption?.trim() || file.label || "(empty)"}\n`;
+      let userArtifactSha;
+      try {
+        const { data: existingUA } = await octokit.rest.repos.getContent({ owner, repo, path: userArtifactPath, ref: `issue-${active}` });
+        userArtifactSha = existingUA.sha;
+      } catch {}
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: userArtifactPath,
+        message: `chore: update issue #${active} comment #${created.data.id} user artifact`,
+        content: Buffer.from(userArtifactContent).toString("base64"), branch: `issue-${active}`,
+        ...(userArtifactSha ? { sha: userArtifactSha } : {}),
+      });
+    } catch (e) { console.error("[media:single] user.md artifact failed:", e); }
     // 7. 写 issue.jsonl（对齐旧 bundle Zr+xn，content 用 Zl 结构体）
     try {
       const jsonlPath = "issue.jsonl";
@@ -237,7 +256,35 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
     const finalMediaMeta = `<!-- githubclaw-media-meta: {"stage":"finalized","kind":"album","temp_paths":${JSON.stringify(tempPaths)},"final_paths":${JSON.stringify(finalPaths)}} -->`;
     const finalizedBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${finalMediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${finalLinks}${caption ? `\n\n${caption}` : ""}\n\n${t("core.relativeLocation", { path: finalPaths.join("`, `") }, lang)}`;
     await octokit.rest.issues.updateComment({ owner, repo, comment_id: created.data.id, body: finalizedBody });
-    // 5. 清理 temp
+    // 5. 写 issue.jsonl（对齐旧 bundle xn — album 也写 jsonl）
+    try {
+      const jsonlPath = "issue.jsonl";
+      let jsonlSha, jsonlContent = "";
+      try {
+        const { data: existing } = await octokit.rest.repos.getContent({ owner, repo, path: jsonlPath, ref: branch });
+        if (existing.content) jsonlContent = Buffer.from(existing.content, "base64").toString("utf8");
+        jsonlSha = existing.sha;
+      } catch {}
+      const attachments = fileDescriptors.map((f) => ({ type: "photo", label: f.label, github_repo_path: f.finalPath }));
+      const structuredContent = coreMediaCommentBody(caption, attachments, lang);
+      const entry = {
+        role: "user", source: t("system.source_name", {}, lang),
+        issue_number: active, comment_id: created.data.id,
+        github_comment_url: created.data.html_url ?? null,
+        telegram: { chat_id: meta.chat_id, message_id: meta.msg_id, user_id: meta.user_id, username: meta.username },
+        content: structuredContent, attachments,
+        created_at: new Date().toISOString(),
+      };
+      const newLine = JSON.stringify(entry) + "\n";
+      const stripped = jsonlContent.replace(/\r?\n*$/g, "");
+      const newContent = stripped === "" ? newLine : `${stripped}\n${newLine}`;
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: jsonlPath, message: `chore: update issue #${active} conversation log`,
+        content: Buffer.from(newContent).toString("base64"), branch,
+        ...(jsonlSha ? { sha: jsonlSha } : {}),
+      });
+    } catch (e) { console.error("[media:album] jsonl write failed:", e); }
+    // 6. 清理 temp
     for (const tp of tempPaths) {
       try {
         const { data: tc } = await octokit.rest.repos.getContent({ owner, repo, path: tp, ref: branch });

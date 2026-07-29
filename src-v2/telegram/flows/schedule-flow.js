@@ -184,6 +184,14 @@ export function computeNextRun({ ruleType, rulePayload, now = new Date() }) {
 
 function safeJsonParse(s) { try { return JSON.parse(s) ?? {}; } catch { return {}; } }
 
+// Bt — locale-formatted timestamp
+function formatLocalTime(iso, lang) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
 // 键盘 builders
 function cancelKeyboard(lang) {
   return new InlineKeyboard().text(t("kb.cancelSetup", {}, lang), "schedule_flow_cancel:current");
@@ -226,7 +234,7 @@ function scheduleCardText(title, issueNumber, sched, lang) {
     t("schedule.card.id", { id: sched.id }, L),
     t("schedule.card.status", { status: sched.status === "paused" ? t("schedule.statusPaused", {}, L) : t("schedule.statusActive", {}, L) }, L),
     t("schedule.card.rule", { rule: `${scheduleRuleTypeLabel(sched.ruleType, L)} (${ruleDesc})` }, L),
-    t("schedule.card.nextRun", { nextRun: sched.nextRunAt ?? t("core.notSet", {}, L) }, L),
+    t("schedule.card.nextRun", { nextRun: formatLocalTime(sched.nextRunAt, L) || t("core.notSet", {}, L) }, L),
     t("schedule.card.task", { prompt: sched.prompt ?? "" }, L),
     t("schedule.card.payload", { payload: sched.eventData ?? t("core.notSet", {}, L) }, L),
     notifyLabel,
@@ -252,8 +260,8 @@ async function onScheduleAction(ctx, sched, action, lang) {
     t("schedule.flow.configCardTitle", { badge, action: actionLabel }, lang),
     t("schedule.flow.fieldId", { id: sched.id }, lang),
     t("schedule.flow.fieldType", { type: sched.ruleType ?? "" }, lang),
-    t("schedule.flow.fieldTime", { time: sched.nextRunAt ?? "" }, lang),
-    t("schedule.flow.fieldNextRun", { nextRun: sched.nextRunAt ?? "" }, lang),
+    t("schedule.flow.fieldTime", { time: formatLocalTime(sched.nextRunAt, lang) }, lang),
+    t("schedule.flow.fieldNextRun", { nextRun: formatLocalTime(sched.nextRunAt, lang) }, lang),
     t("schedule.flow.fieldPrompt", { prompt: sched.prompt ?? "" }, lang),
     t("schedule.flow.fieldPayload", { payload: sched.eventData ?? t("core.notSet", {}, lang) }, lang),
   ].join("\n");
@@ -283,7 +291,7 @@ function buildChatScheduleListText(schedules, lang) {
     const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
     lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
     lines.push(`   🆔 ${s.id}`);
-    lines.push(`   ⏭️ ${s.nextRunAt ?? ""}`);
+    lines.push(`   ⏭️ ${formatLocalTime(s.nextRunAt, lang)}`);
   });
   lines.push(t("schedule.thisChatListHint", {}, lang));
   return lines.join("\n");
@@ -309,7 +317,7 @@ function buildIssueScheduleListText(schedules, title, issueNumber, lang) {
     const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
     lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
     lines.push(`   🆔 ${s.id}`);
-    lines.push(`   ⏭️ ${s.nextRunAt ?? ""}`);
+    lines.push(`   ⏭️ ${formatLocalTime(s.nextRunAt, lang)}`);
   });
   lines.push(t("schedule.listManageHint", {}, lang));
   return lines.join("\n");
