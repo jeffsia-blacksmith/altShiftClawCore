@@ -3,6 +3,9 @@
 
 import { createApp } from "./http/routes.js";
 import { handleScheduled } from "./scheduler/cron.js";
+import { _validateLogKeys } from "./i18n/log.js";
+
+_validateLogKeys();
 
 const app = createApp();
 

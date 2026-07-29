@@ -71,6 +71,38 @@ export async function handleCommentOnIssue(ctx) {
     return true;
   }
 
+  // 检查 workflow dispatch 状态
+  let branchExists = false, workflowExists = false, workflowEnabled = false;
+  try {
+    await octokit.rest.git.getRef({ owner, repo, ref: `heads/issue-${active}` });
+    branchExists = true;
+  } catch {}
+  if (branchExists) {
+    try {
+      const { data: wfList } = await octokit.rest.actions.listRepoWorkflows({ owner, repo });
+      const wf = wfList.workflows.find((w) => w.path === `.github/workflows/issue-${active}.yml`);
+      if (wf) { workflowExists = true; workflowEnabled = wf.state !== "disabled_manually"; }
+    } catch {}
+  }
+  const acceptsDispatch = branchExists && workflowExists && workflowEnabled;
+
+  // 先回复 processing
+  let processingMsg = null;
+  if (acceptsDispatch) {
+    try { processingMsg = await ctx.reply(t("system.processing", {}, lang)); } catch {}
+  }
+
+  // !acceptsDispatch → resting 或 noTaskMessage
+  if (!acceptsDispatch) {
+    const { buildRestingReply, buildMissingSetupReply } = await import("./edge-replies.js");
+    if (!branchExists || !workflowExists) {
+      await ctx.reply(buildMissingSetupReply(lang));
+    } else {
+      await ctx.reply(buildRestingReply("", lang));
+    }
+    return true;
+  }
+
   // 建 issue comment
   const body = buildCommentBody(ctx, text, lang);
   try {

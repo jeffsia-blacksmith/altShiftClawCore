@@ -5,6 +5,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { getActiveIssue } from "../../db/kv-state.js";
+import { skillCatalogReply } from "../edge-replies.js";
 
 // skill-install:<chatId> KV state（TTL 900s，对齐 ht/El L12609-12619）
 async function setSkillInstallState(store, chatId, state) {
@@ -79,7 +80,8 @@ export function registerSkills(composer) {
       const kb = new InlineKeyboard();
       const installedSet = new Set(installed);
       for (const s of catalog.slice(0, 20)) {
-        const label = installedSet.has(s.name) ? `✅ ${s.name}` : `📦 ${s.name}`;
+        const displayName = skillCatalogReply(s.name, lang) ?? s.name;
+        const label = installedSet.has(s.name) ? `✅ ${displayName}` : `📦 ${displayName}`;
         kb.text(label, `skill_select:${s.name}`).row();
       }
       const target = issueTitle ? `🦞 ${issueTitle} #${active}` : `🦞 #${active}`;

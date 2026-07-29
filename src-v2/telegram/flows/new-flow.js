@@ -7,6 +7,16 @@ import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { getFlowState, setFlowState, clearFlowState } from "./state.js";
 import { clearMenuState } from "../../db/kv-state.js";
+import { newFlowStepTemplateReply } from "../edge-replies.js";
+
+// dy — step label (对齐旧 bundle dy L4485-4492)
+function stepLabel(step) {
+  const lang = glang();
+  if (step === "awaiting_name") return t("newFlow.stepName", {}, lang);
+  if (step === "awaiting_description") return t("newFlow.stepDescription", {}, lang);
+  if (step === "awaiting_template") return newFlowStepTemplateReply("", lang);
+  return "";
+}
 
 // eT 渲染（R4 子集：awaiting_name / awaiting_description create 模式）
 export function renderFlowPrompt({ step, mode, name }) {

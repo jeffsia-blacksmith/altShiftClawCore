@@ -8,6 +8,7 @@ import { t, glang } from "../i18n/index.js";
 import { getActiveIssue } from "../db/kv-state.js";
 import { getFlowState } from "../telegram/flows/state.js";
 import { enqueueAlbumItem, flushAlbum } from "./album.js";
+import { mediaTypeLabel, coreMediaCommentBody } from "../telegram/edge-replies.js";
 
 // 字段 → 扩展名映射（对齐 tu L16711-16723）
 export function fieldExt(field, fileName) {
@@ -59,7 +60,7 @@ export async function handleSingleMedia(ctx, file) {
   if (!branchExists) {
     // 无分支 → metadata-only comment
     try {
-      const label = file.label ?? t(`mediaLabel.${file.field}`, {}, lang);
+      const label = file.label ?? mediaTypeLabel(file.field, lang);
       const content = file.caption?.trim() || "";
       const body = `🦞 ${label}${content ? `\n\n${content}` : ""}`;
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
@@ -103,7 +104,37 @@ export async function handleSingleMedia(ctx, file) {
     const finalMediaMeta = `<!-- githubclaw-media-meta: {"stage":"finalized","kind":"single","temp_paths":["${tempPath}"],"final_paths":["${finalPath}"]} -->`;
     const finalizedBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${finalMediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${finalLink}${file.caption ? `\n\n${file.caption}` : ""}\n\n${t("core.relativeLocation", { path: finalPath }, lang)}`;
     await octokit.rest.issues.updateComment({ owner, repo, comment_id: created.data.id, body: finalizedBody });
-    // 7. 清理 temp
+    // 7. 写 issue.jsonl（对齐旧 bundle Zr+xn，content 用 Zl 结构体）
+    try {
+      const jsonlPath = "issue.jsonl";
+      let jsonlSha, jsonlContent = "";
+      try {
+        const { data: existing } = await octokit.rest.repos.getContent({ owner, repo, path: jsonlPath, ref: `issue-${active}` });
+        if (existing.content) jsonlContent = Buffer.from(existing.content, "base64").toString("utf8");
+        jsonlSha = existing.sha;
+      } catch {}
+      const structuredContent = coreMediaCommentBody(file.caption ?? "", [{ repoPath: finalPath }], lang);
+      const entry = {
+        role: "user",
+        source: t("system.source_name", {}, lang),
+        issue_number: active,
+        comment_id: created.data.id,
+        github_comment_url: created.data.html_url ?? null,
+        telegram: { chat_id: meta.chat_id, message_id: meta.msg_id, user_id: meta.user_id, username: meta.username },
+        content: structuredContent,
+        created_at: new Date().toISOString(),
+      };
+      const newLine = JSON.stringify(entry) + "\n";
+      const stripped = jsonlContent.replace(/\r?\n*$/g, "");
+      const newContent = stripped === "" ? newLine : `${stripped}\n${newLine}`;
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: jsonlPath,
+        message: `chore: update issue #${active} conversation log`,
+        content: Buffer.from(newContent).toString("base64"), branch: `issue-${active}`,
+        ...(jsonlSha ? { sha: jsonlSha } : {}),
+      });
+    } catch (e) { console.error("[media:single] jsonl write failed:", e); }
+    // 8. 清理 temp
     try {
       const tempContent = await octokit.rest.repos.getContent({ owner, repo, path: tempPath, ref: `issue-${active}` });
       await octokit.rest.repos.deleteFile({ owner, repo, path: tempPath, message: `chore: cleanup temp ${file.field}`, sha: tempContent.data.sha, branch: `issue-${active}` });
@@ -151,7 +182,7 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
     // 无分支 → metadata-only comment
     try {
       const caption = rows.slice().reverse().find((r) => r.caption?.trim())?.caption ?? "";
-      const body = `🦞 ${t("mediaLabel.photo", {}, lang)} ×${rows.length}${caption ? `\n\n${caption}` : ""}`;
+      const body = `🦞 ${mediaTypeLabel("photo", lang)} ×${rows.length}${caption ? `\n\n${caption}` : ""}`;
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
     } catch (e) { console.error("[media:album]", e); await ctx.reply(t("core.unknownError", {}, lang)); }
     return;
@@ -178,7 +209,7 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
       });
       const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${tempPath}`;
       tempPaths.push(tempPath);
-      fileDescriptors.push({ label: t("mediaLabel.photo", {}, lang), rawUrl, tempPath, storedName });
+      fileDescriptors.push({ label: mediaTypeLabel("photo", lang), rawUrl, tempPath, storedName });
     }
     // 2. 建 pending comment
     const caption = rows.slice().reverse().find((r) => r.caption?.trim())?.caption ?? "";

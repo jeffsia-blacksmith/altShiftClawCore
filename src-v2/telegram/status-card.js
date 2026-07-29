@@ -6,6 +6,7 @@ import { t, glang } from "../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { listSchedulesForIssue } from "../db/schedules.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as fp } from "./markdown.js";
+import { scheduleRuleTypeLabel, scheduleRuleDescription, scheduleCardNotify, scheduleNotifyLabel } from "./edge-replies.js";
 
 // Hp — 7 路并行数据采集
 async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumber) {
@@ -138,8 +139,10 @@ function buildStatusCardText(e, lang) {
         : sch.status === "paused" ? t("schedule.schedule_status_paused", {}, L)
         : sch.status === "cancelled" ? t("schedule.schedule_status_cancelled", {}, L)
         : sch.status;
-      const notifyLabel = sch.shouldNotify ? t("schedule.notify_open", {}, L) : t("schedule.notify_close", {}, L);
-      parts.push(`${sch.ruleType ?? ""}：${sch.prompt ?? ""}｜${statusLabel}｜${notifyLabel}`);
+      const notifyLabel = scheduleCardNotify(sch.shouldNotify, L);
+      const notifyShort = scheduleNotifyLabel(sch.shouldNotify, L);
+      const desc = scheduleRuleDescription(sch, L);
+      parts.push(`${scheduleRuleTypeLabel(sch.ruleType, L)}：${sch.prompt ?? ""}｜${desc}｜${statusLabel}｜${notifyLabel}｜${notifyShort}`);
       if (sch.nextRunAt) parts.push(t("schedule.cardNextRun", { time: sch.nextRunAt }, L));
       if (sch.prompt) parts.push(t("schedule.cardPrompt", { prompt: sch.prompt }, L));
       lines.push(`\\- ${O(parts.join("｜"))}`);

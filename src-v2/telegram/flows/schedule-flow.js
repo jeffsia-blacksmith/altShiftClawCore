@@ -337,8 +337,13 @@ export async function handleScheduleText(ctx) {
         `${t("schedule.flow.payloadPromptLine1", {}, lang)}\n${t("schedule.flow.payloadPromptLine2", {}, lang)}\n${t("schedule.flow.payloadPromptLine3", {}, lang)}`,
         { reply_markup: payloadKeyboard(lang) },
       );
+    } else if (result.status === "ambiguous") {
+      const msg = result.message
+        ? t("schedule.flow.ambiguousClarify", { message: result.message }, lang)
+        : t("schedule.flow.ambiguousReply", {}, lang);
+      await ctx.reply(msg, { reply_markup: cancelKeyboard(lang) });
     } else {
-      await ctx.reply(t("schedule.flow.failedUnderstand", {}, lang), { reply_markup: cancelKeyboard(lang) });
+      await ctx.reply(t("schedule.flow.failedReply", {}, lang), { reply_markup: cancelKeyboard(lang) });
     }
     return true;
   }
@@ -373,15 +378,21 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_edit_time") {
-    const result = parseSimpleTime(text);
+    const ai = ctx.services.ai;
+    const result = await parseScheduleTime(text, { now: new Date(), ai });
     if (result.status === "resolved") {
       const sched = await updateSchedule(d1, state.scheduleId, {
         ruleType: result.ruleType, rulePayload: result.rulePayload, nextRunAt: result.nextRunAt,
       });
       if (!sched) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
       await onScheduleAction(ctx, sched, "update", lang);
+    } else if (result.status === "ambiguous") {
+      const msg = result.message
+        ? t("schedule.flow.ambiguousClarify", { message: result.message }, lang)
+        : t("schedule.flow.ambiguousReply", {}, lang);
+      await ctx.reply(msg, { reply_markup: cancelKeyboard(lang) });
     } else {
-      await ctx.reply(t("schedule.flow.failedUnderstand", {}, lang), { reply_markup: cancelKeyboard(lang) });
+      await ctx.reply(t("schedule.flow.failedReply", {}, lang), { reply_markup: cancelKeyboard(lang) });
     }
     return true;
   }
