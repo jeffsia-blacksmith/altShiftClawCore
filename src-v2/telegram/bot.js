@@ -20,6 +20,8 @@ import { registerNew, registerFlowCancel, handleFlowText } from "./flows/new-flo
 import { registerEdit, registerEditCallbacks, handleEditText } from "./flows/edit-flow.js";
 import { registerFlowCallbacks } from "./flows/callbacks.js";
 import { registerLlm, handleLlmText } from "./flows/llm/llm.js";
+import { registerSkillCallbacks, handleSkillEnvText } from "./flows/skills-callbacks.js";
+import { registerTemplateCallbacks, handleTemplateEnvText } from "./flows/templates-callbacks.js";
 import { registerVersion } from "./commands/version.js";
 import { registerSchedules } from "./commands/schedules.js";
 import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
@@ -66,11 +68,15 @@ export function createBot({ config, services }) {
   registerEditCallbacks(commands);
   registerFlowCancel(commands);
   registerFlowCallbacks(commands);
+  registerSkillCallbacks(commands);
+  registerTemplateCallbacks(commands);
   bot.use(commands);
 
   // 4. message:text 续接 — 对齐 su.on("message:text")（L17810-17840）
-  // 优先级：new-flow (handleFlowText) → edit-flow (handleEditText) → llm (handleLlmText) → comment-on-issue（R9b）
+  // 优先级：skill-env → template-env → new-flow → edit-flow → llm → comment-on-issue（R9b）
   bot.on("message:text", async (ctx, next) => {
+    if (await handleSkillEnvText(ctx)) return;
+    if (await handleTemplateEnvText(ctx)) return;
     if (await handleFlowText(ctx)) return;
     if (await handleEditText(ctx)) return;
     if (await handleLlmText(ctx)) return;

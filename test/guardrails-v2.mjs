@@ -795,6 +795,67 @@ await hitTg("POST /edit (no active) → noActiveLobster reply", guardedEnv, tgUp
   assertReply(replies, { contains: "lobster" });
 });
 
+console.log("guardrails-v2: Batch B — skills/templates callbacks");
+// skills_cancel:0 → clears state + skills.install_cancelled
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("skill-install:111", JSON.stringify({ step: "preview", skillName: "foo", issueNumber: 7 }));
+  const cbAnswers = [];
+  const edits = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage([]), tg.answerCallback(cbAnswers), tg.editMessageText(edits)]);
+  const ctx = capturingCtx();
+  try {
+    const update = {
+      update_id: 50, callback_query: {
+        id: "c1", from: { id: 111 }, message: { message_id: 42, chat: { id: 111, type: "private" }, date: 1, text: "x" },
+        chat_instance: "x", data: "skills_cancel:0",
+      },
+    };
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST", headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    if (env.SCHEDULES_DB.getKv("skill-install:111") !== null) throw new Error("skill-install state not cleared");
+    if (edits.length < 1) throw new Error(`expected editMessageText, got ${edits.length}`);
+    console.log("  ✓ skills_cancel:0 → state cleared + install_cancelled");
+    pass++;
+  } catch (e) { console.error(`  ✗ skills_cancel: ${e.message}`); fail++; }
+  finally { mock.restore(); }
+}
+
+// templates_cancel:0 → clears state + templates.install_cancelled
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  env.SCHEDULES_DB.putKv("template-install:111", JSON.stringify({ step: "preview", templateName: "default" }));
+  const cbAnswers = [];
+  const edits = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage([]), tg.answerCallback(cbAnswers), tg.editMessageText(edits)]);
+  const ctx = capturingCtx();
+  try {
+    const update = {
+      update_id: 51, callback_query: {
+        id: "c2", from: { id: 111 }, message: { message_id: 43, chat: { id: 111, type: "private" }, date: 1, text: "x" },
+        chat_instance: "x", data: "templates_cancel:0",
+      },
+    };
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST", headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    if (env.SCHEDULES_DB.getKv("template-install:111") !== null) throw new Error("template-install state not cleared");
+    if (edits.length < 1) throw new Error(`expected editMessageText, got ${edits.length}`);
+    console.log("  ✓ templates_cancel:0 → state cleared + install_cancelled");
+    pass++;
+  } catch (e) { console.error(`  ✗ templates_cancel: ${e.message}`); fail++; }
+  finally { mock.restore(); }
+}
+
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
