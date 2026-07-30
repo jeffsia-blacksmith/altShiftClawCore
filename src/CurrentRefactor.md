@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-07-29（Phase R 全功能对等完成 —— src-v2 6132 行覆盖全部 17 命令 + 61 活跃回调 + 7 webhook 事件 + 5 媒体 + 完整 schedule/llm/skills/templates/LINE/edit/template_reset/current_edit/workflow_run + 9 大功能缺口全部补完：/new Os create finalize、/edit template reset、status card ks/Hp/gp/qd、cron per-schedule Rp/DE/FE/Zr/Ap、schedule AI 时间解析 Ul、issue_comment relay pu 图片检测、comment-on-issue Zr/xn artifacts、album git 上传、AI workflow-input inference Zp。268/360 i18n key 已用（100 剩余全为 edge/dead/internal）；40/40 护栏绿，基线 14/14 无回归，i18n 813×2 对等，§6.2 Ys bug 已修；合并原父目录 `CurrentRefactor.md` / `currentWorks*.md`）
+> 最后更新：2026-07-30（Phase R 深度审计 4 轮完成 —— src-v2 8215 行，58 文件，17 命令 + 62 活跃回调 + 7 webhook + 5 媒体全对等；54 护栏绿（14 old + 40 v2）；i18n 813×2 对等，real gap=0；132 项审计修复全部完成；build 661KB；详见 `src/AUDIT-DEEP.md`）
 
 ---
 
