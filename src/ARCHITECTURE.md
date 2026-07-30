@@ -35,52 +35,63 @@ altShiftClawCore 是一个部署在 **Cloudflare Workers** 上的 Telegram Bot +
 
 ```mermaid
 graph TB
+    %% 样式定义
+    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef http fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
+    classDef telegram fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef github fill:#f6f8fa,stroke:#586069,color:#24292e
+    classDef data fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    classDef i18n fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef external fill:#fce4ec,stroke:#c62828,color:#c62828
+    classDef subBox fill:none,stroke-dasharray:5 5
+
     subgraph "Cloudflare Worker"
-        Worker["worker.js<br/>入口: fetch + scheduled"]
+        Worker["worker.js<br/>入口: fetch + scheduled"]:::entry
 
         subgraph "HTTP 层 (Hono)"
-            Routes["routes.js<br/>路由装配"]
-            GHWebhook["github-webhook.js<br/>签名验证"]
-            TGWebhook["telegram-webhook.js<br/>Secret 验证"]
+            Routes["routes.js<br/>路由装配"]:::http
+            GHWebhook["github-webhook.js<br/>签名验证"]:::http
+            TGWebhook["telegram-webhook.js<br/>Secret 验证"]:::http
         end
 
         subgraph "Telegram Bot (grammY)"
-            Bot["bot.js<br/>中间件链"]
-            AccessGuard["access-guard.js<br/>访问控制"]
-            Commands["17 个命令"]
-            Flows["多步状态机流程"]
-            Media["媒体处理"]
+            Bot["bot.js<br/>中间件链"]:::telegram
+            AccessGuard["access-guard.js<br/>访问控制"]:::telegram
+            Commands["17 个命令"]:::telegram
+            Flows["多步状态机流程"]:::telegram
+            Media["媒体处理"]:::telegram
         end
 
         subgraph "GitHub 集成"
-            Branches["branches.js<br/>分支/模板/workflow"]
-            Secrets["secrets.js<br/>加密写入"]
-            Webhooks["7 个 Webhook 事件"]
-            Dispatch["dispatch.js<br/>Coding-Agent 派工"]
+            Branches["branches.js<br/>分支/模板/workflow"]:::github
+            Secrets["secrets.js<br/>加密写入"]:::github
+            Webhooks["7 个 Webhook 事件"]:::github
+            Dispatch["dispatch.js<br/>Coding-Agent 派工"]:::github
         end
 
         subgraph "数据层"
-            D1["D1 数据库"]
-            KV["KV Store (D1 facade)"]
-            Schedules["schedules.js<br/>排程 CRUD"]
-            KVState["kv-state.js<br/>流程状态"]
+            D1["D1 数据库"]:::data
+            KV["KV Store (D1 facade)"]:::data
+            Schedules["schedules.js<br/>排程 CRUD"]:::data
+            KVState["kv-state.js<br/>流程状态"]:::data
         end
 
         subgraph "调度器"
-            Cron["cron.js<br/>scheduled() 处理"]
+            Cron["cron.js<br/>scheduled() 处理"]:::cron
         end
 
         subgraph "i18n"
-            I18n["index.js<br/>t() / glang()"]
-            Log["log.js<br/>102 个结构化日志 key"]
+            I18n["index.js<br/>t() / glang()"]:::i18n
+            Log["log.js<br/>102 个结构化日志 key"]:::i18n
         end
     end
 
     subgraph "外部服务"
-        TG["Telegram API"]
-        GHA["GitHub Actions"]
-        GHAPI["GitHub API"]
-        WAI["Workers AI"]
+        TG["Telegram API"]:::external
+        GHA["GitHub Actions"]:::external
+        GHAPI["GitHub API"]:::external
+        WAI["Workers AI"]:::external
     end
 
     Worker --> Routes
