@@ -129,22 +129,21 @@ function renderEditPrompt({ step, name, description, workflowEnabled, lang }) {
   return { text: lines.join("\n"), reply_markup: editKeyboard(step, L) };
 }
 
-// 键盘
+// 键盘 (row layout 对齐旧 bundle jd/La/Wd)
 function editKeyboard(step, lang) {
   const kb = new InlineKeyboard();
   if (step === "awaiting_name" || step === "awaiting_description") {
     const fieldKey = step === "awaiting_name" ? "newFlow.stepName" : "newFlow.stepDescription";
     const fieldLabel = t(fieldKey, {}, lang);
-    kb.text(t("newFlow.keepFieldButton", { step: fieldLabel }, lang), `edit_keep_field:${step}`);
+    kb.text(t("newFlow.keepFieldButton", { step: fieldLabel }, lang), `edit_keep_field:${step}`).row();
     kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
   } else if (step === "awaiting_template_reset") {
-    // 模板按钮由调用方在 renderEditPrompt 外加（Uo）；这里返回 cancel/skip 基底
-    kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip");
+    kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip").row();
     kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
   } else if (step === "awaiting_workflow_enabled") {
-    kb.text(t("kb.enableSlash", {}, lang), "edit_workflow_enabled:true");
+    kb.text(t("kb.enableSlash", {}, lang), "edit_workflow_enabled:true").row();
     kb.text(t("kb.disableSlash", {}, lang), "edit_workflow_enabled:false").row();
-    kb.text(t("kb.keepCurrentSettings", {}, lang), "edit_keep_field:awaiting_workflow_enabled");
+    kb.text(t("kb.keepCurrentSettings", {}, lang), "edit_keep_field:awaiting_workflow_enabled").row();
     kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
   }
   return kb;
@@ -426,7 +425,19 @@ export function registerEditCallbacks(composer) {
       try { templates = await listInstalledTemplates(octokit, owner, repo); } catch {}
       if (!templates.includes(tpl)) {
         await ctx.answerCallbackQuery(t("newFlow.templateNoLongerExists", {}, lang));
-        await ctx.reply(t("newFlow.templateNotInLobster", { template: tpl }, lang));
+        // 重新渲染模板选择键盘（对齐旧 bundle yl L7796：刷新提示 + 新鲜键盘）
+        const prompt = renderEditPrompt({ step: "awaiting_template_reset", name: state.name, description: state.description, workflowEnabled: state.workflowEnabled, lang });
+        const kb = new InlineKeyboard();
+        for (const tp of templates.slice(0, 20)) {
+          kb.text(`🔄 ${tp}`, `new_template_select:${tp}`).row();
+        }
+        kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip");
+        kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
+        try {
+          await ctx.editMessageText(prompt.text, { reply_markup: kb });
+        } catch {
+          await ctx.reply(prompt.text, { reply_markup: kb });
+        }
         return;
       }
       const newState = { ...state, step: "awaiting_workflow_enabled", template: tpl, resetTemplate: true };
@@ -438,6 +449,7 @@ export function registerEditCallbacks(composer) {
     }
     // create 模式：触发 Os create finalize
     if (state.mode === "create") {
+      if (state.isSubmitting) return;
       const newState = { ...state, template: tpl, isSubmitting: true };
       await setFlowState(store, chatId, newState);
       await ctx.answerCallbackQuery(t("newFlow.templateSelected", {}, lang));
@@ -447,9 +459,13 @@ export function registerEditCallbacks(composer) {
       try {
         const { osCreateFinalize } = await import("../../github/branches.js");
         const result = await osCreateFinalize(ctx, newState);
-        // Ns finalize reply (create mode → reply new message)
+        // Ns finalize reply (create mode → editMessageText 替换 creatingPleaseWait，失败回退 reply)
         const replyText = t("newFlow.createdLobster", { title: result.issue?.title ?? "", number: result.issue?.number ?? "" }, lang);
-        await ctx.reply(replyText);
+        try {
+          await ctx.editMessageText(replyText);
+        } catch {
+          await ctx.reply(replyText);
+        }
         // 清除 new-flow 状态
         await clearFlowState(store, chatId);
         // 发 status card
@@ -457,7 +473,14 @@ export function registerEditCallbacks(composer) {
         await sendStatusCard(ctx, result.issue.number);
       } catch (e) {
         logError("log.editNew.finishNewFlowFailed", { command: "new", error: e?.message ?? String(e) });
-        await ctx.reply(t("newFlow.errorCreateFailed", {}, lang));
+        // 错误分类（对齐旧 bundle Cm）
+        const errReply =
+          e?.code === "TEMPLATE_NOT_INSTALLED"
+            ? t("newFlow.errorTemplateNotInstalled", { name: tpl }, lang)
+            : e?.code === "TEMPLATE_READ_FAILED"
+              ? t("newFlow.errorTemplateReadFailed", { name: tpl }, lang)
+              : t("newFlow.errorCreateFailed", {}, lang);
+        await ctx.reply(errReply);
         await clearFlowState(store, chatId);
       }
       return;
@@ -515,6 +538,20 @@ export async function handleEditText(ctx) {
       return true;
     }
     const val = parseEnableDisable(text);
+    // In edit mode, "-" keeps current workflow setting (对齐旧 bundle tT L7312-7313)
+    if (val == null && state.mode === "edit" && text.trim() === "-") {
+      const val2 = state.workflowEnabled !== false; // keep current
+      const newState = { ...state, workflowEnabled: val2, isSubmitting: true };
+      await setFlowState(store, chatId, newState);
+      try {
+        const result = await osEditFinalize(ctx, newState);
+        await nsFinalizeReply(ctx, result, "reply");
+      } catch (e) {
+        logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
+        await ctx.reply(t("newFlow.updateErrorRetryEdit", {}, lang));
+      }
+      return true;
+    }
     if (val == null) {
       const prompt = renderEditPrompt({ step: "awaiting_workflow_enabled", name: state.name, description: state.description, workflowEnabled: state.workflowEnabled, lang });
       await ctx.reply(t("newFlow.enterEnableDisable", {}, lang), { reply_markup: prompt.reply_markup });

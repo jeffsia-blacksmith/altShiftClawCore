@@ -363,7 +363,7 @@ export function registerScheduleCallbacks(composer) {
       const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: n });
       if (data.state === "closed") { await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)); return; }
       issueTitle = data.title;
-    } catch { await ctx.answerCallbackQuery(t("schedule.flow.issueNotFoundOrClosed", {}, lang)); return; }
+    } catch { await ctx.answerCallbackQuery(t("schedule.issueNotFoundOrClosed", {}, lang)); return; }
     if (chatId) await clearFlowState(store, chatId);
     await setSchedState(store, chatId, { step: "awaiting_prompt", issueNumber: n });
     await ctx.answerCallbackQuery();

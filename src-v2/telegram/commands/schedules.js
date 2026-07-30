@@ -46,11 +46,11 @@ function buildSchedulesListText(schedules, issueTitles, lang) {
 }
 
 // Bn(l) — 列表键盘
-function buildSchedulesKeyboard(schedules, lang) {
+function buildSchedulesKeyboard(schedules, issueTitles, lang) {
   if (schedules.length === 0) return undefined;
   const kb = new InlineKeyboard();
   for (const r of schedules.slice(0, 20)) {
-    const label = `${scheduleItemLabel(r, undefined, lang)} ${scheduleRuleSummary(r)}`.slice(0, 36);
+    const label = `${scheduleItemLabel(r, issueTitles.get(r.issueNumber), lang)}｜${scheduleRuleSummary(r)}`.slice(0, 36);
     kb.text(label, `schedule_chat_open:${r.id}`).row();
   }
   return kb;
@@ -79,7 +79,7 @@ export function registerSchedules(composer) {
         }),
       );
       const text = buildSchedulesListText(schedules, issueTitles, lang);
-      const keyboard = buildSchedulesKeyboard(schedules, lang);
+      const keyboard = buildSchedulesKeyboard(schedules, issueTitles, lang);
       await ctx.reply(text, keyboard ? { reply_markup: keyboard } : undefined);
     } catch (e) {
       logError("log.command.executionFailed", { command: "schedules", error: e instanceof Error ? e.message : String(e) });

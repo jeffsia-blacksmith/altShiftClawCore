@@ -1,7 +1,6 @@
 // telegram/flows/templates-callbacks.js — /templates 多步安装流回调
 // 行为对齐旧 bundle templates_* callbacks（L15307-15658）+ Mf env 收集（L17248-17360）。
-// 注意：Mf 路径使用 templates.enterEnvValue/envValueRequired/setEnvFailed/envsSet/confirmInstallTo
-//   这些 key 在 en.json/zh-CN.json 中 MISSING → t() 返回字面 key 字符串（必须保留此行为）。
+// Mf 路径使用 newFlow.enterEnvValue/envValueRequired/setEnvFailed/envsSet/confirmInstallTo。
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
@@ -278,7 +277,7 @@ export function registerTemplateCallbacks(composer) {
     if (pending.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("templates.enter_env_value", { envName: pending[0], total: pending.length }, lang), { reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("newFlow.enterEnvValue", { name: pending[0], current: 1, total: pending.length }, lang), { reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_skip:0 (dead handler, registered for parity)
@@ -305,7 +304,7 @@ export function registerTemplateCallbacks(composer) {
     if (requiredEnvs.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", pendingEnvs: requiredEnvs, currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("templates.enter_env_value", { envName: requiredEnvs[0], total: requiredEnvs.length }, lang), { reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("newFlow.enterEnvValue", { name: requiredEnvs[0], current: 1, total: requiredEnvs.length }, lang), { reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_keepall:0
@@ -384,7 +383,6 @@ async function goToTemplateConfirm(ctx, state, lang) {
 }
 
 // handleTemplateEnvText — Mf 等价，message:text 中 awaiting_env 步骤
-// 注意：使用 MISSING key（templates.enterEnvValue 等）→ t() 返回字面 key 字符串（保留旧 bundle 行为）
 export async function handleTemplateEnvText(ctx) {
   const { store, octokit, config } = ctx.services;
   const { owner, repo } = config.github;
@@ -401,8 +399,7 @@ export async function handleTemplateEnvText(ctx) {
   const collected = { ...(state.collectedEnvs ?? {}) };
   const trimmed = text.trim();
   if (!trimmed) {
-    // MISSING key → 字面 "templates.envValueRequired"
-    const replyText = t("templates.envValueRequired", {}, lang);
+    const replyText = t("newFlow.envValueRequired", {}, lang);
     if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); } }
     else { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }
     return true;
@@ -411,8 +408,7 @@ export async function handleTemplateEnvText(ctx) {
   try { await ctx.api.deleteMessage(chatId, ctx.message.message_id); } catch {}
   const next = idx + 1;
   if (next < envs.length) {
-    // MISSING key → 字面 "templates.enterEnvValue"
-    const replyText = t("templates.enterEnvValue", { name: envs[next], current: next + 1, total: envs.length }, lang);
+    const replyText = t("newFlow.enterEnvValue", { name: envs[next], current: next + 1, total: envs.length }, lang);
     await setTplState(store, chatId, { ...state, collectedEnvs: collected, currentEnvIndex: next });
     if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); } }
     else { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }
@@ -423,12 +419,11 @@ export async function handleTemplateEnvText(ctx) {
       const trimmedVal = val.trim();
       if (!upperName || !trimmedVal) continue;
       try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); }
-      catch (e) { await ctx.reply(t("templates.setEnvFailed", { name, error: e.message }, lang)); }
+      catch (e) { await ctx.reply(t("newFlow.setEnvFailed", { name, error: e.message }, lang)); }
     }
     await setTplState(store, chatId, { ...state, step: "confirm_install", envCheckDone: true, collectedEnvs: {}, pendingEnvs: [], currentEnvIndex: 0 });
-    // MISSING key → 字面 "templates.envsSet" + "templates.confirmInstallTo"
-    const envsSetLine = t("templates.envsSet", { count: Object.keys(collected).length }, lang);
-    const confirmLine = t("templates.confirmInstallTo", { templateName: state.templateName }, lang);
+    const envsSetLine = t("newFlow.envsSet", { count: Object.keys(collected).length }, lang);
+    const confirmLine = t("newFlow.confirmInstallTo", { templateName: state.templateName }, lang);
     const replyText = `${envsSetLine}\n\n${confirmLine}`;
     if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: confirmKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: confirmKeyboard(lang) }); } }
     else { await ctx.reply(replyText, { reply_markup: confirmKeyboard(lang) }); }

@@ -176,8 +176,8 @@ export function templatesNestedTooDeepReply(path, lang) {
 export function errorsNotAFileReply(name, lang) {
   return t("errors.notAFile", { name }, lang ?? glang());
 }
-export function errorsGetFileFailedReply(name, lang) {
-  return t("errors.getFileFailed", { name }, lang ?? glang());
+export function errorsGetFileFailedReply(name, path, status, lang) {
+  return t("errors.getFileFailed", { name, path, status }, lang ?? glang());
 }
 
 // api.rateLimit.*
@@ -348,22 +348,16 @@ export function lineErrorChannelIdRequiredReply(lang) {
 export function lineErrorIssueNumberFormatReply(lang) {
   return t("line.error_issue_number_format", {}, lang ?? glang());
 }
-export function lineErrorLobsterNotFoundReply(lang) {
-  return t("line.error_lobster_not_found", {}, lang ?? glang());
+export function lineErrorLobsterNotFoundReply(number, lang) {
+  return t("line.error_lobster_not_found", { number }, lang ?? glang());
 }
 export function lineErrorTimezoneFormatReply(lang) {
   return t("line.error_timezone_format", {}, lang ?? glang());
 }
 
 // templates.* additional
-export function templatesDescReply(lang) {
-  return t("templates.desc_", {}, lang ?? glang());
-}
 export function templatesFallbackNameReply(lang) {
   return t("templates.fallback_name", {}, lang ?? glang());
-}
-export function templatesNameReply(lang) {
-  return t("templates.name_", {}, lang ?? glang());
 }
 export function templatesSyncDescReply(lang) {
   return t("templates.sync_desc", {}, lang ?? glang());
@@ -485,11 +479,11 @@ export function newFlowStepTemplateReply(name, lang) {
 }
 
 // core.workflowDisabledMessage / workflowEnabledMessage
-export function coreWorkflowDisabledMessageReply(name, lang) {
-  return t("core.workflowDisabledMessage", { name }, lang ?? glang());
+export function coreWorkflowDisabledMessageReply(name, number, lang) {
+  return t("core.workflowDisabledMessage", { name, number }, lang ?? glang());
 }
-export function coreWorkflowEnabledMessageReply(name, lang) {
-  return t("core.workflowEnabledMessage", { name }, lang ?? glang());
+export function coreWorkflowEnabledMessageReply(name, number, lang) {
+  return t("core.workflowEnabledMessage", { name, number }, lang ?? glang());
 }
 
 // core.workflowInferParamsError / workflowQueryStatusError / workflowTriggerFailed
@@ -499,8 +493,8 @@ export function coreWorkflowInferParamsErrorReply(name, lang) {
 export function coreWorkflowQueryStatusErrorReply(name, lang) {
   return t("core.workflowQueryStatusError", { name }, lang ?? glang());
 }
-export function coreWorkflowTriggerFailedReply(name, lang) {
-  return t("core.workflowTriggerFailed", { name }, lang ?? glang());
+export function coreWorkflowTriggerFailedReply(name, error, lang) {
+  return t("core.workflowTriggerFailed", { name, error }, lang ?? glang());
 }
 
 // core.workflow_state_active / workflow_state_disabled_manually
@@ -549,16 +543,16 @@ export function systemErrorStartReply(lang) {
 }
 
 // skills.confirmInstallTo / skills.target_lobster_fallback
-export function skillsConfirmInstallToReply(name, lang) {
-  return t("skills.confirmInstallTo", { name }, lang ?? glang());
+export function skillsConfirmInstallToReply(skillName, target, lang) {
+  return t("skills.confirmInstallTo", { skillName, target }, lang ?? glang());
 }
 export function skillsTargetLobsterFallbackReply2(lang) {
   return t("skills.target_lobster_fallback", {}, lang ?? glang());
 }
 
 // newFlow.confirmInstallTo / editStepWorkflowEnabled / envValueRequired / envsSet / notInstalled / readFailed / setEnvFailed
-export function newFlowConfirmInstallToReply(name, lang) {
-  return t("newFlow.confirmInstallTo", { name }, lang ?? glang());
+export function newFlowConfirmInstallToReply(templateName, lang) {
+  return t("newFlow.confirmInstallTo", { templateName }, lang ?? glang());
 }
 export function newFlowEditStepWorkflowEnabledReply(name, lang) {
   return t("newFlow.editStepWorkflowEnabled", { name }, lang ?? glang());
@@ -566,17 +560,17 @@ export function newFlowEditStepWorkflowEnabledReply(name, lang) {
 export function newFlowEnvValueRequiredReply(name, lang) {
   return t("newFlow.envValueRequired", { name }, lang ?? glang());
 }
-export function newFlowEnvsSetReply(lang) {
-  return t("newFlow.envsSet", {}, lang ?? glang());
+export function newFlowEnvsSetReply(count, lang) {
+  return t("newFlow.envsSet", { count }, lang ?? glang());
 }
 export function newFlowNotInstalledReply(name, lang) {
   return t("newFlow.notInstalled", { name }, lang ?? glang());
 }
-export function newFlowReadFailedReply(name, lang) {
-  return t("newFlow.readFailed", { name }, lang ?? glang());
+export function newFlowReadFailedReply(name, error, lang) {
+  return t("newFlow.readFailed", { name, error }, lang ?? glang());
 }
-export function newFlowSetEnvFailedReply(name, lang) {
-  return t("newFlow.setEnvFailed", { name }, lang ?? glang());
+export function newFlowSetEnvFailedReply(name, error, lang) {
+  return t("newFlow.setEnvFailed", { name, error }, lang ?? glang());
 }
 
 // templates.desc_default / desc_image_generation / desc_summary / name_default / name_image_generation / name_summary / sync_complete_ask_line
@@ -598,8 +592,8 @@ export function templatesNameImageGenerationReply(lang) {
 export function templatesNameSummaryReply(lang) {
   return t("templates.name_summary", {}, lang ?? glang());
 }
-export function templatesSyncCompleteAskLineReply(lang) {
-  return t("templates.sync_complete_ask_line", {}, lang ?? glang());
+export function templatesSyncCompleteAskLineReply(name, lang) {
+  return t("templates.sync_complete_ask_line", { name }, lang ?? glang());
 }
 
 // skillCatalog.* — skill catalog names/descriptions

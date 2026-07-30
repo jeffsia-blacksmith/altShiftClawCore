@@ -212,8 +212,8 @@ export function registerWorkflowRunHandlers(webhooks, env) {
       if (path === WORKFLOW_PATHS.templates && sourceId === "line-bot" && conclusion === "success" && notif.chat_id) {
         const { InlineKeyboard } = await import("grammy");
         lineBotKeyboard = new InlineKeyboard()
-          .text(t("line.continue_setup", {}, lang), "linebot_setup_continue:current")
-          .text(t("line.skip", {}, lang), "linebot_setup_skip:current");
+          .text(t("kb.continueLineBotSetup", {}, lang), "linebot_setup_continue:current")
+          .text(t("kb.triggerLaterManually", {}, lang), "linebot_setup_skip:current");
       }
       await sendNotify({ env }, env, requestId, text, lang, lineBotKeyboard);
       // skills 成功 + 有 issue_number → 建 issue comment

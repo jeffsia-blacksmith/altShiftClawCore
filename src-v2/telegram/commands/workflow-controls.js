@@ -26,24 +26,24 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
+      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
     try {
       const wf = await findIssueWorkflow(octokit, owner, repo, active);
       if (!wf) {
-        await ctx.reply(O(t("core.workflowNotFound", { name: `\`${wfFile}\`` }, lang)), He);
+        await ctx.reply(t("core.workflowNotFound", { name: `\`${O(wfFile)}\`` }, lang), He);
         return;
       }
       await octokit.rest.actions.enableWorkflow({ owner, repo, workflow_id: wf.id });
       await ctx.reply(
-        O(t("core.workflowEnabledOk", { name: `\`${wfFile}\``, number: `#${active}` }, lang)),
+        t("core.workflowEnabledOk", { name: `\`${O(wfFile)}\``, number: `#${active}` }, lang),
         He,
       );
     } catch (e) {
       logError("log.workflow.enableFailed", { command: "enable", error: e instanceof Error ? e.message : String(e) });
-      await ctx.reply(O(t("core.enableWorkflowFailed", { name: `\`${wfFile}\`` }, lang)), He);
+      await ctx.reply(t("core.enableWorkflowFailed", { name: `\`${O(wfFile)}\`` }, lang), He);
     }
   });
 
@@ -55,24 +55,24 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
+      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
     try {
       const wf = await findIssueWorkflow(octokit, owner, repo, active);
       if (!wf) {
-        await ctx.reply(O(t("core.workflowNotFound", { name: `\`${wfFile}\`` }, lang)), He);
+        await ctx.reply(t("core.workflowNotFound", { name: `\`${O(wfFile)}\`` }, lang), He);
         return;
       }
       await octokit.rest.actions.disableWorkflow({ owner, repo, workflow_id: wf.id });
       await ctx.reply(
-        O(t("core.workflowDisabledOk", { name: `\`${wfFile}\``, number: `#${active}` }, lang)),
+        t("core.workflowDisabledOk", { name: `\`${O(wfFile)}\``, number: `#${active}` }, lang),
         He,
       );
     } catch (e) {
       logError("log.workflow.disableFailed", { command: "disable", error: e instanceof Error ? e.message : String(e) });
-      await ctx.reply(O(t("core.disableWorkflowFailed", { name: `\`${wfFile}\`` }, lang)), He);
+      await ctx.reply(t("core.disableWorkflowFailed", { name: `\`${O(wfFile)}\`` }, lang), He);
     }
   });
 
@@ -84,7 +84,7 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
+      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
@@ -92,7 +92,7 @@ export function registerWorkflowControls(composer) {
       const wf = await findIssueWorkflow(octokit, owner, repo, active);
       if (!wf) {
         await ctx.reply(
-          O(t("core.workflowNotCreatedYet", { number: `#${active}`, name: `\`${wfFile}\`` }, lang)),
+          t("core.workflowNotCreatedYet", { number: `#${active}`, name: `\`${O(wfFile)}\`` }, lang),
           He,
         );
         return;
@@ -104,12 +104,12 @@ export function registerWorkflowControls(composer) {
             ? t("schedule.workflowStateDisabledManually", {}, lang)
             : String(wf.state);
       await ctx.reply(
-        O(t("core.workflowStatusCard", { number: `#${active}`, name: `\`${wfFile}\``, status: stateText, id: String(wf.id) }, lang)),
+        t("core.workflowStatusCard", { number: `#${active}`, name: `\`${O(wfFile)}\``, status: stateText, id: String(wf.id) }, lang),
         He,
       );
     } catch (e) {
       logError("log.workflow.queryFailed", { command: "workflow", error: e instanceof Error ? e.message : String(e) });
-      await ctx.reply(O(t("core.queryWorkflowFailed", {}, lang)), He);
+      await ctx.reply(t("core.queryWorkflowFailed", {}, lang), He);
     }
   });
 }

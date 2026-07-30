@@ -15,7 +15,7 @@ export function registerClear(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
+      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
       return;
     }
     try {
@@ -27,14 +27,14 @@ export function registerClear(composer) {
         ref: repoInfo.default_branch,
         inputs: { active_issue: String(active) },
       });
-      await ctx.reply(O(t("core.memoryCleared", { number: active }, lang)), He);
+      await ctx.reply(t("core.memoryCleared", { number: active }, lang), He);
     } catch (e) {
       logError("log.command.executionFailed", { command: "clear", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(
-        O(t("core.triggerWorkflowFailed", {
-          name: O(t("core.clearMemoryWorkflow", {}, lang)),
+        t("core.triggerWorkflowFailed", {
+          name: t("core.clearMemoryWorkflow", {}, lang),
           error: O(e?.message ?? t("core.unknownError", {}, lang)),
-        }, lang)),
+        }, lang),
         He,
       );
     }

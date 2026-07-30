@@ -23,8 +23,8 @@ async function clearLineState(store, chatId) {
 
 function continueKeyboard(lang) {
   return new InlineKeyboard()
-    .text(t("kb.continue", {}, lang), "linebot_setup_continue:0")
-    .text(t("kb.cancel", {}, lang), "linebot_setup_skip:0");
+    .text(t("kb.continueLineBotSetup", {}, lang), "linebot_setup_continue:0")
+    .text(t("kb.triggerLaterManually", {}, lang), "linebot_setup_skip:0");
 }
 function skipKeyboard(lang) {
   return new InlineKeyboard().text(t("kb.skip", {}, lang), "linebot_input_skip:0")
@@ -32,10 +32,9 @@ function skipKeyboard(lang) {
 }
 function deployConfirmKeyboard(lang) {
   return new InlineKeyboard()
-    .text(t("kb.confirmDeploy", {}, lang), "linebot_deploy_confirm:0")
-    .text(t("kb.cancel", {}, lang), "linebot_deploy_cancel:0")
-    .row()
-    .text(t("kb.editParams", {}, lang), "linebot_edit_params:0");
+    .text(t("kb.startDeploy", {}, lang), "linebot_deploy_confirm:0")
+    .text(t("kb.edit", {}, lang), "linebot_edit_params:0")
+    .text(t("kb.cancel", {}, lang), "linebot_deploy_cancel:0");
 }
 function cancelOnlyKeyboard(lang) {
   return new InlineKeyboard().text(t("kb.cancel", {}, lang), "linebot_setup_skip:0");
@@ -47,7 +46,7 @@ function confirmDetailLines(state, lang) {
     `Channel ID: \`${state.lineChannelId ?? ""}\``,
     t("line.confirm_reply_msg", { value: state.lineDefaultReplyMessage ?? "" }, lang),
     t("line.confirm_lobster", { value: state.issueNumber ?? "" }, lang),
-    t("line.confirm_timezone", { value: state.defaultUtcOffset ?? "+8" }, lang),
+    t("line.confirm_timezone", { value: state.defaultUtcOffset ?? "+08:00" }, lang),
   ].join("\n");
 }
 
@@ -58,7 +57,7 @@ export function registerLineBotCallbacks(composer) {
     const chatId = ctx.chat?.id;
     const lang = ctx.language ?? glang();
     const state = await getLineState(store, chatId);
-    if (!state) { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
+    if (!state || state.step !== "POST_INSTALL_PROMPT") { await ctx.answerCallbackQuery(t("line.process_expired", {}, lang)); return; }
     await ctx.answerCallbackQuery();
     await setLineState(store, chatId, { ...state, step: "AWAITING_LINE_BOT_ID", promptMessageId: ctx.callbackQuery?.message?.message_id });
     await ctx.reply(t("line.ask_bot_id", {}, lang), { reply_markup: cancelOnlyKeyboard(lang) });
@@ -129,7 +128,7 @@ export function registerLineBotCallbacks(composer) {
           line_bot_id: state.lineBotId, line_bot_channel_id: state.lineChannelId,
           line_default_reply_message: state.lineDefaultReplyMessage ?? "",
           issue_number: state.issueNumber ? String(state.issueNumber) : "",
-          default_utc_offset: state.defaultUtcOffset ?? "+8",
+          default_utc_offset: state.defaultUtcOffset ?? "+08:00",
         },
       });
       try {
@@ -222,7 +221,7 @@ export async function handleLineText(ctx) {
   const trimmed = text.trim();
   // P1-13：字段格式校验
   const validationStep = state.editMode ? state.editField && {
-    bot_id: "AWAITING_LINE_BOT_ID", channel_id: "AWAITING_LINE_CHANNEL_ID", utc_offset: "AWAITING_LINE_UTC_OFFSET",
+    bot_id: "AWAITING_LINE_BOT_ID", channel_id: "AWAITING_LINE_CHANNEL_ID", issue_number: "AWAITING_LINE_ISSUE_NUMBER", utc_offset: "AWAITING_LINE_UTC_OFFSET",
   }[state.editField] : state.step;
   if (validationStep === "AWAITING_LINE_BOT_ID" && !/^@[\w.-]+$/.test(trimmed)) {
     await ctx.reply(t("line.error_bot_id_format", {}, lang));
@@ -231,6 +230,21 @@ export async function handleLineText(ctx) {
   if (validationStep === "AWAITING_LINE_CHANNEL_ID" && !/^\d+$/.test(trimmed)) {
     await ctx.reply(t("line.error_channel_id_format", {}, lang));
     return true;
+  }
+  if (validationStep === "AWAITING_LINE_ISSUE_NUMBER") {
+    const issueNum = Number.parseInt(trimmed, 10);
+    if (!Number.isInteger(issueNum) || issueNum <= 0) {
+      await ctx.reply(t("line.error_issue_number_format", {}, lang));
+      return true;
+    }
+    try {
+      const { octokit, config } = ctx.services;
+      const { owner, repo } = config.github;
+      await octokit.rest.issues.get({ owner, repo, issue_number: issueNum });
+    } catch {
+      await ctx.reply(t("line.error_lobster_not_found", { number: issueNum }, lang));
+      return true;
+    }
   }
   if (validationStep === "AWAITING_LINE_UTC_OFFSET" && !/^[+-]\d{2}:\d{2}$/.test(trimmed)) {
     await ctx.reply(t("line.error_timezone_format", {}, lang));

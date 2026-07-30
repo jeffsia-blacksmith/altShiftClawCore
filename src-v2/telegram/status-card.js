@@ -6,7 +6,7 @@ import { t, glang } from "../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { listSchedulesForIssue } from "../db/schedules.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as fp } from "./markdown.js";
-import { scheduleRuleTypeLabel, scheduleRuleDescription, scheduleCardNotify } from "./edge-replies.js";
+import { scheduleRuleTypeLabel, scheduleRuleDescription } from "./edge-replies.js";
 
 // Bt — locale-formatted timestamp (对齐旧 bundle Bt L5178-5181)
 function formatLocalTime(iso, lang) {
@@ -15,6 +15,30 @@ function formatLocalTime(iso, lang) {
   if (isNaN(d.getTime())) return iso;
   const locale = lang === "zh-CN" ? "zh-CN" : "en";
   return d.toLocaleString(locale, { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+// escapeUrl — escape MarkdownV2 link URL (对齐旧 bundle: escape `\` and `)`)
+function escapeUrl(url) {
+  if (!url) return "";
+  return String(url).replace(/\\/g, "\\\\").replace(/\)/g, "\\)");
+}
+
+// parseCodexModel — 解析 .codex/config.toml 的 model（对齐旧 bundle: 多行/单引号/bare）
+function parseCodexModel(content) {
+  if (!content) return null;
+  for (const raw of content.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#") || line.startsWith("[")) continue;
+    const m = line.match(/^model\s*=\s*(.+)$/);
+    if (!m) continue;
+    const v = m[1].trim();
+    const dq = v.match(/^"([^"]*)"$/);
+    if (dq) return dq[1];
+    const sq = v.match(/^'([^']*)'$/);
+    if (sq) return sq[1];
+    return v;
+  }
+  return null;
 }
 
 // Hp — 7 路并行数据采集
@@ -63,7 +87,7 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
             const content = Buffer.from(data.content, "base64").toString("utf8");
             let model = null;
             if (s.source === "copilot") { try { model = JSON.parse(content).model ?? null; } catch {} }
-            else { const m = content.match(/^model\s*=\s*"([^"]+)"/m); model = m ? m[1] : null; }
+            else { model = parseCodexModel(content); }
             results.push({ ...s, exists: true, model });
           } else { results.push({ ...s, exists: false, model: null }); }
         } catch { results.push({ ...s, exists: false, model: null }); }
@@ -84,6 +108,7 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
         }
       } catch {}
       let status = "missing";
+      let activeRunId = null, activeRunHtmlUrl = null;
       if (!workflowExists) status = "missing";
       else if (!workflowEnabled) status = "disabled";
       else {
@@ -93,13 +118,15 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
           const activeRun = runs.workflow_runs?.find((r) => r.status !== "completed");
           if (activeRun) {
             status = "running";
+            activeRunId = activeRun.id ?? activeRun.run_number ?? null;
+            activeRunHtmlUrl = activeRun.html_url ?? null;
             workflowHtmlUrl = activeRun.html_url ?? workflowHtmlUrl;
           } else {
             status = "idle";
           }
         } catch { status = "idle"; }
       }
-      return { file: `issue-${issueNumber}.yml`, path: `.github/workflows/issue-${issueNumber}.yml`, url: workflowHtmlUrl, id: workflowId, exists: workflowExists, enabled: workflowEnabled, state: workflowState, branchExists, status };
+      return { file: `issue-${issueNumber}.yml`, path: `.github/workflows/issue-${issueNumber}.yml`, url: workflowHtmlUrl, id: workflowId, exists: workflowExists, enabled: workflowEnabled, state: workflowState, branchExists, status, activeRunId, activeRunHtmlUrl };
     })(),
     // 7. LLM settings
     (async () => {
@@ -160,7 +187,7 @@ function buildStatusCardText(e, lang) {
         : sch.status === "paused" ? t("schedule.schedule_status_paused", {}, L)
         : sch.status === "cancelled" ? t("schedule.schedule_status_cancelled", {}, L)
         : sch.status;
-      const notifyLabel = scheduleCardNotify(sch.shouldNotify, L);
+      const notifyLabel = sch.shouldNotify ? t("schedule.notify_open", {}, L) : t("schedule.notify_close", {}, L);
       const desc = scheduleRuleDescription(sch, L);
       parts.push(`${scheduleRuleTypeLabel(sch.ruleType, L)}：${desc}｜${statusLabel}｜${notifyLabel}`);
       if (sch.nextRunAt) parts.push(t("schedule.cardNextRun", { time: formatLocalTime(sch.nextRunAt, L) }, L));
@@ -172,7 +199,7 @@ function buildStatusCardText(e, lang) {
   lines.push("", t("core.infoCardTaskStatus", {}, L));
   if (e.workflow.exists) {
     const fileLink = e.workflow.url
-      ? `[${O(e.workflow.file)}](${e.workflow.url})`
+      ? `[${O(e.workflow.file)}](${escapeUrl(e.workflow.url)})`
       : O(e.workflow.file);
     lines.push(`\\- File: ${fileLink}`);
     // Simplified: Status line
@@ -180,7 +207,12 @@ function buildStatusCardText(e, lang) {
     if (!e.workflow.enabled || e.workflow.status === "disabled") {
       statusText = O(t("schedule.workflowState.disabled", {}, L));
     } else if (e.workflow.status === "running") {
-      statusText = t("schedule.workflowState.running", { run: "run" }, L);
+      const runId = e.workflow.activeRunId != null ? String(e.workflow.activeRunId) : "";
+      const runUrl = e.workflow.activeRunHtmlUrl;
+      const runLink = runUrl
+        ? `[${O(runId)}](${escapeUrl(runUrl)})`
+        : O(runId);
+      statusText = t("schedule.workflowState.running", { run: runLink }, L);
     } else {
       statusText = O(t("schedule.workflowState.idle", {}, L));
     }

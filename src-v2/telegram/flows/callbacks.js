@@ -130,8 +130,9 @@ export function registerFlowCallbacks(composer) {
     const lang = ctx.language ?? glang();
     const chatId = await callbackChatId(ctx);
     if (!chatId) return;
+    const num = parseIssueNumber(ctx.callbackQuery.data);
     await ctx.answerCallbackQuery(t("core.closeCancelAnswer", {}, lang));
-    await ctx.editMessageText(t("core.closeCancelMessage", {}, lang), {
+    await ctx.editMessageText(t("core.closeCancelMessage", { number: num ?? "" }, lang), {
       reply_markup: { inline_keyboard: [] },
     });
   });
