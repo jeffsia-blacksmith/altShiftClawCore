@@ -6,6 +6,10 @@
 import { t, glang } from "../../i18n/index.js";
 import { logError } from "../../i18n/log.js";
 
+let catalogCache = null;
+let catalogCacheTime = 0;
+const CATALOG_TTL = 300000; // 5 minutes
+
 // template-install:<chatId> KV state（TTL 900s，对齐 oe L12731-12744）
 async function setTemplateInstallState(store, chatId, state) {
   if (chatId == null) return;
@@ -14,18 +18,32 @@ async function setTemplateInstallState(store, chatId, state) {
 
 // 远端模板目录（On L12765-12785：从 altShiftClawToolkit:main/templates 拉）
 async function fetchRemoteTemplateCatalog(config) {
+  if (catalogCache !== null && Date.now() - catalogCacheTime < CATALOG_TTL) {
+    return catalogCache;
+  }
   const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/templates?ref=main";
-  const resp = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": config.github.apiVersion,
-      "User-Agent": config.github.userAgent,
-    },
-  });
-  if (!resp.ok) throw new Error(`template catalog fetch failed: ${resp.status}`);
-  const data = await resp.json();
-  if (!Array.isArray(data)) return [];
-  return data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": config.github.apiVersion,
+        "User-Agent": config.github.userAgent,
+      },
+    });
+    if (!resp.ok) throw new Error(`template catalog fetch failed: ${resp.status}`);
+    const data = await resp.json();
+    if (!Array.isArray(data)) return [];
+    const catalog = data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
+    catalogCache = catalog;
+    catalogCacheTime = Date.now();
+    return catalog;
+  } catch (e) {
+    if (catalogCache !== null) {
+      console.warn("[templates] catalog fetch failed, returning stale cache:", e?.message ?? String(e));
+      return catalogCache;
+    }
+    throw e;
+  }
 }
 
 // 已装查询（Nn L12867-12874：octokit.repos.getContent templates/<name>）

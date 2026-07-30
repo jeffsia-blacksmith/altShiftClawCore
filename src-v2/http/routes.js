@@ -68,12 +68,14 @@ export function createApp({ buildOctokit = defaultBuildOctokit } = {}) {
   });
 
   // yu — GET /api/active-issue（L20070-20075）
-  app.get("/api/active-issue", (c) => {
+  app.get("/api/active-issue", async (c) => {
     const store = c.var.store;
     const chatId = Number(c.req.query("chat_id") ?? 0);
     if (!chatId) return c.json({ error: "chat_id required" }, 400);
-    const active = store ? store.get(`active-issue:${chatId}`) : null;
-    return c.json({ issueNumber: active ?? null });
+    const active = store ? await store.get(`active-issue:${chatId}`) : null;
+    const issueNumber = active ? Number(active) : null;
+    if (issueNumber !== null && (!Number.isFinite(issueNumber) || issueNumber <= 0)) return c.json({ issueNumber: null });
+    return c.json({ issueNumber });
   });
 
   // ou — POST * with secret+path gate（L17932-17955）

@@ -41,6 +41,9 @@ async function getNotificationByRequestId(d1, requestId) {
   const row = await d1.prepare("SELECT * FROM workflow_notifications WHERE request_id = ? LIMIT 1").bind(requestId).first();
   return row;
 }
+export async function deleteWorkflowNotificationByRequestId(d1, requestId) {
+  await d1.prepare("DELETE FROM workflow_notifications WHERE request_id = ?").bind(requestId).run();
+}
 async function getNotificationByRunId(d1, runId) {
   const row = await d1.prepare("SELECT * FROM workflow_notifications WHERE workflow_run_id = ? LIMIT 1").bind(runId).first();
   return row;
@@ -67,7 +70,7 @@ async function getRecentPending(d1, path) {
 
 // 从 display_title 提取 req:<uuid>
 function extractRequestId(title) {
-  const m = (title ?? "").match(/\| req:([0-9a-f-]+)/i);
+  const m = (title ?? "").match(/\|\s*req:([A-Za-z0-9-]+)\s*$/i);
   return m ? m[1] : null;
 }
 

@@ -786,18 +786,18 @@
       "done": "Synced {file} to {repo}"
     },
     "editNew": {
-      "rebuildBranchReadTemplateFailed": "[/edit] Read template failed while rebuilding issue branch",
+      "rebuildBranchReadTemplateFailed": "[/edit] Read template failed while rebuilding issue branch: {error}",
       "workflowSyncFailed": "[/edit] issue workflow sync failed",
       "preparingLobsterData": "[/new] Preparing to send lobster data",
-      "setWorkflowStateFailed": "[/edit] Set workflow state failed",
+      "setWorkflowStateFailed": "[/edit] Set workflow state failed: {error}",
       "issueUpdateOk": "[/edit] GitHub Issue updated successfully",
       "templateResetOk": "[/edit] Template reset succeeded",
-      "templateResetFailed": "[/edit] Template reset failed",
+      "templateResetFailed": "[/edit] Template reset failed: {error}",
       "issueCreateOk": "[/new] GitHub Issue created successfully",
-      "issueWriteFailed": "[/new] GitHub Issue write failed",
+      "issueWriteFailed": "[/new] GitHub Issue write failed: {error}",
       "sendStatusCardFailed": "[/new] Send status card failed",
       "readTemplateListFailed": "[/{command}] Read template list failed",
-      "finishNewFlowFailed": "[/{command}] finishNewFlow failed",
+      "finishNewFlowFailed": "[/{command}] finishNewFlow failed: {error}",
       "unexpectedTextInputStep": "[/{command}] Unexpected text input step",
       "finishNewFlowReservedFieldFailed": "[/{command}] finishNewFlow reserved field failed",
       "revalidateTemplateListFailed": "[/{command}] Re-validate template list failed",
@@ -809,21 +809,21 @@
       "commandReceivedEnteringName": "[/{command}] /{command} command received, entering wait-for-name step"
     },
     "command": {
-      "executionFailed": "[/{command}] Execution failed",
-      "skillsListFailed": "[/skills] listRemoteSkills failed",
-      "templatesListFailed": "[/templates] listRemoteTemplates failed"
+      "executionFailed": "[/{command}] Execution failed: {error}",
+      "skillsListFailed": "[/skills] listRemoteSkills failed: {error}",
+      "templatesListFailed": "[/templates] listRemoteTemplates failed: {error}"
     },
     "workflow": {
       "dispatchUsingAI": "[Workflow dispatch] Using Workers AI to infer workflow inputs",
       "dispatchAIFailedRetry": "[Workflow dispatch] Workers AI inference of workflow inputs failed, preparing retry",
       "clearDispatchFailed": "[/{command}] dispatchWorkflow failed",
-      "enableFailed": "[/{command}] Enable workflow failed",
-      "disableFailed": "[/{command}] Disable workflow failed",
-      "queryFailed": "[/{command}] Query workflow failed",
+      "enableFailed": "[/{command}] Enable workflow failed: {error}",
+      "disableFailed": "[/{command}] Disable workflow failed: {error}",
+      "queryFailed": "[/{command}] Query workflow failed: {error}",
       "resolveCommandFailed": "[workflow] resolveWorkflowCommand failed",
-      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs failed",
+      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs failed: {error}",
       "autoupdateDispatchFailed": "[workflow] autoupdate notification dispatch failed",
-      "dispatchFailed": "[workflow] dispatchWorkflow failed"
+      "dispatchFailed": "[workflow] dispatchWorkflow failed: {error}"
     },
     "access": {
       "notFullyConfigured": "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID and TELEGRAM_ALLOWED_CHAT_ID must both be set; denying all requests."
@@ -833,7 +833,7 @@
       "missingAIBinding": "[schedule] Missing AI binding, cannot parse natural-language schedule time",
       "aiParseFailedRetry": "[schedule] AI time parse failed (attempt {attempt}/{total})",
       "aiParseFinalFailed": "[schedule] AI time parse final failure",
-      "createCommentFailed": "[schedule] Create issue comment failed"
+      "createCommentFailed": "[schedule] Create issue comment failed: {error}"
     },
     "scheduleFlow": {
       "handlingInput": "[schedule flow] handling input",
@@ -841,10 +841,10 @@
     },
     "templateReset": {
       "readListFailed": "[template_reset] Read template list failed",
-      "resetFailed": "[template_reset] Reset failed"
+      "resetFailed": "[template_reset] Reset failed: {error}"
     },
     "media": {
-      "deleteTempFailed": "Delete temp media {key} failed"
+      "deleteTempFailed": "Delete temp media {key} failed: {error}"
     },
     "relay": {
       "tooLongPlainText": "Issue #{issue} Telegram message too long, relaying as plain text",
@@ -878,18 +878,18 @@
     "autoInit": {
       "firstLobsterCreated": "[auto-init] Auto-created the first lobster",
       "variableSetFalse": "[auto-init] Set INIT_GITHUB_CLAW repo variable to false",
-      "variableUpdateFailed": "[auto-init] Failed to update INIT_GITHUB_CLAW repo variable",
+      "variableUpdateFailed": "[auto-init] Failed to update INIT_GITHUB_CLAW repo variable: {error}",
       "alreadyInitialized": "[auto-init] Already initialized, skip",
-      "createFailed": "[auto-init] Auto-create lobster failed"
+      "createFailed": "[auto-init] Auto-create lobster failed: {error}"
     },
     "webhook": {
-      "relayToTelegramFailed": "Relay Issue comment to Telegram failed",
-      "dispatchToCodingAgentFailed": "Dispatch Issue comment to coding-agent failed",
-      "relayEditedToTelegramFailed": "Relay edited Issue comment to Telegram failed",
-      "dispatchEditedToCodingAgentFailed": "Dispatch edited Issue comment to coding-agent failed",
-      "installWelcomeFailed": "GitHub App install welcome message send failed",
-      "workflowRunFailed": "Handle workflow_run.{event} failed",
-      "handleFailed": "GitHub webhook handle failed:"
+      "relayToTelegramFailed": "Relay Issue comment to Telegram failed: {error}",
+      "dispatchToCodingAgentFailed": "Dispatch Issue comment to coding-agent failed: {error}",
+      "relayEditedToTelegramFailed": "Relay edited Issue comment to Telegram failed: {error}",
+      "dispatchEditedToCodingAgentFailed": "Dispatch edited Issue comment to coding-agent failed: {error}",
+      "installWelcomeFailed": "GitHub App install welcome message send failed: {error}",
+      "workflowRunFailed": "Handle workflow_run.{event} failed: {error}",
+      "handleFailed": "GitHub webhook handle failed: {error}"
     }
   }
 }

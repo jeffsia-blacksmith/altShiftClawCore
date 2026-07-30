@@ -256,7 +256,7 @@ async function nsFinalizeReply(ctx, result, mode) {
   }
   // status card
   const { sendStatusCard } = await import("../status-card.js");
-  if (result.issue?.number) await sendStatusCard(ctx, result.issue.number);
+  try { if (result.issue?.number) await sendStatusCard(ctx, result.issue.number); } catch (e) { console.error("[Ns] status card failed:", e.message); }
 }
 
 // /edit 命令入口
@@ -343,7 +343,7 @@ export function registerEditCallbacks(composer) {
       for (const tpl of templates.slice(0, 20)) {
         kb.text(`🔄 ${tpl}`, `new_template_select:${tpl}`).row();
       }
-      kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip");
+      kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip").row();
       kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
       await ctx.editMessageText(prompt.text, { reply_markup: kb });
     } else if (step === "awaiting_workflow_enabled") {
@@ -355,6 +355,7 @@ export function registerEditCallbacks(composer) {
         await nsFinalizeReply(ctx, result, "edit");
       } catch (e) {
         logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
+        await clearFlowState(store, chatId);
         await ctx.editMessageText(t("newFlow.updateErrorGeneric", {}, lang));
       }
     }
@@ -384,6 +385,7 @@ export function registerEditCallbacks(composer) {
       await nsFinalizeReply(ctx, result, "edit");
     } catch (e) {
       logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
+      await clearFlowState(store, chatId);
       await ctx.editMessageText(t("newFlow.updateErrorGeneric", {}, lang));
     }
   });
@@ -431,7 +433,7 @@ export function registerEditCallbacks(composer) {
         for (const tp of templates.slice(0, 20)) {
           kb.text(`🔄 ${tp}`, `new_template_select:${tp}`).row();
         }
-        kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip");
+        kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip").row();
         kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
         try {
           await ctx.editMessageText(prompt.text, { reply_markup: kb });
@@ -523,7 +525,7 @@ export async function handleEditText(ctx) {
     for (const tpl of templates.slice(0, 20)) {
       kb.text(`🔄 ${tpl}`, `new_template_select:${tpl}`).row();
     }
-    kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip");
+    kb.text(t("kb.skip", {}, lang), "edit_template_reset:skip").row();
     kb.text(t("kb.cancel", {}, lang), "new_flow_cancel:current");
     await ctx.reply(prompt.text, { reply_markup: kb });
     return true;
@@ -548,6 +550,7 @@ export async function handleEditText(ctx) {
         await nsFinalizeReply(ctx, result, "reply");
       } catch (e) {
         logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
+        await clearFlowState(store, chatId);
         await ctx.reply(t("newFlow.updateErrorRetryEdit", {}, lang));
       }
       return true;
@@ -564,6 +567,7 @@ export async function handleEditText(ctx) {
       await nsFinalizeReply(ctx, result, "reply");
     } catch (e) {
       logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
+      await clearFlowState(store, chatId);
       await ctx.reply(t("newFlow.updateErrorRetryEdit", {}, lang));
     }
     return true;

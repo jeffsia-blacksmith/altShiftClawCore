@@ -277,7 +277,7 @@ export function registerTemplateCallbacks(composer) {
     if (pending.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("newFlow.enterEnvValue", { name: pending[0], current: 1, total: pending.length }, lang), { reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("templates.enter_env_value", { envName: pending[0], total: pending.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_skip:0 (dead handler, registered for parity)
@@ -304,7 +304,7 @@ export function registerTemplateCallbacks(composer) {
     if (requiredEnvs.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", pendingEnvs: requiredEnvs, currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("newFlow.enterEnvValue", { name: requiredEnvs[0], current: 1, total: requiredEnvs.length }, lang), { reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("templates.enter_env_value", { envName: requiredEnvs[0], total: requiredEnvs.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_keepall:0
@@ -408,7 +408,7 @@ export async function handleTemplateEnvText(ctx) {
   try { await ctx.api.deleteMessage(chatId, ctx.message.message_id); } catch {}
   const next = idx + 1;
   if (next < envs.length) {
-    const replyText = t("newFlow.enterEnvValue", { name: envs[next], current: next + 1, total: envs.length }, lang);
+    const replyText = t("templates.enter_env_value", { envName: envs[next], total: envs.length }, lang);
     await setTplState(store, chatId, { ...state, collectedEnvs: collected, currentEnvIndex: next });
     if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); } }
     else { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }

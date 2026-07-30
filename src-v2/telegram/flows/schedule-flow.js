@@ -740,6 +740,11 @@ Current time: ${now.toISOString()}`;
 }
 function parseSimpleTime(text) {
   const t = text.toLowerCase().trim();
+  const chineseEvery = text.trim().match(/每\s*(\d+)\s*分/);
+  if (chineseEvery) {
+    const minutes = parseInt(chineseEvery[1], 10);
+    return { status: "resolved", ruleType: "every_N_minutes", rulePayload: { minutes }, nextRunAt: new Date(Date.now() + minutes * 60000).toISOString() };
+  }
   const every = t.match(/every\s+(\d+)\s*(min|minute|minutes)/);
   if (every) {
     const minutes = parseInt(every[1], 10);

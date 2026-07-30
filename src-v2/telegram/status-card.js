@@ -14,7 +14,7 @@ function formatLocalTime(iso, lang) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
   const locale = lang === "zh-CN" ? "zh-CN" : "en";
-  return d.toLocaleString(locale, { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(locale, { timeZone: "Asia/Taipei" });
 }
 
 // escapeUrl — escape MarkdownV2 link URL (对齐旧 bundle: escape `\` and `)`)
@@ -76,8 +76,8 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
     // 5. model sources (copilot/codex configs)
     (async () => {
       const sources = [
-        { source: "copilot", label: "Copilot CLI", path: ".copilot/config.json" },
-        { source: "codex", label: "Codex CLI", path: ".codex/config.toml" },
+        { source: "copilot", label: "GitHub Copilot", path: ".copilot/config.json" },
+        { source: "codex", label: "Codex", path: ".codex/config.toml" },
       ];
       const results = [];
       for (const s of sources) {
@@ -114,7 +114,7 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
       else {
         // 查 workflow runs 检测 running 状态（对齐旧 bundle s_ L6367-6386）
         try {
-          const { data: runs } = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 5 });
+          const { data: runs } = await octokit.rest.actions.listWorkflowRuns({ owner, repo, workflow_id: workflowId, per_page: 10 });
           const activeRun = runs.workflow_runs?.find((r) => r.status !== "completed");
           if (activeRun) {
             status = "running";

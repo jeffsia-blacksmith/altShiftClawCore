@@ -98,7 +98,8 @@ export function createBot({ config, services }) {
     const text = ctx.message?.text;
     if (text && text.startsWith("/")) {
       const parts = text.slice(1).split(/\s+/);
-      const commandName = parts[0];
+      let commandName = parts[0];
+      if (commandName && commandName.includes("@")) commandName = commandName.split("@")[0];
       const argsText = parts.slice(1).join(" ");
       if (commandName && !["start","help","list","current","status","close","clear","enable","disable","workflow","skills","templates","version","schedules","llm","new","edit","cancel"].includes(commandName)) {
         if (await handleNaturalLanguageCommand(ctx, commandName, argsText)) return;

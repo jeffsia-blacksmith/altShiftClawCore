@@ -786,18 +786,18 @@
       "done": "已在 {repo} 同步 {file}"
     },
     "editNew": {
-      "rebuildBranchReadTemplateFailed": "[/edit] 重建 issue 分支时读取模板失败",
+      "rebuildBranchReadTemplateFailed": "[/edit] 重建 issue 分支时读取模板失败：{error}",
       "workflowSyncFailed": "[/edit] issue workflow 同步失败",
       "preparingLobsterData": "[/new] 准备送出小龙虾资料",
-      "setWorkflowStateFailed": "[/edit] 设定 workflow 状态失败",
+      "setWorkflowStateFailed": "[/edit] 设定 workflow 状态失败：{error}",
       "issueUpdateOk": "[/edit] GitHub Issue 更新成功",
       "templateResetOk": "[/edit] 模板重设成功",
-      "templateResetFailed": "[/edit] 模板重设失败",
+      "templateResetFailed": "[/edit] 模板重设失败：{error}",
       "issueCreateOk": "[/new] GitHub Issue 建立成功",
-      "issueWriteFailed": "[/new] GitHub Issue 写入失败",
+      "issueWriteFailed": "[/new] GitHub Issue 写入失败：{error}",
       "sendStatusCardFailed": "[/new] 传送状态卡片失败",
       "readTemplateListFailed": "[/{command}] 读取模板清单失败",
-      "finishNewFlowFailed": "[/{command}] finishNewFlow 失败",
+      "finishNewFlowFailed": "[/{command}] finishNewFlow 失败：{error}",
       "unexpectedTextInputStep": "[/{command}] 未预期的文字输入步骤",
       "finishNewFlowReservedFieldFailed": "[/{command}] finishNewFlow 保留字段失败",
       "revalidateTemplateListFailed": "[/{command}] 重新验证模板清单失败",
@@ -809,21 +809,21 @@
       "commandReceivedEnteringName": "[/{command}] 收到 /{command} 指令，进入等待名称阶段"
     },
     "command": {
-      "executionFailed": "[/{command}] 执行失败",
-      "skillsListFailed": "[/skills] listRemoteSkills 失败",
-      "templatesListFailed": "[/templates] listRemoteTemplates 失败"
+      "executionFailed": "[/{command}] 执行失败：{error}",
+      "skillsListFailed": "[/skills] listRemoteSkills 失败：{error}",
+      "templatesListFailed": "[/templates] listRemoteTemplates 失败：{error}"
     },
     "workflow": {
       "dispatchUsingAI": "[Workflow dispatch] 使用 Workers AI 推导 workflow inputs",
       "dispatchAIFailedRetry": "[Workflow dispatch] Workers AI 推导 workflow inputs 失败，准备重试",
       "clearDispatchFailed": "[/{command}] dispatchWorkflow 失败",
-      "enableFailed": "[/{command}] 启用 workflow 失败",
-      "disableFailed": "[/{command}] 停用 workflow 失败",
-      "queryFailed": "[/{command}] 查询 workflow 失败",
+      "enableFailed": "[/{command}] 启用 workflow 失败：{error}",
+      "disableFailed": "[/{command}] 停用 workflow 失败：{error}",
+      "queryFailed": "[/{command}] 查询 workflow 失败：{error}",
       "resolveCommandFailed": "[workflow] resolveWorkflowCommand 失败",
-      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs 失败",
+      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs 失败：{error}",
       "autoupdateDispatchFailed": "[workflow] autoupdate notification dispatch 失败",
-      "dispatchFailed": "[workflow] dispatchWorkflow 失败"
+      "dispatchFailed": "[workflow] dispatchWorkflow 失败：{error}"
     },
     "access": {
       "notFullyConfigured": "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID 与 TELEGRAM_ALLOWED_CHAT_ID 必须同时设定，拒绝所有请求。"
@@ -833,7 +833,7 @@
       "missingAIBinding": "[排程] 缺少 AI 绑定，无法解析自然语言排程时间",
       "aiParseFailedRetry": "[排程] AI 时间解析失败 (attempt {attempt}/{total})",
       "aiParseFinalFailed": "[排程] AI 时间解析最终失败",
-      "createCommentFailed": "[排程] 建立 issue comment 失败"
+      "createCommentFailed": "[排程] 建立 issue comment 失败：{error}"
     },
     "scheduleFlow": {
       "handlingInput": "[排程 flow] handling input",
@@ -841,10 +841,10 @@
     },
     "templateReset": {
       "readListFailed": "[template_reset] 读取模板清单失败",
-      "resetFailed": "[template_reset] 重置失败"
+      "resetFailed": "[template_reset] 重置失败：{error}"
     },
     "media": {
-      "deleteTempFailed": "删除暂存媒体 {key} 失败"
+      "deleteTempFailed": "删除暂存媒体 {key} 失败：{error}"
     },
     "relay": {
       "tooLongPlainText": "Issue #{issue} 的 Telegram 讯息过长，改用纯文字转送",
@@ -878,18 +878,18 @@
     "autoInit": {
       "firstLobsterCreated": "[auto-init] 已自动建立第一只小龙虾",
       "variableSetFalse": "[auto-init] 已将 INIT_GITHUB_CLAW repo variable 设为 false",
-      "variableUpdateFailed": "[auto-init] 无法更新 INIT_GITHUB_CLAW repo variable",
+      "variableUpdateFailed": "[auto-init] 无法更新 INIT_GITHUB_CLAW repo variable：{error}",
       "alreadyInitialized": "[auto-init] 已执行过初始化，跳过",
-      "createFailed": "[auto-init] 自动建立小龙虾失败"
+      "createFailed": "[auto-init] 自动建立小龙虾失败：{error}"
     },
     "webhook": {
-      "relayToTelegramFailed": "转送 Issue 留言到 Telegram 失败",
-      "dispatchToCodingAgentFailed": "派送 Issue 留言到 coding-agent 失败",
-      "relayEditedToTelegramFailed": "转送已编辑 Issue 留言到 Telegram 失败",
-      "dispatchEditedToCodingAgentFailed": "派送已编辑 Issue 留言到 coding-agent 失败",
-      "installWelcomeFailed": "GitHub App 安装完成欢迎讯息发送失败",
-      "workflowRunFailed": "处理 workflow_run.{event} 失败",
-      "handleFailed": "GitHub webhook 处理失败:"
+      "relayToTelegramFailed": "转送 Issue 留言到 Telegram 失败：{error}",
+      "dispatchToCodingAgentFailed": "派送 Issue 留言到 coding-agent 失败：{error}",
+      "relayEditedToTelegramFailed": "转送已编辑 Issue 留言到 Telegram 失败：{error}",
+      "dispatchEditedToCodingAgentFailed": "派送已编辑 Issue 留言到 coding-agent 失败：{error}",
+      "installWelcomeFailed": "GitHub App 安装完成欢迎讯息发送失败：{error}",
+      "workflowRunFailed": "处理 workflow_run.{event} 失败：{error}",
+      "handleFailed": "GitHub webhook 处理失败：{error}"
     }
   }
 }

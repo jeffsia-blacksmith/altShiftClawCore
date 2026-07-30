@@ -8,6 +8,10 @@ import { getActiveIssue } from "../../db/kv-state.js";
 import { skillCatalogReply } from "../edge-replies.js";
 import { logError } from "../../i18n/log.js";
 
+let catalogCache = null;
+let catalogCacheTime = 0;
+const CATALOG_TTL = 300000; // 5 minutes
+
 // skill-install:<chatId> KV state（TTL 900s，对齐 ht/El L12609-12619）
 async function setSkillInstallState(store, chatId, state) {
   if (chatId == null) return;
@@ -32,18 +36,32 @@ async function listInstalledSkills(octokit, owner, repo, issueNumber) {
 
 // 远端技能目录（bs L5938：从 altShiftClawToolkit:main/skills 拉）
 async function fetchRemoteSkillCatalog(config) {
+  if (catalogCache !== null && Date.now() - catalogCacheTime < CATALOG_TTL) {
+    return catalogCache;
+  }
   const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/skills?ref=main";
-  const resp = await fetch(url, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": config.github.apiVersion,
-      "User-Agent": config.github.userAgent,
-    },
-  });
-  if (!resp.ok) throw new Error(`skill catalog fetch failed: ${resp.status}`);
-  const data = await resp.json();
-  if (!Array.isArray(data)) return [];
-  return data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": config.github.apiVersion,
+        "User-Agent": config.github.userAgent,
+      },
+    });
+    if (!resp.ok) throw new Error(`skill catalog fetch failed: ${resp.status}`);
+    const data = await resp.json();
+    if (!Array.isArray(data)) return [];
+    const catalog = data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
+    catalogCache = catalog;
+    catalogCacheTime = Date.now();
+    return catalog;
+  } catch (e) {
+    if (catalogCache !== null) {
+      console.warn("[skills] catalog fetch failed, returning stale cache:", e?.message ?? String(e));
+      return catalogCache;
+    }
+    throw e;
+  }
 }
 
 export async function handleSkillsCommand(ctx) {
