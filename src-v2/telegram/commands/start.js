@@ -5,6 +5,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { switchIssueKeyboard } from "../keyboards.js";
 import { getActiveIssue, setMenuState } from "../../db/kv-state.js";
+import { logError } from "../../i18n/log.js";
 import { fetchOpenIssues } from "./list.js";
 
 export function registerStart(composer) {
@@ -37,7 +38,7 @@ export function registerStart(composer) {
         await setMenuState(store, chatId, { mode: "list", messageId: sent.message_id });
       }
     } catch (err) {
-      console.error("[/start]", err);
+      logError("log.command.executionFailed", { command: "start", error: err instanceof Error ? err.message : String(err) });
       await ctx.reply(t("core.startError", {}, lang));
     }
   });

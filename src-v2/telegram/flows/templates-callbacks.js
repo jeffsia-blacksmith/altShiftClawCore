@@ -5,6 +5,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
+import { logError } from "../../i18n/log.js";
 
 const PREFIX = "template-install:";
 
@@ -242,8 +243,8 @@ export function registerTemplateCallbacks(composer) {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         const { d1 } = ctx.services;
         await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/templates.yml", sourceId: tplName, chatId });
-      } catch (e) { console.error("[templates confirm] D1 notification record failed:", e); }
-    } catch (e) { console.error("[templates install] dispatch failed:", e); }
+      } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
+    } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearTplState(store, chatId);
     await ctx.editMessageText(t("templates.installing_progress", { name: tplName }, lang), { reply_markup: { inline_keyboard: [] } });
   });

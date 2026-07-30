@@ -5,6 +5,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
+import { logError } from "../../i18n/log.js";
 
 const PREFIX = "linebot-setup:";
 
@@ -134,8 +135,8 @@ export function registerLineBotCallbacks(composer) {
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/install-line-bot.yml", sourceId: "line-bot", issueNumber: state.issueNumber, chatId });
-      } catch (e) { console.error("[line deploy] D1 notification record failed:", e); }
-    } catch (e) { console.error("[line deploy] dispatch failed:", e); }
+      } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
+    } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     if (chatId) await clearLineState(store, chatId);
     try { await ctx.editMessageText(t("line.deploying_message", { id: state.lineBotId }, lang), { reply_markup: { inline_keyboard: [] } }); } catch {}
   });

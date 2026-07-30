@@ -4,6 +4,7 @@
 // 多步 callback flow（env 收集 + confirm_install + dispatch templates.yml）在后续子批次接入。
 
 import { t, glang } from "../../i18n/index.js";
+import { logError } from "../../i18n/log.js";
 
 // template-install:<chatId> KV state（TTL 900s，对齐 oe L12731-12744）
 async function setTemplateInstallState(store, chatId, state) {
@@ -53,7 +54,7 @@ export function registerTemplates(composer) {
     try {
       catalog = await fetchRemoteTemplateCatalog(config);
     } catch (e) {
-      console.error("[/templates]", e);
+      logError("log.command.templatesListFailed", { error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(t("templates.getFailed", { error: e instanceof Error ? e.message : String(e) }, lang));
       return;
     }

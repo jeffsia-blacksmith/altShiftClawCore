@@ -3,6 +3,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
+import { logError } from "../../i18n/log.js";
 import { setActiveIssue } from "../../db/kv-state.js";
 import { initEditFlow } from "./edit-flow.js";
 import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } from "../../github/branches.js";
@@ -59,7 +60,7 @@ export function registerTemplateResetCallbacks(composer) {
       await syncWorkflowFile(octokit, owner, repo, issueNum, template);
       await upsertIssueTemplate(d1, repoFullName, issueNum, template);
     } catch (e) {
-      console.error("[template_reset] failed:", e);
+      logError("log.templateReset.resetFailed", { error: e?.message ?? String(e) });
       await ctx.answerCallbackQuery(t("core.resetTemplateFailedAnswer", {}, lang));
       return;
     }

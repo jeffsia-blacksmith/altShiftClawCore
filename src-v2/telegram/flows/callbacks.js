@@ -3,6 +3,7 @@
 // 含 menu-state 守卫 Hs（L14296）、issue 列表 Ht（L14276）、lobster label Ei（L14290）。
 
 import { t, glang } from "../../i18n/index.js";
+import { logWarn } from "../../i18n/log.js";
 import { InlineKeyboard } from "grammy";
 import { getMenuState, getActiveIssue, setActiveIssue } from "../../db/kv-state.js";
 import { clearFlowState } from "./state.js";
@@ -177,7 +178,7 @@ export function registerFlowCallbacks(composer) {
       scheduleLine = deleted > 0
         ? t("core.closeClearedSchedules", { count: deleted }, lang)
         : t("core.closeNoSchedulesToClear", {}, lang);
-    } catch (e) { console.error("[close] schedule cleanup failed:", e); }
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     // active-issue 重分配：若关闭的是当前 active，切到下一个开 issue
     const active = await getActiveIssue(store, chatId);
     let nextLine;

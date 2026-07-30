@@ -7,6 +7,7 @@ import { buildConfig } from "../config.js";
 import { buildOctokit } from "../github/octokit.js";
 import { fetchDueSchedules, acquireScheduleLock, persistScheduleRun, updateSchedule } from "../db/schedules.js";
 import { computeNextRun } from "../telegram/flows/schedule-flow.js";
+import { logError } from "../i18n/log.js";
 
 function parseScheduledTime(event) {
   const t = event?.scheduledTime ?? Date.now();
@@ -117,7 +118,7 @@ export async function handleScheduled(event, env, ctx) {
       try {
         await updateSchedule(db, locked.id, { lastError: errMsg, lockedUntil: null });
       } catch {}
-      console.error(`[Scheduled] Failed to process schedule ${locked.id}:`, errMsg);
+      logError("log.webhook.handleFailed", { error: `schedule ${locked.id}: ${errMsg}` });
       results.push({ id: locked.id, issueNumber: locked.issueNumber, success: false, error: errMsg });
     }
   }

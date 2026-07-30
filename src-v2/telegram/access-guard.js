@@ -5,6 +5,7 @@
 // 全通过 → next()。
 
 import { t, glang } from "../i18n/index.js";
+import { logWarn } from "../i18n/log.js";
 
 export function accessGuard({ allowedFromId, allowedChatId, maxMessageLength = 4096 }) {
   return async (ctx, next) => {
@@ -15,7 +16,7 @@ export function accessGuard({ allowedFromId, allowedChatId, maxMessageLength = 4
     const lang = ctx.language ?? glang();
 
     if (allowedFromId == null || allowedChatId == null) {
-      console.error("[AccessGuard] TELEGRAM_ALLOWED_FROM_ID and TELEGRAM_ALLOWED_CHAT_ID must both be set; denying all requests.");
+      logWarn("log.access.notFullyConfigured");
       await ctx.reply(t("access.notFullyConfigured", {}, lang));
       return;
     }

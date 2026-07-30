@@ -2,6 +2,7 @@
 // 行为对齐旧 bundle Er/Pn/Sr/Vr/Q_/ci/Kp/rT（L6752/6864/6997/5361/6976/7113/6244/7315）。
 
 import { t, glang } from "../i18n/index.js";
+import { logInfo, logWarn } from "../i18n/log.js";
 
 // rT — 从 ctx 提取 telegram meta
 export function buildTelegramMeta(ctx) {
@@ -62,7 +63,7 @@ export async function readTemplateFiles(octokit, owner, repo, template, personal
             files.push({ path: fullPath, content });
           }
         } catch (e) {
-          console.error(`[Er] failed to read ${fullPath}:`, e.message);
+          logWarn("log.editNew.rebuildBranchReadTemplateFailed", { error: e.message });
         }
       } else if (item.type === "dir") {
         try {
@@ -92,10 +93,10 @@ export async function createOrphanBranch(octokit, owner, repo, branchName, files
   // 3. createRef
   try {
     await octokit.rest.git.createRef({ owner, repo, ref: `refs/heads/${branchName}`, sha: commit.sha });
-    console.log(`[Pn] orphan branch ${branchName} created at ${commit.sha}`);
+    logInfo("log.branch.orphanCreated", { branch: branchName, sha: commit.sha });
   } catch (e) {
     if (/already exists|422/i.test(e.message ?? "")) {
-      console.log(`[Pn] branch ${branchName} already exists, skip`);
+      logInfo("log.branch.existsSkip", { branch: branchName });
       return { ok: true, branch: branchName };
     }
     throw e;
@@ -120,7 +121,7 @@ export async function syncWorkflowFile(octokit, owner, repo, issueNumber, templa
     if (data.content) sourceContent = Buffer.from(data.content, "base64").toString("utf8");
   } catch (e) {
     if (/404|not found/i.test(e.message ?? "")) {
-      console.log(`Template ${template} does not have ${sourcePath}, skipping workflow sync`);
+      logInfo("log.sync.workflowNameNotFound", { template });
       return;
     }
     throw e;
@@ -134,7 +135,7 @@ export async function syncWorkflowFile(octokit, owner, repo, issueNumber, templa
     if (existing.content) {
       const existingContent = Buffer.from(existing.content, "base64").toString("utf8");
       if (existingContent === newContent) {
-        console.log(`[Sr] ${targetPath} already in sync`);
+        logInfo("log.sync.alreadyInSync", { file: targetPath });
         return;
       }
     }
@@ -148,7 +149,7 @@ export async function syncWorkflowFile(octokit, owner, repo, issueNumber, templa
     branch: "main",
     ...(existingSha ? { sha: existingSha } : {}),
   });
-  console.log(`[Sr] synced ${targetPath} on main`);
+  logInfo("log.sync.done", { file: targetPath });
 }
 
 // Vr — D1 upsert issue↔template 映射（issue_metadata 表）
@@ -244,7 +245,7 @@ export async function osEditFinalize(ctx, state) {
         if (state.workflowEnabled) await octokit.rest.actions.enableWorkflow({ owner, repo, workflow_id: wf.id });
         else await octokit.rest.actions.disableWorkflow({ owner, repo, workflow_id: wf.id });
       }
-    } catch (e) { console.warn("[Os edit] setWorkflowState failed:", e.message); }
+    } catch (e) { logWarn("log.editNew.setWorkflowStateFailed", { error: e.message }); }
   }
 
   // 如果 resetTemplate → 重建 orphan 分支
@@ -256,7 +257,7 @@ export async function osEditFinalize(ctx, state) {
       await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: reset issue #${issueNumber} template (template: ${tpl})`);
       await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl);
       finalTemplate = tpl;
-    } catch (e) { console.warn("[Os edit] templateReset failed:", e.message); }
+    } catch (e) { logWarn("log.editNew.templateResetFailed", { error: e.message }); }
   }
 
   // D1 upsert issue_metadata

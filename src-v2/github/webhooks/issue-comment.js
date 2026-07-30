@@ -4,6 +4,7 @@
 // dispatch (fu → actions.createWorkflowDispatch) 在 R5 做最小占位（人类 sender 触发），R7 完善。
 
 import { t, glang } from "../../i18n/index.js";
+import { logInfo, logWarn, logError } from "../../i18n/log.js";
 import { parseTelegramMeta, stripTelegramMeta } from "./meta.js";
 import { escapeMarkdownV2 } from "../../telegram/markdown.js";
 import { dispatchCodingAgent } from "../../coding-agent/dispatch.js";
@@ -31,12 +32,12 @@ async function relayCommentToTelegram(payload, env) {
   if (!issue || !comment) return;
   // skip conditions（对齐 Zk）
   if (shouldSkipRelay(payload)) {
-    console.log("[relay] skip: comment has own meta / line / schedule / no issue meta");
+    logInfo("log.relay.skipMissingMeta", { issue: issue?.number ?? "" });
     return;
   }
   const meta = parseTelegramMeta(issue.body);
   if (!meta || !meta.chat_id) {
-    console.error("[relay] no telegram-meta chat_id in issue body, skip");
+    logWarn("log.relay.skipNoChatId", { issue: issue?.number ?? "" });
     return;
   }
   let bodyOnly = stripTelegramMeta(comment.body || "").trim() || t("core.blank", {}, glang());
@@ -55,7 +56,7 @@ async function relayCommentToTelegram(payload, env) {
       await bot.api.sendPhoto(meta.chat_id, imageMatch[2], { caption: text, parse_mode: "MarkdownV2" });
       return;
     } catch (e) {
-      console.error("[relay] sendPhoto failed, fallback to sendMessage:", e.message);
+      logWarn("log.relay.imageRelayFailedPlainText", { issue: issue?.number ?? "", error: e?.message ?? String(e) });
     }
   }
   // 纯文本 → sendMessage
@@ -92,7 +93,7 @@ export function registerIssueCommentHandlers(webhooks, env) {
     const isSchedBot = isScheduledTriggerBot(payload);
     const pending = isMediaPending(payload);
     const relayP = relayCommentToTelegram(payload, env).catch((e) => {
-      console.error("[webhook] relay to Telegram failed:", e);
+      logError("log.webhook.relayToTelegramFailed", { error: e?.message ?? String(e) });
       throw e;
     });
     if (pending) {
@@ -105,7 +106,7 @@ export function registerIssueCommentHandlers(webhooks, env) {
     }
     // 人类 / scheduled-trigger Bot → relay + dispatch
     const dispatchP = dispatchCodingAgent(payload, env).catch((e) => {
-      console.error("[webhook] dispatch to coding agent failed:", e);
+      logError("log.webhook.dispatchToCodingAgentFailed", { error: e?.message ?? String(e) });
     });
     await Promise.allSettled([relayP, dispatchP]);
   });
@@ -113,10 +114,10 @@ export function registerIssueCommentHandlers(webhooks, env) {
   webhooks.on("issue_comment.edited", async ({ payload }) => {
     // R5：relay + dispatch gate（ag 等价判断在 dispatchCodingAgent 内部）
     const relayP = relayCommentToTelegram(payload, env).catch((e) => {
-      console.error("[webhook] relay edited to Telegram failed:", e);
+      logError("log.webhook.relayEditedToTelegramFailed", { error: e?.message ?? String(e) });
     });
     const dispatchP = dispatchCodingAgent(payload, env).catch((e) => {
-      console.error("[webhook] dispatch edited to coding agent failed:", e);
+      logError("log.webhook.dispatchEditedToCodingAgentFailed", { error: e?.message ?? String(e) });
     });
     await Promise.allSettled([relayP, dispatchP]);
   });

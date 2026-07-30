@@ -3,6 +3,7 @@
 // 从 issue_comment webhook 触发，向 issue-<n>.yml 工作流派工。
 
 import { t, glang } from "../i18n/index.js";
+import { logInfo } from "../i18n/log.js";
 
 // ai/meta markers（对齐 il/en markers）
 const SYSTEM_MARKERS = [
@@ -153,33 +154,33 @@ export async function dispatchCodingAgent(payload, env) {
   const issue = payload.issue;
   const comment = payload.comment;
   if (!issue || !comment) {
-    console.log("[fu] payload missing, skip");
+    logInfo("log.codingAgent.payloadMissingSkip");
     return null;
   }
   const body = comment.body ?? "";
   if (isSystemComment(body)) {
-    console.log("[fu] system comment, skip");
+    logInfo("log.codingAgent.skipSystemComment", { issue: issue.number });
     return null;
   }
   if (isScheduleFlowRecord(body)) {
-    console.log("[fu] schedule-flow record, skip");
+    logInfo("log.codingAgent.skipScheduleRecord", { issue: issue.number });
     return null;
   }
   if (!hasCommentMeta(body) && !hasCommentMeta(issue.body ?? "")) {
-    console.log("[fu] missing comment-meta, skip");
+    logInfo("log.codingAgent.skipMissingMeta", { issue: issue.number });
     return null;
   }
   if (payload.action === "created" && isMediaPending(body)) {
-    console.log("[fu] media pending, skip");
+    logInfo("log.codingAgent.skipMediaNotFinalized", { issue: issue.number });
     return null;
   }
   if (payload.action === "edited" && !isMediaFinalizedFromPending(body, payload.changes?.body?.from ?? null)) {
-    console.log("[fu] edited not finalized, skip");
+    logInfo("log.codingAgent.skipEditedNotFinalized", { issue: issue.number });
     return null;
   }
   const userMessage = stripToUserMessage(body);
   if (!userMessage) {
-    console.log("[fu] empty user message, skip");
+    logInfo("log.codingAgent.skipEmptyUserMessage", { issue: issue.number });
     return null;
   }
 
@@ -187,10 +188,10 @@ export async function dispatchCodingAgent(payload, env) {
   const { owner, repo } = config.github;
   const check = await checkAcceptsDispatch(octokit, owner, repo, issue.number);
   if (!check.acceptsDispatch) {
-    const reason = !check.branchExists || !check.workflowExists
-      ? "missing branch or workflow"
-      : "workflow disabled";
-    console.log(`[fu] skip: ${reason}`);
+    const reasonKey = !check.branchExists || !check.workflowExists
+      ? "log.codingAgent.reasonMissingBranchOrWorkflow"
+      : "log.codingAgent.reasonWorkflowDisabled";
+    logInfo("log.codingAgent.skipOther", { issue: issue.number, reason: t(reasonKey, {}, glang()) });
     return null;
   }
 

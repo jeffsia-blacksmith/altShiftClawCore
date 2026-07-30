@@ -3,6 +3,7 @@
 // R9 完整版：建 issue comment（含 telegram-meta footer）+ 派工 coding-agent 由 GitHub webhook 触发。
 
 import { t, glang } from "../i18n/index.js";
+import { logWarn, logError } from "../i18n/log.js";
 import { getActiveIssue } from "../db/kv-state.js";
 import { getFlowState } from "./flows/state.js";
 import { getSchedState } from "./flows/schedule-flow.js";
@@ -98,7 +99,7 @@ export async function handleCommentOnIssue(ctx) {
     const body = buildCommentBody(ctx, text, lang);
     try {
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
-    } catch (e) { console.error("[comment-on-issue] createComment (no-dispatch) failed:", e); }
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     const { buildRestingReply, buildMissingSetupReply } = await import("./edge-replies.js");
     if (!branchExists || !workflowExists) {
       await ctx.reply(buildMissingSetupReply(lang));
@@ -161,7 +162,7 @@ export async function handleCommentOnIssue(ctx) {
     });
     await ctx.reply(t("system.messageReceived", {}, lang));
   } catch (e) {
-    console.error("[comment-on-issue] createComment/artifact failed:", e);
+    logError("log.webhook.handleFailed", { error: e?.message ?? String(e) });
     await ctx.reply(t("core.unknownError", {}, lang));
   }
   return true;

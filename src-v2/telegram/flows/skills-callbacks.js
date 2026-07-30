@@ -3,6 +3,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
+import { logError, logWarn } from "../../i18n/log.js";
 
 const PREFIX = "skill-install:";
 
@@ -228,7 +229,7 @@ export function registerSkillCallbacks(composer) {
         inputs: { skill_name: skillName, issue_number: String(state.issueNumber), request_id: requestId },
       });
     } catch (e) {
-      console.error("[skills remove] dispatch failed:", e);
+      logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) });
     }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.removing", {}, lang));
@@ -299,7 +300,7 @@ export function registerSkillCallbacks(composer) {
       const upperName = name.trim().toUpperCase();
       const trimmedVal = val.trim();
       if (!upperName || !trimmedVal) continue;
-      try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); } catch (e) { console.error("[skills confirm] secret write failed:", e); }
+      try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     }
     const requestId = crypto.randomUUID();
     try {
@@ -312,8 +313,8 @@ export function registerSkillCallbacks(composer) {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         const { d1 } = ctx.services;
         await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/skills.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId });
-      } catch (e) { console.error("[skills confirm] D1 notification record failed:", e); }
-    } catch (e) { console.error("[skills install] dispatch failed:", e); }
+      } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
+    } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.installing", {}, lang));
     await ctx.editMessageText(t("skills.installing_progress", { name: skillName, target: targetLabel(state, lang) }, lang), { reply_markup: { inline_keyboard: [] } });

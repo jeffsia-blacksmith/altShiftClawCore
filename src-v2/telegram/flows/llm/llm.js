@@ -5,6 +5,7 @@
 import { InlineKeyboard } from "grammy";
 import { getLlmState, setLlmState, clearLlmState } from "./state.js";
 import { getActiveIssue } from "../../../db/kv-state.js";
+import { logWarn } from "../../../i18n/log.js";
 
 // octokit getContent helper
 async function getContent(octokit, owner, repo, path, ref) {
@@ -367,7 +368,7 @@ export async function handleLlmText(ctx) {
         return true;
       }
     } catch (e) {
-      console.error("[llm] model validation failed:", e.message);
+      logWarn("log.workflow.inferInputsFailed", { error: e?.message ?? String(e) });
       // 如果验证 API 不可用，继续接受模型（graceful fallback）
     }
   }

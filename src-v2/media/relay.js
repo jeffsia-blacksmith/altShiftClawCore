@@ -5,6 +5,7 @@
 //   src-v2 用正确参数名 file，i18n t() 不被遮蔽，单条路径可正常工作。
 
 import { t, glang } from "../i18n/index.js";
+import { logError, logWarn } from "../i18n/log.js";
 import { getActiveIssue } from "../db/kv-state.js";
 import { getFlowState } from "../telegram/flows/state.js";
 import { enqueueAlbumItem, flushAlbum } from "./album.js";
@@ -67,7 +68,7 @@ export async function handleSingleMedia(ctx, file) {
       const chatName = ctx.chat?.title ?? ctx.chat?.type ?? "private";
       const body = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n\n${t("core.messageFromSource", { sender: senderName, chat: chatName }, lang)}\n\n---\n\n🦞 ${label}${content ? `\n\n${content}` : ""}`;
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
-    } catch (e) { console.error("[media:single]", e); await ctx.reply(t("core.unknownError", {}, lang)); }
+    } catch (e) { logError("log.relay.imageRelayFailedPlainText", { issue: active, error: e?.message ?? String(e) }); await ctx.reply(t("core.unknownError", {}, lang)); }
     return;
   }
 
@@ -122,7 +123,7 @@ export async function handleSingleMedia(ctx, file) {
         content: Buffer.from(userArtifactContent).toString("base64"), branch: `issue-${active}`,
         ...(userArtifactSha ? { sha: userArtifactSha } : {}),
       });
-    } catch (e) { console.error("[media:single] user.md artifact failed:", e); }
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     // 7. 写 issue.jsonl（对齐旧 bundle Zr+xn，content 用 Zl 结构体）
     try {
       const jsonlPath = "issue.jsonl";
@@ -152,14 +153,14 @@ export async function handleSingleMedia(ctx, file) {
         content: Buffer.from(newContent).toString("base64"), branch: `issue-${active}`,
         ...(jsonlSha ? { sha: jsonlSha } : {}),
       });
-    } catch (e) { console.error("[media:single] jsonl write failed:", e); }
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     // 8. 清理 temp
     try {
       const tempContent = await octokit.rest.repos.getContent({ owner, repo, path: tempPath, ref: `issue-${active}` });
       await octokit.rest.repos.deleteFile({ owner, repo, path: tempPath, message: `chore: cleanup temp ${file.field}`, sha: tempContent.data.sha, branch: `issue-${active}` });
-    } catch (e) { console.error("[media:single] cleanup temp failed:", e); }
+    } catch (e) { logWarn("log.media.deleteTempFailed", { key: tempPath }); }
   } catch (e) {
-    console.error("[media:single git upload]", e);
+    logError("log.relay.imageRelayFailedPlainText", { issue: active, error: e?.message ?? String(e) });
     await ctx.reply(t("core.unknownError", {}, lang));
   }
 }
@@ -203,7 +204,7 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
       const caption = rows.slice().reverse().find((r) => r.caption?.trim())?.caption ?? "";
       const body = `🦞 ${mediaTypeLabel("photo", lang)} ×${rows.length}${caption ? `\n\n${caption}` : ""}`;
       await octokit.rest.issues.createComment({ owner, repo, issue_number: active, body });
-    } catch (e) { console.error("[media:album]", e); await ctx.reply(t("core.unknownError", {}, lang)); }
+    } catch (e) { logError("log.relay.imageRelayFailedPlainText", { issue: active, error: e?.message ?? String(e) }); await ctx.reply(t("core.unknownError", {}, lang)); }
     return;
   }
 
@@ -256,6 +257,22 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
     const finalMediaMeta = `<!-- githubclaw-media-meta: {"stage":"finalized","kind":"album","temp_paths":${JSON.stringify(tempPaths)},"final_paths":${JSON.stringify(finalPaths)}} -->`;
     const finalizedBody = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n${finalMediaMeta}\n\n${t("core.messageFromSource", { sender: ctx.from?.first_name ?? "Unknown", chat: ctx.chat?.title ?? "private" }, lang)}\n\n---\n\n${finalLinks}${caption ? `\n\n${caption}` : ""}\n\n${t("core.relativeLocation", { path: finalPaths.join("`, `") }, lang)}`;
     await octokit.rest.issues.updateComment({ owner, repo, comment_id: created.data.id, body: finalizedBody });
+    // 4b. 写 user.md artifact（Zr — album 也写 user.md）
+    try {
+      const userArtifactPath = `artifacts/${created.data.id}/user.md`;
+      const userArtifactContent = `${caption?.trim() || "album"}\n`;
+      let userArtifactSha;
+      try {
+        const { data: existingUA } = await octokit.rest.repos.getContent({ owner, repo, path: userArtifactPath, ref: branch });
+        userArtifactSha = existingUA.sha;
+      } catch {}
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: userArtifactPath,
+        message: `chore: update issue #${active} comment #${created.data.id} user artifact`,
+        content: Buffer.from(userArtifactContent).toString("base64"), branch,
+        ...(userArtifactSha ? { sha: userArtifactSha } : {}),
+      });
+    } catch (e) { logWarn("log.media.deleteTempFailed", { error: e?.message ?? String(e) }); }
     // 5. 写 issue.jsonl（对齐旧 bundle xn — album 也写 jsonl）
     try {
       const jsonlPath = "issue.jsonl";
@@ -283,16 +300,16 @@ export async function handleAlbumMedia(ctx, file, mediaGroupId) {
         content: Buffer.from(newContent).toString("base64"), branch,
         ...(jsonlSha ? { sha: jsonlSha } : {}),
       });
-    } catch (e) { console.error("[media:album] jsonl write failed:", e); }
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     // 6. 清理 temp
     for (const tp of tempPaths) {
       try {
         const { data: tc } = await octokit.rest.repos.getContent({ owner, repo, path: tp, ref: branch });
         await octokit.rest.repos.deleteFile({ owner, repo, path: tp, message: `chore: cleanup temp photo`, sha: tc.sha, branch });
-      } catch (e) { console.error("[media:album] cleanup temp failed:", e); }
+      } catch (e) { logWarn("log.media.deleteTempFailed", { key: tp }); }
     }
   } catch (e) {
-    console.error("[media:album git upload]", e);
+    logError("log.relay.imageRelayFailedPlainText", { issue: active, error: e?.message ?? String(e) });
     await ctx.reply(t("core.unknownError", {}, lang));
   }
 }

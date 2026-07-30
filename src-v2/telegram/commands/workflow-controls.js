@@ -5,6 +5,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { getActiveIssue } from "../../db/kv-state.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as He } from "../markdown.js";
+import { logError } from "../../i18n/log.js";
 
 function issueWorkflowFile(issueNumber) {
   return `issue-${issueNumber}.yml`;
@@ -41,7 +42,7 @@ export function registerWorkflowControls(composer) {
         He,
       );
     } catch (e) {
-      console.error("[/enable]", e);
+      logError("log.workflow.enableFailed", { command: "enable", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(O(t("core.enableWorkflowFailed", { name: `\`${wfFile}\`` }, lang)), He);
     }
   });
@@ -70,7 +71,7 @@ export function registerWorkflowControls(composer) {
         He,
       );
     } catch (e) {
-      console.error("[/disable]", e);
+      logError("log.workflow.disableFailed", { command: "disable", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(O(t("core.disableWorkflowFailed", { name: `\`${wfFile}\`` }, lang)), He);
     }
   });
@@ -107,7 +108,7 @@ export function registerWorkflowControls(composer) {
         He,
       );
     } catch (e) {
-      console.error("[/workflow]", e);
+      logError("log.workflow.queryFailed", { command: "workflow", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(O(t("core.queryWorkflowFailed", {}, lang)), He);
     }
   });

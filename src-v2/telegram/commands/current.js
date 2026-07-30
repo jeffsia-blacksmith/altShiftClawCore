@@ -5,6 +5,7 @@
 
 import { getActiveIssue } from "../../db/kv-state.js";
 import { sendStatusCard } from "../status-card.js";
+import { logError } from "../../i18n/log.js";
 
 async function currentStatusHandler(ctx) {
   const { store } = ctx.services;
@@ -18,7 +19,7 @@ async function currentStatusHandler(ctx) {
     // 发完整信息卡
     await sendStatusCard(ctx, active);
   } catch (err) {
-    console.error("[/current|/status]", err);
+    logError("log.command.executionFailed", { command: "current", error: err instanceof Error ? err.message : String(err) });
     await ctx.reply(ctx.t("core.statusError"));
   }
 }

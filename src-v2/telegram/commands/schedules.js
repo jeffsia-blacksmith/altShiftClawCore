@@ -5,6 +5,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { listSchedulesForChat } from "../../db/schedules.js";
+import { logError } from "../../i18n/log.js";
 
 // Bt — locale-formatted timestamp
 function formatLocalTime(iso, lang) {
@@ -81,7 +82,7 @@ export function registerSchedules(composer) {
       const keyboard = buildSchedulesKeyboard(schedules, lang);
       await ctx.reply(text, keyboard ? { reply_markup: keyboard } : undefined);
     } catch (e) {
-      console.error("[/schedules]", e);
+      logError("log.command.executionFailed", { command: "schedules", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(t("schedule.flow.listFetchFailed", {}, lang));
     }
   });

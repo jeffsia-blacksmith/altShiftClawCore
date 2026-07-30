@@ -6,6 +6,7 @@
 import { closeIssueKeyboard } from "../keyboards.js";
 import { setMenuState, clearMenuState } from "../../db/kv-state.js";
 import { fetchOpenIssues } from "./list.js";
+import { logError } from "../../i18n/log.js";
 
 export function registerClose(composer) {
   composer.command("close", async (ctx) => {
@@ -35,7 +36,7 @@ export function registerClose(composer) {
         await clearMenuState(store, chatId);
       }
     } catch (err) {
-      console.error("[/close]", err);
+      logError("log.command.executionFailed", { command: "close", error: err instanceof Error ? err.message : String(err) });
       await ctx.reply(ctx.t("core.closeError"));
     }
   });

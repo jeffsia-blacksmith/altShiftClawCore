@@ -6,6 +6,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { getActiveIssue } from "../../db/kv-state.js";
 import { skillCatalogReply } from "../edge-replies.js";
+import { logError } from "../../i18n/log.js";
 
 // skill-install:<chatId> KV state（TTL 900s，对齐 ht/El L12609-12619）
 async function setSkillInstallState(store, chatId, state) {
@@ -98,7 +99,7 @@ export function registerSkills(composer) {
       const target = issueTitle ? `🦞 ${issueTitle} #${active}` : `🦞 #${active}`;
       await ctx.reply(t("skills.select_install", { target }, lang), { reply_markup: kb });
     } catch (e) {
-      console.error("[/skills]", e);
+      logError("log.command.skillsListFailed", { error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(t("skills.getFailed", { error: e instanceof Error ? e.message : String(e) }, lang));
     }
   });

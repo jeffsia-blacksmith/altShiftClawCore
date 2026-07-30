@@ -3,6 +3,7 @@
 // 注意：AI 时间解析（Ul）需 Workers AI binding；R9 minimal 走 fallback（failedUnderstand）。
 
 import { t, glang } from "../../i18n/index.js";
+import { logError } from "../../i18n/log.js";
 import { InlineKeyboard } from "grammy";
 import {
   createSchedule, getSchedule, listSchedulesForIssue, listSchedulesForChat,
@@ -252,7 +253,7 @@ async function onScheduleAction(ctx, sched, action, lang) {
   try {
     await octokit.rest.issues.createComment({ owner, repo, issue_number: sched.issueNumber, body: commentBody });
   } catch (e) {
-    console.error("[schedule] createComment failed:", e);
+    logError("log.schedule.createCommentFailed", { error: e?.message ?? String(e) });
   }
   const badge = action === "create" ? "(4/4)" : "(2/2)";
   const cardText = [

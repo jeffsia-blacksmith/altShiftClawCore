@@ -3,6 +3,7 @@
 // 4 步：awaiting_name → awaiting_description → awaiting_template_reset → awaiting_workflow_enabled → Os finalize。
 
 import { t, glang } from "../../i18n/index.js";
+import { logError } from "../../i18n/log.js";
 import { InlineKeyboard } from "grammy";
 import { getActiveIssue, setActiveIssue, clearMenuState } from "../../db/kv-state.js";
 import { getFlowState, setFlowState, clearFlowState } from "./state.js";
@@ -209,7 +210,7 @@ async function osEditFinalize(ctx, state) {
         }
       }
     } catch (e) {
-      console.error("[edit finalize] workflow toggle failed:", e);
+      logError("log.editNew.setWorkflowStateFailed", { error: e?.message ?? String(e) });
     }
   }
 
@@ -223,7 +224,7 @@ async function osEditFinalize(ctx, state) {
       await syncWorkflowFile(octokit, owner, repo, issueNumber, state.template);
       finalTemplate = state.template;
     } catch (e) {
-      console.error("[edit finalize] template reset failed:", e);
+      logError("log.editNew.templateResetFailed", { error: e?.message ?? String(e) });
     }
   }
 
@@ -231,7 +232,7 @@ async function osEditFinalize(ctx, state) {
   try {
     const { upsertIssueTemplate } = await import("../../github/branches.js");
     await upsertIssueTemplate(d1, config.github.repoFullName, issueNumber, finalTemplate);
-  } catch (e) { console.error("[edit finalize] D1 upsert failed:", e); }
+  } catch (e) { logError("log.editNew.issueWriteFailed", { error: e?.message ?? String(e) }); }
 
   const chatId = ctx.chat?.id;
   if (chatId != null) {
@@ -354,7 +355,7 @@ export function registerEditCallbacks(composer) {
         const result = await osEditFinalize(ctx, newState);
         await nsFinalizeReply(ctx, result, "edit");
       } catch (e) {
-        console.error("[edit keep workflow] finalize failed:", e);
+        logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
         await ctx.editMessageText(t("newFlow.updateErrorGeneric", {}, lang));
       }
     }
@@ -383,7 +384,7 @@ export function registerEditCallbacks(composer) {
       const result = await osEditFinalize(ctx, newState);
       await nsFinalizeReply(ctx, result, "edit");
     } catch (e) {
-      console.error("[edit workflow_enabled] finalize failed:", e);
+      logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
       await ctx.editMessageText(t("newFlow.updateErrorGeneric", {}, lang));
     }
   });
@@ -455,7 +456,7 @@ export function registerEditCallbacks(composer) {
         const { sendStatusCard } = await import("../status-card.js");
         await sendStatusCard(ctx, result.issue.number);
       } catch (e) {
-        console.error("[new template select create] finalize failed:", e);
+        logError("log.editNew.finishNewFlowFailed", { command: "new", error: e?.message ?? String(e) });
         await ctx.reply(t("newFlow.errorCreateFailed", {}, lang));
         await clearFlowState(store, chatId);
       }
@@ -525,7 +526,7 @@ export async function handleEditText(ctx) {
       const result = await osEditFinalize(ctx, newState);
       await nsFinalizeReply(ctx, result, "reply");
     } catch (e) {
-      console.error("[edit text workflow] finalize failed:", e);
+      logError("log.editNew.finishNewFlowFailed", { command: "edit", error: e?.message ?? String(e) });
       await ctx.reply(t("newFlow.updateErrorRetryEdit", {}, lang));
     }
     return true;

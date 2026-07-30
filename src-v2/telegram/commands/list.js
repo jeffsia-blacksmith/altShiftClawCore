@@ -3,6 +3,7 @@
 // 护栏 #5（空 issues）→ reply core.noLobstersYet；护栏 #6（1 issue）→ 键盘含 #7。
 
 import { t } from "../../i18n/index.js";
+import { logError } from "../../i18n/log.js";
 import { switchIssueKeyboard } from "../keyboards.js";
 import { getActiveIssue, setMenuState, clearMenuState } from "../../db/kv-state.js";
 
@@ -64,7 +65,7 @@ export function registerList(composer) {
         await clearMenuState(store, chatId);
       }
     } catch (err) {
-      console.error("[/list]", err);
+      logError("log.command.executionFailed", { command: "list", error: err instanceof Error ? err.message : String(err) });
       const status = err?.status ?? err?.response?.status;
       if (status === 401 || status === 403) {
         await ctx.reply(ctx.t("core.listErrorUnauthorized"));

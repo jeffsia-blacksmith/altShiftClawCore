@@ -4,6 +4,7 @@
 
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
+import { logError } from "../../i18n/log.js";
 
 const WORKFLOW_PATHS = {
   autoupdate: ".github/workflows/autoupdate.yml",
@@ -68,7 +69,7 @@ async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefin
     }
     await updateNotification(env.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() });
   } catch (e) {
-    console.error("[workflow_run notify] failed:", e);
+    logError("log.webhook.handleFailed", { error: e?.message ?? String(e) });
     await updateNotification(env.d1, requestId, { status: "failed_to_notify", errorMessage: e.message });
   }
 }
@@ -170,7 +171,7 @@ export function registerWorkflowRunHandlers(webhooks, env) {
           if (notif.chat_id) {
             try {
               await env.store.put(`linebot-setup:${notif.chat_id}`, JSON.stringify({ step: "POST_INSTALL_PROMPT", issueNumber: notif.issue_number, promptMessageId: null }), { expirationTtl: 900 });
-            } catch (e) { console.error("[workflow_run line-bot state] failed:", e); }
+            } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
           }
         }
       } else if (path === WORKFLOW_PATHS.lineBot) {
@@ -194,10 +195,10 @@ export function registerWorkflowRunHandlers(webhooks, env) {
             owner: env.config.github.owner, repo: env.config.github.repo, issue_number: notif.issue_number,
             body: t("skills.issue_comment_completed", { name, action }, lang),
           });
-        } catch (e) { console.error("[workflow_run skills comment] failed:", e); }
+        } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
       }
     } catch (e) {
-      console.error(`[workflow_run.${event}] failed:`, e);
+      logError("log.webhook.workflowRunFailed", { event, error: e?.message ?? String(e) });
     }
   };
   webhooks.on("workflow_run.requested", ({ payload }) => handle(payload, "requested"));

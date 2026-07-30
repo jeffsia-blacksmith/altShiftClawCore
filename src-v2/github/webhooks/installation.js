@@ -4,6 +4,7 @@
 // auto-init（kE 创建第一只龙虾）在 R9 接入；R5 仅 welcome。
 
 import { t, glang } from "../../i18n/index.js";
+import { logInfo, logWarn, logError } from "../../i18n/log.js";
 import { setActiveIssue } from "../../db/kv-state.js";
 import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } from "../branches.js";
 
@@ -63,7 +64,7 @@ async function markInitDone(env) {
     if (/404|not found/i.test(e.message ?? "")) {
       await octokit.rest.actions.createRepoVariable({ owner, repo, name: "INIT_GITHUB_CLAW", value: "false" });
     } else {
-      console.error("[auto-init] set repo variable failed:", e.message);
+      logWarn("log.autoInit.variableUpdateFailed", { error: e.message });
     }
   }
 }
@@ -89,7 +90,7 @@ export function registerInstallationHandlers(webhooks, env) {
       // R9: auto-init — 创建第一只龙虾
       if (env.config.initGitHubClaw) {
         if ((await env.store.get(INIT_DONE_KEY)) === "true") {
-          console.log("[auto-init] already initialized, skip");
+          logInfo("log.autoInit.alreadyInitialized");
           return;
         }
         try {
@@ -100,12 +101,12 @@ export function registerInstallationHandlers(webhooks, env) {
             t("system.autoInitCreated", { title: created.title, number: created.number }, glang()),
           );
         } catch (e) {
-          console.error("[auto-init] create failed:", e);
+          logError("log.autoInit.createFailed", { error: e?.message ?? String(e) });
           await bot.api.sendMessage(chatId, t("system.autoInitFailed", {}, glang()));
         }
       }
     } catch (e) {
-      console.error("[webhook] install welcome failed:", e);
+      logError("log.webhook.installWelcomeFailed", { error: e?.message ?? String(e) });
     }
   });
 }

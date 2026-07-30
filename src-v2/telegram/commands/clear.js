@@ -5,6 +5,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { getActiveIssue } from "../../db/kv-state.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as He } from "../markdown.js";
+import { logError } from "../../i18n/log.js";
 
 export function registerClear(composer) {
   composer.command("clear", async (ctx) => {
@@ -28,7 +29,7 @@ export function registerClear(composer) {
       });
       await ctx.reply(O(t("core.memoryCleared", { number: active }, lang)), He);
     } catch (e) {
-      console.error("[/clear]", e);
+      logError("log.command.executionFailed", { command: "clear", error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(
         O(t("core.triggerWorkflowFailed", {
           name: O(t("core.clearMemoryWorkflow", {}, lang)),
