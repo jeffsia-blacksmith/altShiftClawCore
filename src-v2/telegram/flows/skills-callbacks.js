@@ -4,6 +4,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { logError, logWarn } from "../../i18n/log.js";
+import { setRepoSecret } from "../../github/secrets.js";
 
 const PREFIX = "skill-install:";
 
@@ -121,11 +122,6 @@ async function listRepoSecrets(octokit, owner, repo) {
   } catch { return new Set(); }
 }
 
-// 写 repo secret
-async function setRepoSecret(octokit, owner, repo, name, value) {
-  await octokit.rest.actions.createOrUpdateRepoSecret({ owner, repo, secret_name: name.toUpperCase(), encrypted_value: value });
-}
-
 export function registerSkillCallbacks(composer) {
   // skills_pick:<name>
   composer.callbackQuery(/^skills_pick:/, async (ctx) => {
@@ -228,6 +224,11 @@ export function registerSkillCallbacks(composer) {
         owner, repo, workflow_id: "remove-skill.yml", ref: "main",
         inputs: { skill_name: skillName, issue_number: String(state.issueNumber), request_id: requestId },
       });
+      try {
+        const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
+        const { d1, config } = ctx.services;
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "remove-skill", workflowPath: ".github/workflows/remove-skill.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId, sourceType: "skill_remove" });
+      } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) {
       logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) });
     }
@@ -311,8 +312,8 @@ export function registerSkillCallbacks(composer) {
       // D1 workflow notification record（对齐旧 bundle Gt）
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
-        const { d1 } = ctx.services;
-        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/skills.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId });
+        const { d1, config } = ctx.services;
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "skills", workflowPath: ".github/workflows/skills.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId, sourceType: "skill_install" });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearSkillState(store, chatId);

@@ -30,6 +30,7 @@ await build({
   outfile: OUT,
   legalComments: "none",
   conditions: ["browser"],
+  alias: { crypto: join(root, "../src/modules/empty.js") },
 });
 
 const mod = await import(`file://${OUT}`);

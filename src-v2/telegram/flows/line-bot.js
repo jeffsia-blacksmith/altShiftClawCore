@@ -134,7 +134,7 @@ export function registerLineBotCallbacks(composer) {
       });
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
-        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/install-line-bot.yml", sourceId: "line-bot", issueNumber: state.issueNumber, chatId });
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "install-line-bot", workflowPath: ".github/workflows/install-line-bot.yml", sourceId: "line-bot", issueNumber: state.issueNumber, chatId });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     if (chatId) await clearLineState(store, chatId);

@@ -6,6 +6,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { logError } from "../../i18n/log.js";
+import { setRepoSecret } from "../../github/secrets.js";
 
 const PREFIX = "template-install:";
 
@@ -35,10 +36,20 @@ async function fetchTemplateManifest(config, name) {
   const resp = await fetch(url, {
     headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": config.github.apiVersion, "User-Agent": config.github.userAgent },
   });
-  if (!resp.ok) return {};
-  const data = await resp.json();
-  if (data.content) return JSON.parse(Buffer.from(data.content, "base64").toString("utf8"));
-  return {};
+  let manifest = {};
+  if (resp.ok) {
+    const data = await resp.json();
+    if (data.content) {
+      try { manifest = JSON.parse(Buffer.from(data.content, "base64").toString("utf8")); }
+      catch { manifest = {}; }
+    }
+  }
+  if (!manifest || typeof manifest !== "object") manifest = {};
+  const titleCased = name.split(/[-_]/).filter(Boolean).map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const needModel = manifest.needModel ?? manifest.need_model ?? false;
+  const modelVar = manifest.modelVar ?? manifest.model_var ?? null;
+  const models = (manifest.models ?? []).map((m) => typeof m === "string" ? { value: m, label: m } : m);
+  return { ...manifest, name: manifest.name ?? titleCased, needModel, modelVar, models };
 }
 async function isTemplateInstalled(octokit, owner, repo, name) {
   try {
@@ -51,9 +62,6 @@ async function listRepoSecrets(octokit, owner, repo) {
     const { data } = await octokit.rest.actions.listRepoSecrets({ owner, repo });
     return new Set(data.secrets.map((s) => s.name.toUpperCase()));
   } catch { return new Set(); }
-}
-async function setRepoSecret(octokit, owner, repo, name, value) {
-  await octokit.rest.actions.createOrUpdateRepoSecret({ owner, repo, secret_name: name.toUpperCase(), encrypted_value: value });
 }
 
 function templatesListKeyboard(list, page, installedSet, lang) {
@@ -215,7 +223,7 @@ export function registerTemplateCallbacks(composer) {
     const modelVar = manifest.modelVar || state.modelVar;
     const model = manifest.models?.[idx];
     const value = model?.value?.trim();
-    if (!modelVar) { await ctx.answerCallbackQuery(t("templates.process_expired", {}, lang)); return; }
+    if (!modelVar) { await ctx.answerCallbackQuery(`Template ${tplName} missing modelVar setting`); return; }
     if (!value) { await ctx.answerCallbackQuery(t("templates.model_not_found", {}, lang)); return; }
     await ctx.answerCallbackQuery(t("templates.saving_model", {}, lang));
     try { await octokit.rest.actions.updateRepoVariable({ owner, repo, name: modelVar, value }); }
@@ -241,8 +249,8 @@ export function registerTemplateCallbacks(composer) {
       });
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
-        const { d1 } = ctx.services;
-        await createWorkflowNotification(d1, { requestId, workflowPath: ".github/workflows/templates.yml", sourceId: tplName, chatId });
+        const { d1, config } = ctx.services;
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "templates", workflowPath: ".github/workflows/templates.yml", sourceId: tplName, chatId });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearTplState(store, chatId);

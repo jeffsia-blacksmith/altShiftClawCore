@@ -46,8 +46,7 @@ async function fetchRemoteSkillCatalog(config) {
   return data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
 }
 
-export function registerSkills(composer) {
-  composer.command("skills", async (ctx) => {
+export async function handleSkillsCommand(ctx) {
     const { octokit, store, config } = ctx.services;
     const { owner, repo } = config.github;
     const lang = ctx.language ?? glang();
@@ -102,5 +101,8 @@ export function registerSkills(composer) {
       logError("log.command.skillsListFailed", { error: e instanceof Error ? e.message : String(e) });
       await ctx.reply(t("skills.getFailed", { error: e instanceof Error ? e.message : String(e) }, lang));
     }
-  });
+}
+
+export function registerSkills(composer) {
+  composer.command("skills", handleSkillsCommand);
 }

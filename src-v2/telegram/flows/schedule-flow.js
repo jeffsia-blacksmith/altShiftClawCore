@@ -266,6 +266,11 @@ async function onScheduleAction(ctx, sched, action, lang) {
     t("schedule.flow.fieldPayload", { payload: sched.eventData ?? t("core.notSet", {}, lang) }, lang),
   ].join("\n");
   await ctx.reply(cardText);
+  // 发 issue-status card（对齐旧 bundle Es(e, n, "schedule_configuration")）
+  try {
+    const { sendStatusCard } = await import("../status-card.js");
+    await sendStatusCard(ctx, sched.issueNumber);
+  } catch (e) { console.error("[schedule] status card failed:", e.message); }
 }
 
 // yi — 解析 callback data "id|chat" 或 "id"
@@ -619,6 +624,12 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_payload") {
+    // State integrity guard (对齐旧 bundle ql L14158-14164)
+    if (!state.prompt || !state.ruleType || !state.rulePayload || !state.timezone || !state.nextRunAt) {
+      await clearSchedState(store, chatId);
+      await ctx.reply(t("schedule.flow.stateLost", {}, lang));
+      return true;
+    }
     const eventData = text.trim() || null;
     const sched = await createSchedule(d1, {
       repo: repoFullName, issueNumber: state.issueNumber, chatId, prompt: state.prompt,
@@ -631,6 +642,7 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_edit_prompt") {
+    if (!state.scheduleId) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
     const prompt = text.trim();
     if (!prompt) { await ctx.reply(t("schedule.prompt_cannot_be_empty", {}, lang), { reply_markup: cancelKeyboard(lang) }); return true; }
     const sched = await updateSchedule(d1, state.scheduleId, { prompt });
@@ -640,6 +652,7 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_edit_payload") {
+    if (!state.scheduleId) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
     const eventData = text.trim() || null;
     const sched = await updateSchedule(d1, state.scheduleId, { eventData });
     if (!sched) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
@@ -648,6 +661,7 @@ export async function handleScheduleText(ctx) {
   }
 
   if (state.step === "awaiting_edit_time") {
+    if (!state.scheduleId) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
     const ai = ctx.services.ai;
     const result = await parseScheduleTime(text, { now: new Date(), ai });
     if (result.status === "resolved") {

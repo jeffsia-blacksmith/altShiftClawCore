@@ -27,6 +27,7 @@ import { registerSchedules } from "./commands/schedules.js";
 import { registerScheduleCallbacks, handleScheduleText } from "./flows/schedule-flow.js";
 import { registerLineBotCallbacks, handleLineText } from "./flows/line-bot.js";
 import { registerTemplateResetCallbacks } from "./flows/template-reset-callbacks.js";
+import { registerCommandMenuCallbacks } from "./flows/command-menu-callbacks.js";
 import { handleCommentOnIssue } from "./comment-on-issue.js";
 import { handleNaturalLanguageCommand } from "./ai-inference.js";
 import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
@@ -78,16 +79,18 @@ export function createBot({ config, services }) {
   registerScheduleCallbacks(commands);
   registerLineBotCallbacks(commands);
   registerTemplateResetCallbacks(commands);
+  registerCommandMenuCallbacks(commands);
   bot.use(commands);
 
-  // 4. message:text 续接 — 对齐 su.on("message:text")（L17810-17897）
-  // 优先级：skill-env → template-env → new-flow → edit-flow → llm → schedule → LINE → comment-on-issue → AI natural-lang
+  // 4. message:text 续接 — 对齐 old bundle priority:
+  // llmComposer (separate, before su) → su: skill-env → template-env → new-flow → edit-flow → schedule → comment-on-issue
+  // LLM must be checked early (before other flows) because it's a separate Composer in old bundle
   bot.on("message:text", async (ctx, next) => {
+    if (await handleLlmText(ctx)) return;
     if (await handleSkillEnvText(ctx)) return;
     if (await handleTemplateEnvText(ctx)) return;
     if (await handleFlowText(ctx)) return;
     if (await handleEditText(ctx)) return;
-    if (await handleLlmText(ctx)) return;
     if (await handleScheduleText(ctx)) return;
     if (await handleLineText(ctx)) return;
     if (await handleCommentOnIssue(ctx)) return;

@@ -5,6 +5,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { logError } from "../../i18n/log.js";
+import { escapeMarkdownV2 as escapeMdV2 } from "../../telegram/markdown.js";
 
 const WORKFLOW_PATHS = {
   autoupdate: ".github/workflows/autoupdate.yml",
@@ -14,12 +15,27 @@ const WORKFLOW_PATHS = {
   lineBot: ".github/workflows/install-line-bot.yml",
 };
 
-// workflow_notifications CRUD（对齐 src/modules/workflow-notifications.js）
+// workflow_notifications CRUD（对齐 src/modules/workflow-notifications.js Gt L104-140）
 export async function createWorkflowNotification(d1, data) {
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const {
+    requestId, repo, workflowName, workflowPath, title, channel = "telegram",
+    chatId, messageId, eventName = "workflow_dispatch",
+    sourceType, sourceId, issueNumber, payloadJson,
+  } = data;
   await d1.prepare(
-    `INSERT INTO workflow_notifications (request_id, workflow_path, source_id, issue_number, chat_id, channel, status, created_at, updated_at)
-     VALUES (?,?,?,?,?,?, 'pending', datetime('now'), datetime('now'))`,
-  ).bind(requestId, workflowPath, sourceId ?? null, issueNumber ?? null, chatId ?? null, channel).run();
+    `INSERT INTO workflow_notifications (
+      id, request_id, repo, workflow_name, workflow_path, title, channel, chat_id, message_id,
+      event_name, status, workflow_ref, head_branch, head_sha, source_type, source_id, payload_json,
+      created_at, updated_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', NULL, NULL, NULL, ?, ?, ?, ?, ?)`,
+  ).bind(
+    id, requestId, repo, workflowName, workflowPath ?? null, title ?? null, channel,
+    chatId ?? null, messageId ?? null, eventName, sourceType ?? null, sourceId ?? null,
+    payloadJson ?? null, now, now,
+  ).run();
+  return id;
 }
 async function getNotificationByRequestId(d1, requestId) {
   const row = await d1.prepare("SELECT * FROM workflow_notifications WHERE request_id = ? LIMIT 1").bind(requestId).first();
@@ -61,11 +77,19 @@ async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefin
   if (!notif || notif.channel !== "telegram" || !notif.chat_id) return;
   const { Bot } = await import("grammy");
   const bot = new Bot(env.config.telegram.botToken, { client: { apiRoot: env.config.telegram.apiBaseUrl ?? "https://api.telegram.org" } });
+  const chatId = Number(notif.chat_id);
+  const messageId = notif.message_id != null ? Number(notif.message_id) : null;
+  const opts = { parse_mode: "MarkdownV2", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) };
   try {
-    if (notif.message_id) {
-      await bot.api.editMessageText(notif.chat_id, notif.message_id, text, { parse_mode: "MarkdownV2", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
+    if (messageId) {
+      try {
+        await bot.api.editMessageText(chatId, messageId, text, opts);
+      } catch (editErr) {
+        logError("log.webhook.handleFailed", { error: editErr?.message ?? String(editErr) });
+        await bot.api.sendMessage(chatId, text, opts);
+      }
     } else {
-      await bot.api.sendMessage(notif.chat_id, text, { parse_mode: "MarkdownV2", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
+      await bot.api.sendMessage(chatId, text, opts);
     }
     await updateNotification(env.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() });
   } catch (e) {
@@ -79,29 +103,34 @@ function autoupdateNotifyText(conclusion, lang) {
   if (conclusion === "success") return t("core.coreUpdateSuccess", {}, lang);
   if (conclusion === "cancelled") return t("core.coreUpdateCancelled", {}, lang);
   if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("core.coreUpdateFailed", {}, lang);
-  return t("core.coreUpdateEnded", { result: conclusion }, lang);
+  return t("core.coreUpdateEnded", { result: escapeMdV2(conclusion) }, lang);
 }
 function skillsNotifyText(sourceType, conclusion, name, target, lang) {
   const action = sourceType === "skill_remove" ? t("skills.action_remove", {}, lang)
     : sourceType === "skill_update" ? t("skills.action_update", {}, lang)
     : t("skills.action_install", {}, lang);
-  if (conclusion === "success" && sourceType === "skill_remove") return t("skills.removed_message", { name, target }, lang);
-  if (conclusion === "success") return t("skills.installed_message", { name, action, target }, lang);
-  if (conclusion === "cancelled") return t("skills.cancelled_message", { name, action }, lang);
-  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("skills.failed_message", { name, action }, lang);
-  return t("skills.ended_message", { name, action, result: conclusion }, lang);
+  const eName = escapeMdV2(name);
+  const eTarget = escapeMdV2(target);
+  const eAction = escapeMdV2(action);
+  if (conclusion === "success" && sourceType === "skill_remove") return t("skills.removed_message", { name: eName, target: eTarget }, lang);
+  if (conclusion === "success") return t("skills.installed_message", { name: eName, action: eAction, target: eTarget }, lang);
+  if (conclusion === "cancelled") return t("skills.cancelled_message", { name: eName, action: eAction }, lang);
+  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("skills.failed_message", { name: eName, action: eAction }, lang);
+  return t("skills.ended_message", { name: eName, action: eAction, result: escapeMdV2(conclusion) }, lang);
 }
 function templatesNotifyText(conclusion, name, lang) {
-  if (conclusion === "success") return t("templates.installed_message", { name }, lang);
-  if (conclusion === "cancelled") return t("templates.cancelled_message", { name }, lang);
-  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("templates.failed_message", { name }, lang);
-  return t("templates.ended_message", { name, result: conclusion }, lang);
+  const eName = escapeMdV2(name);
+  if (conclusion === "success") return t("templates.installed_message", { name: eName }, lang);
+  if (conclusion === "cancelled") return t("templates.cancelled_message", { name: eName }, lang);
+  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("templates.failed_message", { name: eName }, lang);
+  return t("templates.ended_message", { name: eName, result: escapeMdV2(conclusion) }, lang);
 }
 function lineBotNotifyText(conclusion, name, channelId, lang) {
-  if (conclusion === "success") return t("line.deployed_message", { name }, lang);
-  if (conclusion === "cancelled") return t("line.deploy_cancelled_message_callback", { name }, lang);
-  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("line.deploy_failed_message_callback", { name }, lang);
-  return t("line.deploy_ended_message_callback", { name, result: conclusion }, lang);
+  const eName = escapeMdV2(name);
+  if (conclusion === "success") return t("line.deployed_message", { name: eName }, lang);
+  if (conclusion === "cancelled") return t("line.deploy_cancelled_message_callback", { name: eName }, lang);
+  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("line.deploy_failed_message_callback", { name: eName }, lang);
+  return t("line.deploy_ended_message_callback", { name: eName, result: escapeMdV2(conclusion) }, lang);
 }
 
 export function registerWorkflowRunHandlers(webhooks, env) {

@@ -75,7 +75,8 @@ export async function updateSchedule(db, id, fields) {
     let val = v;
     if (k === "rulePayload" && typeof v !== "string") val = JSON.stringify(v ?? null);
     if (k === "shouldNotify") val = v ? 1 : 0;
-    if (val === null || val === undefined) continue; // COALESCE 语义：null 不覆盖
+    if (val === undefined) continue; // undefined = skip (not provided)
+    // null is explicitly written (clears the field, matching old bundle behavior)
     sets.push(`${col} = ?`);
     params.push(val);
   }
@@ -145,17 +146,30 @@ export async function persistScheduleRun(db, id, { lastRunAt, lastError, nextRun
 }
 
 function safeParseJSON(s) {
-  if (!s || typeof s !== "string") return null;
+  if (s == null) return {};
+  if (typeof s !== "string") return s;
   try { return JSON.parse(s) ?? {}; } catch { return {}; }
+}
+
+function trimNull(s) {
+  if (s == null) return null;
+  const v = typeof s === "string" ? s.trim() : s;
+  return v === "" ? null : v;
 }
 
 function camelSchedule(row) {
   return {
-    id: row.id, repo: row.repo, issueNumber: row.issue_number, chatId: row.chat_id,
-    prompt: row.prompt, eventData: row.event_data, ruleType: row.rule_type, rulePayload: safeParseJSON(row.rule_payload),
-    timezone: row.timezone, nextRunAt: row.next_run_at, shouldNotify: !!row.should_notify,
-    status: row.status, lastRunAt: row.last_run_at, lastError: row.last_error,
-    lockedUntil: row.locked_until, cancelledAt: row.cancelled_at,
+    id: row.id, repo: row.repo,
+    issueNumber: row.issue_number != null ? Number(row.issue_number) : null,
+    chatId: row.chat_id != null ? Number(row.chat_id) : null,
+    prompt: row.prompt,
+    eventData: trimNull(row.event_data),
+    ruleType: row.rule_type, rulePayload: safeParseJSON(row.rule_payload),
+    timezone: row.timezone, nextRunAt: row.next_run_at,
+    shouldNotify: !!row.should_notify,
+    status: row.status,
+    lastRunAt: row.last_run_at ?? null, lastError: row.last_error ?? null,
+    lockedUntil: row.locked_until ?? null, cancelledAt: row.cancelled_at ?? null,
     createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }

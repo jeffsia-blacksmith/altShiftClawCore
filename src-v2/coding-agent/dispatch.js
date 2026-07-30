@@ -5,10 +5,11 @@
 import { t, glang } from "../i18n/index.js";
 import { logInfo } from "../i18n/log.js";
 
-// ai/meta markers（对齐 il/en markers）
+// ai/meta markers（对齐 il/en markers — old bundle il L6561-6563）
+// Skip: brain-result, tool-run, line-meta — NOT telegram-meta (human comments carry telegram-meta)
 const SYSTEM_MARKERS = [
   /<!--\s*githubclaw-brain-result:/,
-  /<!--\s*telegram-meta:/,
+  /<!--\s*githubclaw-tool-run:/,
   /<!--\s*line-meta:/,
 ];
 
@@ -16,18 +17,25 @@ function isSystemComment(body) {
   return SYSTEM_MARKERS.some((re) => re.test(body ?? ""));
 }
 
-function isScheduleFlowRecord(body) {
-  const m = body?.match(/<!--\s*githubclaw-(?:brain-result|comment-meta):\s*(\{[\s\S]*?\})\s*-->/);
-  if (!m) return false;
+// en/al: telegram-meta marker — old bundle al (L6567-6568) requires this
+function parseTelegramMeta(body) {
+  if (!body) return null;
+  const m = body.match(/<!--\s*telegram-meta:\s*(\{[\s\S]*?\})\s*-->/);
+  if (!m) return null;
   try {
-    return JSON.parse(m[1]).source === "schedule-flow";
-  } catch {
-    return false;
-  }
+    const meta = JSON.parse(m[1]);
+    if (typeof meta.chat_id !== "number") return null;
+    return meta;
+  } catch { return null; }
 }
 
 function hasCommentMeta(body) {
-  return /<!--\s*githubclaw-comment-meta:\s*\{[\s\S]*?\}\s*-->/.test(body ?? "");
+  return parseTelegramMeta(body) !== null;
+}
+
+function isScheduleFlowRecord(body) {
+  const meta = parseTelegramMeta(body);
+  return meta?.source === "schedule-flow";
 }
 
 function mediaStage(body) {
@@ -50,26 +58,29 @@ function isMediaFinalizedFromPending(newBody, oldBody) {
   return mediaStage(oldBody) === "pending";
 }
 
-// mu：剥离所有 HTML 注释/meta/HTML 标签，留下纯人类文本
+// mu：strip HTML comments + HTML tags but preserve code blocks (对齐旧 bundle mu/oE L19059-19072)
 function stripToUserMessage(body) {
   if (typeof body !== "string") return "";
-  return body
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<[^>]+>/g, "")
-    .replace(/```[\s\S]*?```/g, "")
-    .trim();
+  let s = body;
+  // Strip HTML comments (meta markers)
+  s = s.replace(/<!--[\s\S]*?-->/g, "");
+  // Strip specific HTML tags but preserve content
+  s = s.replace(/<a\s[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "$2 ($1)");
+  s = s.replace(/<\/?(?:b|i|u|s|tg-spoiler|code|pre|blockquote)[^>]*>/gi, "");
+  // Strip "来自：" / "From:" lines
+  s = s.replace(/^(?:来自：|From:).*$/gm, "");
+  // Strip standalone --- separators
+  s = s.replace(/^---+$/gm, "");
+  return s.trim();
 }
 
-// cE：从 comment/issue body 解析 event_source / event_data
+// cE：从 telegram-meta 解析 event_source / event_data (对齐旧 bundle cE L19089-19099)
 function parseEventSource(issueBody, commentBody) {
   for (const body of [commentBody, issueBody]) {
-    const m = body?.match(/<!--\s*githubclaw-comment-meta:\s*(\{[\s\S]*?\})\s*-->/);
-    if (m) {
-      try {
-        const meta = JSON.parse(m[1]);
-        if (meta.source === "scheduled-trigger") return { eventSource: "cron", eventData: meta.event_data ?? "" };
-        return { eventSource: meta.event_source ?? "issue", eventData: meta.event_data ?? "" };
-      } catch {}
+    const meta = parseTelegramMeta(body);
+    if (meta) {
+      if (meta.source === "scheduled-trigger") return { eventSource: "cron", eventData: meta.event_data ?? "" };
+      if (meta.event_source) return { eventSource: meta.event_source, eventData: meta.event_data ?? "" };
     }
   }
   return { eventSource: "issue", eventData: "" };
@@ -115,16 +126,11 @@ function buildProgressCommentBody(userMessage, requestTelegramMeta = null) {
   return [trimmed, footer].filter(Boolean).join("\n\n");
 }
 
-// lE：提取 requestTelegramMeta（从 comment/issue body 的 brain-result/tool-run meta）
+// lE：提取 requestTelegramMeta（从 comment/issue body 的 telegram-meta — 对齐旧 bundle kr/ii L6560-6570）
 function extractRequestTelegramMeta(issueBody, commentBody) {
   for (const body of [commentBody, issueBody]) {
-    const m = body?.match(/<!--\s*githubclaw-(?:brain-result|tool-run):\s*(\{[\s\S]*?\})\s*-->/);
-    if (m) {
-      try {
-        const parsed = JSON.parse(m[1]);
-        if (parsed.requestTelegramMeta) return parsed.requestTelegramMeta;
-      } catch {}
-    }
+    const meta = parseTelegramMeta(body);
+    if (meta) return meta;
   }
   return null;
 }
@@ -228,22 +234,24 @@ export async function dispatchCodingAgent(payload, env) {
     return { issueNumber: issue.number, progressCommentId };
   } catch (e) {
     const errMsg = e?.message ?? "";
-    const isNotFound = /could not be found|not found/i.test(errMsg);
-    const isDisabled = /disabled/i.test(errMsg) && !isNotFound;
+    // og: workflow not found (对齐旧 bundle og L19149-19172)
+    const isNotFound = /could not be found|not found/i.test(errMsg) && /workflow/i.test(errMsg);
+    // fE: workflow disabled (对齐旧 bundle fE L19140-19148)
+    const isDisabled = /cannot trigger a 'workflow_dispatch' on a disabled workflow|workflow_dispatch.*disabled workflow/i.test(errMsg);
     if (progressCommentId != null && isNotFound) {
       await octokit.rest.issues.deleteComment({ owner, repo, comment_id: progressCommentId }).catch(() => {});
     } else if (progressCommentId != null) {
       const lang = glang();
+      const name = userMessage || t("system.source_name", {}, lang);
       let errorBody;
       if (isDisabled) {
-        // Workflow disabled → resting message（对齐旧 bundle fE/bE L19216-19224）
         errorBody = buildProgressCommentBody(
-          `${t("core.restingMessage1", {}, lang)}\n${t("core.restingMessage2", {}, lang)}\n${t("core.restingMessage3", {}, lang)}`,
+          `${t("core.restingMessage1", { name }, lang)}\n\n${t("core.restingMessage2", {}, lang)}\n${t("core.restingMessage3", {}, lang)}`,
           requestTelegramMeta,
         );
       } else {
         errorBody = buildProgressCommentBody(
-          `${t("core.dispatchFailed", { name: t("system.source_name", {}, lang) }, lang)}\n${t("core.dispatchErrorLine", { error: errMsg || t("core.unknownError", {}, lang) }, lang)}`,
+          `${t("core.dispatchFailed", { name }, lang)}\n\n${t("core.dispatchErrorLine", { error: errMsg || t("core.unknownError", {}, lang) }, lang)}`,
           requestTelegramMeta,
         );
       }

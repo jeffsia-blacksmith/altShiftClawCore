@@ -25,8 +25,10 @@ const result = await build({
   // @octokit/webhooks-methods exports node (createHmac) + web (crypto.subtle) 分支；
   // Workers 运行时只有 Web Crypto（crypto.subtle），所以选 browser 分支。
   conditions: ["browser"],
-  // 旧 bundle 用 alias:{crypto:empty.js} 绕过 tweetnacl 的 Node crypto fallback；
-  // src-v2 不再内联 tweetnacl，无需该 alias。
+  // src-v2 复用旧 bundle 的 tweetnacl 用于 repo secret 加密（libsodium sealed box）。
+  // tweetnacl/nacl-fast.js 含 `require('crypto')` Node fallback；Workers 用全局 `crypto`
+  // 走不到该分支，故用 empty.js 占位（同旧 bundle build.mjs）。
+  alias: { crypto: join(root, "src/modules/empty.js") },
 });
 const output = result.outputFiles[0].text;
 
