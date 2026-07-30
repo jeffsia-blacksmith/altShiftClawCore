@@ -135,22 +135,28 @@ graph TB
 
 ```mermaid
 flowchart LR
+    classDef req fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef mw fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
+    classDef route fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef gh fill:#f6f8fa,stroke:#586069,color:#24292e
+    classDef tg fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+
     subgraph 请求入口
-        REQ["HTTP 请求"]
+        REQ["HTTP 请求"]:::req
     end
 
     subgraph "中间件链 (顺序执行)"
-        M1["① config 中间件<br/>buildConfig(env)"]
-        M2["② 服务中间件<br/>D1 migration + octokit + store + ai"]
-        M3["③ 语言中间件<br/>getLanguage → ctx.language"]
+        M1["① config 中间件<br/>buildConfig(env)"]:::mw
+        M2["② 服务中间件<br/>D1 migration + octokit + store + ai"]:::mw
+        M3["③ 语言中间件<br/>getLanguage → ctx.language"]:::mw
     end
 
     subgraph 路由匹配
-        R1["GET / → 健康检查"]
-        R2["GET /health → 健康检查"]
-        R3["POST /github/webhook → GitHub 签名验证"]
-        R4["GET /api/active-issue → 查询活跃龙虾"]
-        R5["POST * → Telegram Webhook"]
+        R1["GET / → 健康检查"]:::route
+        R2["GET /health → 健康检查"]:::route
+        R3["POST /github/webhook → GitHub 签名验证"]:::route
+        R4["GET /api/active-issue → 查询活跃龙虾"]:::route
+        R5["POST * → Telegram Webhook"]:::route
     end
 
     REQ --> M1 --> M2 --> M3
@@ -160,8 +166,8 @@ flowchart LR
     M3 --> R4
     M3 --> R5
 
-    R3 -->|验证通过| GHEVENT["GitHub Webhook 事件分发"]
-    R5 -->|Secret 验证 + 路径匹配| BOT["grammY Bot.handleUpdate"]
+    R3 -->|验证通过| GHEVENT["GitHub Webhook 事件分发"]:::gh
+    R5 -->|Secret 验证 + 路径匹配| BOT["grammY Bot.handleUpdate"]:::tg
 ```
 
 ---
@@ -170,40 +176,48 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    UPDATE["Telegram Update"]
+    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef guard fill:#fce4ec,stroke:#c62828,color:#c62828
+    classDef svc fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
+    classDef cmd fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef flow fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef media fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    classDef err fill:#ffebee,stroke:#b71c1c,color:#b71c1c
+
+    UPDATE["Telegram Update"]:::entry
 
     subgraph "① 访问控制 (access-guard.js)"
-        AG["默认拒绝策略<br/>检查 FROM_ID / CHAT_ID / 消息长度"]
+        AG["默认拒绝策略<br/>检查 FROM_ID / CHAT_ID / 消息长度"]:::guard
     end
 
     subgraph "② 服务注入 (bot.js)"
-        SVC["ctx.services = {octokit, store, d1, ai, config}<br/>ctx.language = getLanguage()<br/>ctx.t = i18nT()"]
+        SVC["ctx.services = {octokit, store, d1, ai, config}<br/>ctx.language = getLanguage()<br/>ctx.t = i18nT()"]:::svc
     end
 
     subgraph "③ 命令 + 回调路由 (Composer)"
-        CMD["17 个 slash 命令"]
-        CB["62 个 callbackQuery 回调"]
-        MENUCB["8 个 command_menu 回调"]
+        CMD["17 个 slash 命令"]:::cmd
+        CB["62 个 callbackQuery 回调"]:::cmd
+        MENUCB["8 个 command_menu 回调"]:::cmd
     end
 
     subgraph "④ message:text 续接链"
-        T1["handleLlmText<br/>(LLM API Key / Model 输入)"]
-        T2["handleSkillEnvText<br/>(技能环境变量收集)"]
-        T3["handleTemplateEnvText<br/>(模板环境变量收集)"]
-        T4["handleFlowText<br/>(/new 流程)"]
-        T5["handleEditText<br/>(/edit 流程)"]
-        T6["handleScheduleText<br/>(排程流程)"]
-        T7["handleLineText<br/>(LINE Bot 配置)"]
-        T8["handleCommentOnIssue<br/>(默认：转送 issue 评论)"]
-        T9["handleNaturalLanguageCommand<br/>(AI 工作流派工)"]
+        T1["handleLlmText<br/>(LLM API Key / Model 输入)"]:::flow
+        T2["handleSkillEnvText<br/>(技能环境变量收集)"]:::flow
+        T3["handleTemplateEnvText<br/>(模板环境变量收集)"]:::flow
+        T4["handleFlowText<br/>(/new 流程)"]:::flow
+        T5["handleEditText<br/>(/edit 流程)"]:::flow
+        T6["handleScheduleText<br/>(排程流程)"]:::flow
+        T7["handleLineText<br/>(LINE Bot 配置)"]:::flow
+        T8["handleCommentOnIssue<br/>(默认：转送 issue 评论)"]:::flow
+        T9["handleNaturalLanguageCommand<br/>(AI 工作流派工)"]:::flow
     end
 
     subgraph "⑤ 媒体处理"
-        MEDIA["photo (单条+相册)<br/>voice / video / audio / document"]
+        MEDIA["photo (单条+相册)<br/>voice / video / audio / document"]:::media
     end
 
     subgraph "⑥ 全局错误捕获"
-        CATCH["bot.catch<br/>回复 ❌ + core.unknownError"]
+        CATCH["bot.catch<br/>回复 ❌ + core.unknownError"]:::err
     end
 
     UPDATE --> AG --> SVC --> CMD --> CB --> MENUCB
@@ -220,42 +234,48 @@ flowchart TB
 
 ```mermaid
 flowchart TB
+    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef event fill:#f6f8fa,stroke:#586069,color:#24292e
+    classDef init fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef relay fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef notify fill:#fff3e0,stroke:#e65100,color:#e65100
+
     subgraph "GitHub Webhook 入口"
-        SIGN["签名验证<br/>(@octokit/webhooks)"]
+        SIGN["签名验证<br/>(@octokit/webhooks)"]:::entry
     end
 
     subgraph "7 个事件处理器"
-        E1["installation.created<br/>→ 自动初始化"]
-        E2["issues.opened<br/>→ 日志记录"]
-        E3["issue_comment.created<br/>→ 转送 + 派工"]
-        E4["issue_comment.edited<br/>→ 转送 + 派工"]
-        E5["workflow_run.requested<br/>→ D1 记录更新"]
-        E6["workflow_run.in_progress<br/>→ D1 记录更新"]
-        E7["workflow_run.completed<br/>→ Telegram 通知"]
+        E1["installation.created<br/>→ 自动初始化"]:::event
+        E2["issues.opened<br/>→ 日志记录"]:::event
+        E3["issue_comment.created<br/>→ 转送 + 派工"]:::event
+        E4["issue_comment.edited<br/>→ 转送 + 派工"]:::event
+        E5["workflow_run.requested<br/>→ D1 记录更新"]:::event
+        E6["workflow_run.in_progress<br/>→ D1 记录更新"]:::event
+        E7["workflow_run.completed<br/>→ Telegram 通知"]:::event
     end
 
     subgraph "自动初始化 (installation.created)"
-        AI1["创建第一个 Issue (龙虾)"]
-        AI2["创建 orphan 分支 issue-N"]
-        AI3["写入 workflow yml"]
-        AI4["D1 记录 issue_metadata"]
-        AI5["设置 INIT_GITHUB_CLAW=false<br/>Repo Variable"]
-        AI6["发送欢迎消息到 Telegram"]
+        AI1["创建第一个 Issue (龙虾)"]:::init
+        AI2["创建 orphan 分支 issue-N"]:::init
+        AI3["写入 workflow yml"]:::init
+        AI4["D1 记录 issue_metadata"]:::init
+        AI5["设置 INIT_GITHUB_CLAW=false<br/>Repo Variable"]:::init
+        AI6["发送欢迎消息到 Telegram"]:::init
     end
 
     subgraph "评论转送 (issue_comment)"
-        RC1["跳过条件检查<br/>(bot echo / line / schedule)"]
-        RC2["解析 telegram-meta → chat_id"]
-        RC3["转送到 Telegram<br/>(含图片检测 + MarkdownV2)"]
-        RC4["Coding-Agent 派工<br/>(检查 branch + workflow)"]
+        RC1["跳过条件检查<br/>(bot echo / line / schedule)"]:::relay
+        RC2["解析 telegram-meta → chat_id"]:::relay
+        RC3["转送到 Telegram<br/>(含图片检测 + MarkdownV2)"]:::relay
+        RC4["Coding-Agent 派工<br/>(检查 branch + workflow)"]:::relay
     end
 
     subgraph "Workflow 完成通知"
-        WN1["查询 D1 notification<br/>(by request_id / run_id)"]
-        WN2["匹配 workflow 类型<br/>(autoupdate/skills/templates/lineBot)"]
-        WN3["发送 Telegram 通知<br/>(MarkdownV2 转义)"]
-        WN4["skills 成功 → 建 issue 评论"]
-        WN5["line-bot 成功 → 发送 post-install 键盘"]
+        WN1["查询 D1 notification<br/>(by request_id / run_id)"]:::notify
+        WN2["匹配 workflow 类型<br/>(autoupdate/skills/templates/lineBot)"]:::notify
+        WN3["发送 Telegram 通知<br/>(MarkdownV2 转义)"]:::notify
+        WN4["skills 成功 → 建 issue 评论"]:::notify
+        WN5["line-bot 成功 → 发送 post-install 键盘"]:::notify
     end
 
     SIGN --> E1 & E2 & E3 & E4 & E5 & E6 & E7
@@ -275,33 +295,39 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    COMMENT["GitHub Issue 评论<br/>(人类发送)"]
+    classDef input fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef gate fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef exec fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef ok fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef err fill:#ffebee,stroke:#b71c1c,color:#b71c1c
+
+    COMMENT["GitHub Issue 评论<br/>(人类发送)"]:::input
 
     subgraph "派工门控 (dispatch.js)"
-        G1["isSystemComment?<br/>跳过 brain-result/tool-run/line-meta"]
-        G2["isScheduleFlowRecord?<br/>跳过排程记录"]
-        G3["hasCommentMeta?<br/>需要 telegram-meta 标记"]
-        G4["isMediaPending?<br/>跳过未完成的媒体"]
-        G5["stripToUserMessage<br/>提取纯用户消息"]
-        G6["checkAcceptsDispatch<br/>检查 branch + workflow + enabled"]
+        G1["isSystemComment?<br/>跳过 brain-result/tool-run/line-meta"]:::gate
+        G2["isScheduleFlowRecord?<br/>跳过排程记录"]:::gate
+        G3["hasCommentMeta?<br/>需要 telegram-meta 标记"]:::gate
+        G4["isMediaPending?<br/>跳过未完成的媒体"]:::gate
+        G5["stripToUserMessage<br/>提取纯用户消息"]:::gate
+        G6["checkAcceptsDispatch<br/>检查 branch + workflow + enabled"]:::gate
     end
 
     subgraph "派工执行"
-        D1["提取 requestTelegramMeta"]
-        D2["创建 progress comment<br/>(githubclaw-brain-result 标记)"]
-        D3["构建 dispatch inputs<br/>(issue_number, comment_id, event_source...)"]
-        D4["createWorkflowDispatch<br/>→ issue-N.yml"]
+        D1["提取 requestTelegramMeta"]:::exec
+        D2["创建 progress comment<br/>(githubclaw-brain-result 标记)"]:::exec
+        D3["构建 dispatch inputs<br/>(issue_number, comment_id, event_source...)"]:::exec
+        D4["createWorkflowDispatch<br/>→ issue-N.yml"]:::exec
     end
 
     subgraph "错误处理"
-        E1["not found → 删除 progress comment"]
-        E2["disabled → 回复 restingMessage"]
-        E3["其他 → 回复 dispatchFailed"]
+        E1["not found → 删除 progress comment"]:::err
+        E2["disabled → 回复 restingMessage"]:::err
+        E3["其他 → 回复 dispatchFailed"]:::err
     end
 
     COMMENT --> G1 -->|否| G2 -->|否| G3 -->|有 meta| G4 -->|否| G5 --> G6
     G6 -->|通过| D1 --> D2 --> D3 --> D4
-    D4 -->|成功| OK["✅ 派工完成"]
+    D4 -->|成功| OK["✅ 派工完成"]:::ok
     D4 -->|失败| E1 & E2 & E3
 ```
 
@@ -311,33 +337,37 @@ flowchart TB
 
 ```mermaid
 flowchart TB
+    classDef create fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef rule fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+
     subgraph "排程创建流程 (Telegram)"
-        S1["/set_schedule 回调<br/>→ awaiting_prompt"]
-        S2["用户输入任务描述<br/>→ awaiting_time"]
-        S3["AI 时间解析<br/>(Workers AI + fallback)"]
-        S4["用户输入 payload<br/>→ createSchedule"]
-        S5["onScheduleAction<br/>建 issue comment + 发 config card + status card"]
+        S1["/set_schedule 回调<br/>→ awaiting_prompt"]:::create
+        S2["用户输入任务描述<br/>→ awaiting_time"]:::create
+        S3["AI 时间解析<br/>(Workers AI + fallback)"]:::create
+        S4["用户输入 payload<br/>→ createSchedule"]:::create
+        S5["onScheduleAction<br/>建 issue comment + 发 config card + status card"]:::create
     end
 
     subgraph "computeNextRun (10+ 规则类型)"
-        NR1["once → 固定时间"]
-        NR2["every_N_minutes → +N 分钟"]
-        NR3["interval → +N 分钟"]
-        NR4["minutely → 对齐分钟"]
-        NR5["daily → 每天指定时刻"]
-        NR6["hourly → 每小时指定分"]
-        NR7["weekly → 指定星期几"]
-        NR8["weekday → 周一到周五"]
-        NR9["weekenday → 周六周日"]
-        NR10["cron → 完整 cron 表达式解析"]
+        NR1["once → 固定时间"]:::rule
+        NR2["every_N_minutes → +N 分钟"]:::rule
+        NR3["interval → +N 分钟"]:::rule
+        NR4["minutely → 对齐分钟"]:::rule
+        NR5["daily → 每天指定时刻"]:::rule
+        NR6["hourly → 每小时指定分"]:::rule
+        NR7["weekly → 指定星期几"]:::rule
+        NR8["weekday → 周一到周五"]:::rule
+        NR9["weekenday → 周六周日"]:::rule
+        NR10["cron → 完整 cron 表达式解析"]:::rule
     end
 
     subgraph "Cron 定时处理 (scheduled handler)"
-        C1["fetchDueSchedules<br/>查询到期排程"]
-        C2["acquireScheduleLock<br/>5 分钟锁"]
-        C3["建 issue 评论<br/>+ 写 user.md artifact"]
-        C4["computeNextRunState<br/>计算下次运行"]
-        C5["persistScheduleRun<br/>更新 D1 + 释放锁"]
+        C1["fetchDueSchedules<br/>查询到期排程"]:::cron
+        C2["acquireScheduleLock<br/>5 分钟锁"]:::cron
+        C3["建 issue 评论<br/>+ 写 user.md artifact"]:::cron
+        C4["computeNextRunState<br/>计算下次运行"]:::cron
+        C5["persistScheduleRun<br/>更新 D1 + 释放锁"]:::cron
     end
 
     S1 --> S2 --> S3 --> S4 --> S5
@@ -431,78 +461,89 @@ erDiagram
 
 ```mermaid
 flowchart TB
+    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef http fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
+    classDef config fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef data fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef github fill:#f6f8fa,stroke:#586069,color:#24292e
+    classDef telegram fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef cmd fill:#e3f2fd,stroke:#0086c4,color:#0086c4
+    classDef flow fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef media fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+
     subgraph "入口层"
-        WORKER["worker.js"]
+        WORKER["worker.js"]:::entry
     end
 
     subgraph "HTTP 层"
-        ROUTES["http/routes.js"]
-        GHW["http/github-webhook.js"]
-        TGW["http/telegram-webhook.js"]
+        ROUTES["http/routes.js"]:::http
+        GHW["http/github-webhook.js"]:::http
+        TGW["http/telegram-webhook.js"]:::http
     end
 
     subgraph "配置 + i18n"
-        CONFIG["config.js"]
-        I18N["i18n/index.js"]
-        LANG["i18n/language.js"]
-        LOG["i18n/log.js"]
+        CONFIG["config.js"]:::config
+        I18N["i18n/index.js"]:::config
+        LANG["i18n/language.js"]:::config
+        LOG["i18n/log.js"]:::config
     end
 
     subgraph "数据层"
-        D1["db/d1.js"]
-        KV["db/kv-state.js"]
-        SCHED["db/schedules.js"]
+        D1["db/d1.js"]:::data
+        KV["db/kv-state.js"]:::data
+        SCHED["db/schedules.js"]:::data
     end
 
     subgraph "GitHub 层"
-        OCTO["github/octokit.js"]
-        BRANCH["github/branches.js"]
-        SECRET["github/secrets.js"]
-        WH_INDEX["github/webhooks/index.js"]
-        WH_INST["github/webhooks/installation.js"]
-        WH_IC["github/webhooks/issue-comment.js"]
-        WH_WR["github/webhooks/workflow-run.js"]
-        WH_META["github/webhooks/meta.js"]
+        OCTO["github/octokit.js"]:::github
+        BRANCH["github/branches.js"]:::github
+        SECRET["github/secrets.js"]:::github
+        WH_INDEX["github/webhooks/index.js"]:::github
+        WH_INST["github/webhooks/installation.js"]:::github
+        WH_IC["github/webhooks/issue-comment.js"]:::github
+        WH_WR["github/webhooks/workflow-run.js"]:::github
+        WH_META["github/webhooks/meta.js"]:::github
     end
 
     subgraph "Telegram 层"
-        BOT["telegram/bot.js"]
-        GUARD["telegram/access-guard.js"]
-        STATUS["telegram/status-card.js"]
-        COMMENT["telegram/comment-on-issue.js"]
-        AI_INF["telegram/ai-inference.js"]
-        EDGE["telegram/edge-replies.js"]
-        MARKDOWN["telegram/markdown.js"]
-        KEYBOARD["telegram/keyboards.js"]
+        BOT["telegram/bot.js"]:::telegram
+        GUARD["telegram/access-guard.js"]:::telegram
+        STATUS["telegram/status-card.js"]:::telegram
+        COMMENT["telegram/comment-on-issue.js"]:::telegram
+        AI_INF["telegram/ai-inference.js"]:::telegram
+        EDGE["telegram/edge-replies.js"]:::telegram
+        MARKDOWN["telegram/markdown.js"]:::telegram
+        KEYBOARD["telegram/keyboards.js"]:::telegram
     end
 
     subgraph "命令层"
-        CMD_START["commands/start.js"]
-        CMD_LIST["commands/list.js"]
-        CMD_HELP["commands/help.js"]
-        CMD_OTHER["commands/*.js (14个)"]
+        CMD_START["commands/start.js"]:::cmd
+        CMD_LIST["commands/list.js"]:::cmd
+        CMD_HELP["commands/help.js"]:::cmd
+        CMD_OTHER["commands/*.js (14个)"]:::cmd
     end
 
     subgraph "流程层"
-        FLOW_NEW["flows/new-flow.js"]
-        FLOW_EDIT["flows/edit-flow.js"]
-        FLOW_SCHED["flows/schedule-flow.js"]
-        FLOW_LLM["flows/llm/llm.js"]
-        FLOW_SKILLS["flows/skills-callbacks.js"]
-        FLOW_TPL["flows/templates-callbacks.js"]
-        FLOW_LINE["flows/line-bot.js"]
-        FLOW_CB["flows/callbacks.js"]
-        FLOW_STATE["flows/state.js"]
+        FLOW_NEW["flows/new-flow.js"]:::flow
+        FLOW_EDIT["flows/edit-flow.js"]:::flow
+        FLOW_SCHED["flows/schedule-flow.js"]:::flow
+        FLOW_LLM["flows/llm/llm.js"]:::flow
+        FLOW_SKILLS["flows/skills-callbacks.js"]:::flow
+        FLOW_TPL["flows/templates-callbacks.js"]:::flow
+        FLOW_LINE["flows/line-bot.js"]:::flow
+        FLOW_CB["flows/callbacks.js"]:::flow
+        FLOW_STATE["flows/state.js"]:::flow
     end
 
     subgraph "媒体层"
-        RELAY["media/relay.js"]
-        ALBUM["media/album.js"]
+        RELAY["media/relay.js"]:::media
+        ALBUM["media/album.js"]:::media
     end
 
     subgraph "调度 + 派工"
-        CRON["scheduler/cron.js"]
-        DISPATCH["coding-agent/dispatch.js"]
+        CRON["scheduler/cron.js"]:::cron
+        DISPATCH["coding-agent/dispatch.js"]:::cron
     end
 
     WORKER --> ROUTES & CRON
@@ -530,28 +571,33 @@ flowchart TB
 
 ```mermaid
 flowchart LR
+    classDef guard fill:#fce4ec,stroke:#c62828,color:#c62828
+    classDef sign fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
+    classDef secret fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef i18n fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+
     subgraph "访问控制"
-        AG["AccessGuard (默认拒绝)"]
-        AG1["① 检查 FROM_ID"]
-        AG2["② 检查 CHAT_ID"]
-        AG3["③ 检查 chat.type = private"]
-        AG4["④ 检查消息长度"]
+        AG["AccessGuard (默认拒绝)"]:::guard
+        AG1["① 检查 FROM_ID"]:::guard
+        AG2["② 检查 CHAT_ID"]:::guard
+        AG3["③ 检查 chat.type = private"]:::guard
+        AG4["④ 检查消息长度"]:::guard
     end
 
     subgraph "Webhook 签名"
-        GS["GitHub: HMAC-SHA256<br/>(@octokit/webhooks)"]
-        TS["Telegram: Secret Token<br/>header 比对"]
+        GS["GitHub: HMAC-SHA256<br/>(@octokit/webhooks)"]:::sign
+        TS["Telegram: Secret Token<br/>header 比对"]:::sign
     end
 
     subgraph "Secret 加密"
-        SE1["获取 Repo Public Key"]
-        SE2["libsodium sealedBox 加密"]
-        SE3["写入 encrypted_value + key_id"]
+        SE1["获取 Repo Public Key"]:::secret
+        SE2["libsodium sealedBox 加密"]:::secret
+        SE3["写入 encrypted_value + key_id"]:::secret
     end
 
     subgraph "i18n 安全"
-        I18N1["MarkdownV2 转义<br/>所有动态值"]
-        I18N2["Secret redaction<br/>正则匹配敏感字段名"]
+        I18N1["MarkdownV2 转义<br/>所有动态值"]:::i18n
+        I18N2["Secret redaction<br/>正则匹配敏感字段名"]:::i18n
     end
 
     AG --> AG1 --> AG2 --> AG3 --> AG4
@@ -565,6 +611,7 @@ flowchart LR
 ## 十二、审计修复统计
 
 ```mermaid
+%%{init: {'themeVariables': {'pie1': '#1a73e8', 'pie2': '#e65100', 'pie3': '#2e7d32', 'pie4': '#7b1fa2'}}}%%
 pie title 4 轮审计修复分布 (132 项)
     "Round 1: 结构/缺失功能" : 46
     "Round 2: 致命行为 Bug" : 20
@@ -573,6 +620,7 @@ pie title 4 轮审计修复分布 (132 项)
 ```
 
 ```mermaid
+%%{init: {'themeVariables': {'pie1': '#b71c1c', 'pie2': '#e65100', 'pie3': '#2e7d32', 'pie4': '#1a73e8', 'pie5': '#7b1fa2', 'pie6': '#586069'}}}%%
 pie title 审计严重性分布
     "P0 Critical" : 11
     "P1 Major" : 20
