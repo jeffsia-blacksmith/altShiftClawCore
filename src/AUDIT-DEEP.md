@@ -1,81 +1,46 @@
-# Phase R — Deep Parity Audit (COMPLETE)
+# Phase R — Deep Parity Audit (Round 2 — Complete)
 
-> Final: 2026-07-29 (commit `e1c31e4`)
-> Method: 4 parallel subagents deep-comparing src-v2 against old bundle `src/index.js`
-
----
-
-## Final Result: 46/46 Fixed ✅
-
-| Category | Total | Fixed | Remaining |
-|----------|-------|-------|-----------|
-| P0 Critical | 11 | 11 ✅ | 0 |
-| P1 Major | 20 | 20 ✅ | 0 |
-| P2 Minor | 15 | 15 ✅ | 0 |
-| **Total** | **46** | **46** | **0** |
+> Final: 2026-07-30 (commit `0d78b46`)
+> Method: 6 parallel subagents doing behavior-level audit of src-v2 vs old bundle
 
 ---
 
-## P0 — Critical Issues (11/11 ✅)
+## Round 2 Audit Summary
 
-| # | Issue | Fix |
-|---|-------|-----|
-| P0-1 | current_edit stub | `initEditFlow(ctx)` full state machine |
-| P0-2 | AI inference dead code | wired into message:text chain |
-| P0-3 | template_reset naive commit | orphan pipeline (Er+ai+Sr+Vr+card) |
-| P0-4 | auto-init incomplete | branch+workflow+D1+repo variable |
-| P0-5 | osCreateFinalize edit mode | workflow sync + D1 persist always |
-| P0-6 | AI YAML regex parser | indent-aware parser |
-| P0-7 | computeNextRun 3/10 types | all 10+ rule types + tz math |
-| P0-8 | /schedules snake_case | camelCase reads |
-| P0-9 | /skills installed path | `.agents/skills` |
-| P0-10 | rulePayload not parsed | JSON.parse in camelSchedule |
-| P0-11 | relay no skip conditions | shouldSkipRelay() |
+Round 1 (46 items) was mostly structural/missing-feature fixes. Round 2 found **critical behavior bugs** where src-v2 code existed but was functionally broken.
 
-## P1 — Major Issues (20/20 ✅)
+### Round 2 Critical Fixes (all resolved ✅)
 
-| # | Issue | Fix |
-|---|-------|-----|
-| P1-1 | comment-on-issue message loss | always create comment |
-| P1-2 | schedule editMessageText | reply for new messages |
-| P1-3 | schedule no list rendering | numbered lists + keyboards |
-| P1-4 | schedule no closed-issue guard | closed check + delete-only kb |
-| P1-5 | schedule no \|chat suffix | source param + \|chat suffix |
-| P1-6 | callback name mismatch | skills_pick:/templates_pick: |
-| P1-7 | no pagination | 8/page, 2/row, prev/next, cancel |
-| P1-8 | no D1 notification records | createWorkflowNotification() |
-| P1-9 | /edit finalize incomplete | workflow sync + D1 always |
-| P1-10 | close no schedule cleanup | deleteSchedulesByIssue() |
-| P1-11 | line-bot editMessageText | reply + promptMessageId |
-| P1-12 | line-bot skip required fields | cancel-only keyboard |
-| P1-13 | line-bot no validation | bot_id/channel_id/utc_offset regex |
-| P1-14 | line-bot confirm card | detail lines |
-| P1-15 | workflow-run line-bot post-install | state + continue/skip keyboard |
-| P1-16 | /llm no model validation | validateModel() (5 providers) |
-| P1-17 | /list generic error | 401/403/404 mapping |
-| P1-18 | edit_keep_field no step guard | step === state.step check |
-| P1-19 | no per-callback error handler | bot.catch answers + replies |
-| P1-20 | no MarkdownV2 escaping | escapeMdV2() in AI replies |
+| Severity | Issue | Fix |
+|----------|-------|-----|
+| FATAL | dispatch.js `isSystemComment` rejected telegram-meta → dispatch never fired | Fixed: only rejects brain-result/tool-run/line-meta |
+| FATAL | dispatch.js `hasCommentMeta` required non-existent `githubclaw-comment-meta` | Fixed: now checks `telegram-meta` (matching old `al`) |
+| FATAL | `createWorkflowNotification` undeclared vars + wrong columns | Fixed: destructured, all NOT NULL columns, correct schema |
+| FATAL | `stripToUserMessage` stripped all code blocks | Fixed: preserves code blocks, targeted HTML tag strip |
+| FATAL | `parseEventSource` read non-existent marker | Fixed: reads `telegram-meta` (matching old `cE`) |
+| CRITICAL | `updateSchedule` skipped null → couldn't clear eventData/lastError | Fixed: null now writes (matching old bundle) |
+| CRITICAL | `camelSchedule` no Number coercion, no eventData trim | Fixed: Number(), trimNull(), ?? null |
+| CRITICAL | Secrets written as plaintext, not libsodium-encrypted | Fixed: `github/secrets.js` with proper encryption |
+| CRITICAL | `command_menu_*` reply-keyboard callbacks missing | Fixed: registered 8 callbacks |
+| HIGH | LLM text handler ordering wrong (after other flows) | Fixed: moved before other flows |
+| HIGH | Template manifest `need_model`/`model_var` snake_case not read | Fixed: reads both cases |
+| HIGH | Template models not normalized (strings→{value,label}) | Fixed: normalized |
+| HIGH | `templates_model_pick` wrong error message | Fixed: proper error text |
+| HIGH | workflow-run no MarkdownV2 escaping | Fixed: escapeMdV2 on all dynamic values |
+| HIGH | workflow-run no editMessageText→sendMessage fallback | Fixed: fallback added |
+| HIGH | workflow-run chat_id/message_id as strings not numbers | Fixed: Number() |
+| MEDIUM | Schedule no state-integrity guards | Fixed: validates required fields + scheduleId |
+| MEDIUM | Schedule no issue-status card after config card | Fixed: sends status card (old `Es` call) |
+| MEDIUM | Error regex too broad (spurious comment deletion) | Fixed: requires workflow context |
+| MEDIUM | Resting/dispatchFailed missing name param + blank line | Fixed: name from userMessage, blank line |
 
-## P2 — Minor Issues (15/15 ✅)
+### Round 2 Additional Fixes
 
-| # | Issue | Fix |
-|---|-------|-----|
-| P2-1 | 102 log.* keys not called | logInfo/logWarn/logError in 18 files (43 active calls) |
-| P2-2 | config optional-null | required-throw when bot token set |
-| P2-3 | webhookPath normalization | prepend / |
-| P2-4 | AI model defaults | @cf/openai/gpt-oss-20b |
-| P2-5 | status card File: label | hardcoded "File:" |
-| P2-6 | status card no runs query | listWorkflowRuns running detection |
-| P2-7 | schedule card duplicate fields | removed prompt inline + notifyShort |
-| P2-8 | nextRunAt raw ISO | formatLocalTime() with Asia/Taipei |
-| P2-9 | no template revalidation | revalidate on new_template_select |
-| P2-10 | single media no user.md | write artifact |
-| P2-11 | album no jsonl/user.md | write both |
-| P2-12 | no-branch media no header | telegram-meta + messageFromSource |
-| P2-13 | /api/active-issue missing | GET /api/active-issue route |
-| P2-14 | cross-tree import | inlined workflow_notifications DDL |
-| P2-15 | dispatch error classification | disabled vs not-found vs generic |
+| Issue | Fix |
+|-------|-----|
+| `skills_remove_confirm` missing D1 notification | Added `createWorkflowNotification` call |
+| `extractRequestId` regex diverges from old | Anchored, alphanumeric |
+| `isScheduleFlowRecord` parsed wrong marker | Now reads telegram-meta |
 
 ---
 
@@ -85,9 +50,9 @@
 |--------|-------|
 | Guardrails v2 | 40/40 ✅ |
 | Guardrails old | 14/14 ✅ |
-| **Total guardrails** | **54/54 ✅** |
-| Build | 616,393 bytes ✅ |
-| i18n parity | 813×2, 0 mismatch ✅ |
-| i18n real gap | 0 ✅ |
-| Source lines | ~7,700 (38% of old 20,195) |
-| Audit items | **46/46 fixed** ✅ |
+| **Total** | **54/54 ✅** |
+| Build | 657,168 bytes ✅ |
+| i18n parity | 813×2, 0 gap ✅ |
+| Source lines | ~8,000 (40% of old 20,195) |
+| Round 1 audit items | 46/46 ✅ |
+| Round 2 critical fixes | 20/20 ✅ |
