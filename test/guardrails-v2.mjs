@@ -17,7 +17,7 @@ import {
 } from "./lib/mock.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const SRC = join(root, "../src-v2/worker.js");
+const SRC = join(root, "../src/worker.js");
 const OUT = join(root, ".test-bundle-v2.mjs");
 
 await build({
@@ -917,8 +917,8 @@ await hitTg("POST text (no active issue) → no_active_issue reply", baseEnv({ T
 console.log("guardrails-v2: i18n parity (en/zh leaf-key)");
 await (async () => {
   try {
-    const en = JSON.parse(readFileSync(join(root, "../src-v2/i18n/en.json"), "utf8"));
-    const zh = JSON.parse(readFileSync(join(root, "../src-v2/i18n/zh-CN.json"), "utf8"));
+    const en = JSON.parse(readFileSync(join(root, "../src/i18n/en.json"), "utf8"));
+    const zh = JSON.parse(readFileSync(join(root, "../src/i18n/zh-CN.json"), "utf8"));
     const leaves = (o, p = "") =>
       Object.entries(o).flatMap(([k, v]) =>
         v && typeof v === "object" ? leaves(v, `${p}${k}.`) : [`${p}${k}`]
@@ -944,7 +944,7 @@ await (async () => {
 console.log("guardrails-v2: i18n t() key resolution + placeholders");
 await (async () => {
   try {
-    const { t } = await import(`file://${join(root, "../src-v2/i18n/index.js")}`);
+    const { t } = await import(`file://${join(root, "../src/i18n/index.js")}`);
     // EN key resolution
     const enHealth = t("core.workflowStatusCard", {}, "en");
     if (typeof enHealth !== "string" || enHealth.length === 0)

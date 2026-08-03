@@ -1,7 +1,7 @@
 // build-v2.mjs — src-v2/ 重写版打包（side-by-side，§10.3）
 // 产物：GitHubClawCore/index.v2.js（shadow 阶段不接流量）
 // 用法：
-//   node build-v2.mjs            # src-v2/worker.js → GitHubClawCore/index.v2.js（minified）
+//   node build-v2.mjs            # src/worker.js → GitHubClawCore/index.v2.js（minified）
 //   node build-v2.mjs --check    # 只打包到暂存并比对，不覆写
 // 与 build.mjs（旧 bundle）并存，互不干扰；swap 时机由 §10.8 验收决定。
 import { build } from "esbuild";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const SRC = join(root, "src-v2/worker.js");
+const SRC = join(root, "src/worker.js");
 const OUT = join(root, "GitHubClawCore/index.v2.js");
 const checkOnly = process.argv.includes("--check");
 

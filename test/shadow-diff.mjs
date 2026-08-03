@@ -26,7 +26,7 @@ const EMPTY = join(root, "../src/modules/empty.js");
 
 // ── build both bundles ONCE (non-minified → readable tracebacks) ────────────
 const OLD_SRC = join(root, "../src/index.js");
-const NEW_SRC = join(root, "../src-v2/worker.js");
+const NEW_SRC = join(root, "../src/worker.js");
 const OLD_OUT = join(root, ".shadow-old.mjs");
 const NEW_OUT = join(root, ".shadow-new.mjs");
 

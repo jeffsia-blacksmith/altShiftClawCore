@@ -1,8 +1,8 @@
-// build.mjs — 把可编辑的 src/index.js 重新打包压缩成 GitHubClawCore/index.js
+// build.mjs — 把可编辑的 src/worker.js 重新打包压缩成 GitHubClawCore/index.js
 // GitHubClawCore/index.js 是 Terraform 部署时 filebase64 读取的产物。
 //
 // 用法：
-//   node build.mjs            # src/index.js → GitHubClawCore/index.js（minified）
+//   node build.mjs            # src/worker.js → GitHubClawCore/index.js（minified）
 //   node build.mjs --check    # 只打包到暂存并比对与 index.js.orig 的差异，不覆盖
 //
 // 需求：npm i（安装 esbuild）
@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const SRC = join(root, "src/index.js");
+const SRC = join(root, "src/worker.js");
 const OUT = join(root, "GitHubClawCore/index.js");
 const ORIG = join(root, "src/index.orig.bundle.js");
 const checkOnly = process.argv.includes("--check");
@@ -25,6 +25,11 @@ const result = await build({
   minify: true,
   write: false,
   legalComments: "none",
+  // @octokit/webhooks-methods exports node (createHmac) + web (crypto.subtle) 分支；
+  // Workers 运行时只有 Web Crypto（crypto.subtle），所以选 browser 分支。
+  conditions: ["browser"],
+  // tweetnacl/nacl-fast.js 含 `require('crypto')` Node fallback；Workers 用全局 `crypto`
+  // 走不到该分支，故用 empty.js 占位。
   alias: { crypto: join(root, "src/modules/empty.js") },
 });
 const output = result.outputFiles[0].text;

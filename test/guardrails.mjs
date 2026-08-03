@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const SRC = join(root, "../src/index.js");
+const SRC = join(root, "../src/worker.js");
 const OUT = join(root, ".test-bundle.mjs");
 
 await build({
@@ -12,6 +12,7 @@ await build({
   bundle: true,
   format: "esm",
   platform: "neutral",
+  conditions: ["browser"],
   minify: false,
   write: true,
   outfile: OUT,
