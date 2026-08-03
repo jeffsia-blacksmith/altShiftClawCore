@@ -335,6 +335,10 @@ Telegram → Worker → GitHub issue → workflow dispatch
 
 **验证**：odd-backtick sweep 全 4 份 i18n = 0；v2 i18n parity 814×2；guardrails-v2 40/40；v2 build 689,359 B；旧 bundle check/build/guardrails 14/14 全绿无回归。实地复跑 `/autoupdate`：派工成功 + 英文成功回复渲染通过（无 sendMessage 400）。
 
+**`set_var_if_nonempty` 守卫端到端实测（smoke repo）**：把修好的 `deploy-lobster-burger.yml` 推进 `jeffsia-blacksmith/testing_on_v2_bot`（commit `271699f`），并**删除**先前手动设的 `PROFILE_NAME`/`PERSONALITY` repo var（让 optional 变量回到空值，只靠守卫防 422），再透过本地 worker 派工 `/autoupdate`（run `30793815565`）。结果："Sync GitHub settings" ✅ **成功**（守卫跳过空 `PROFILE_NAME`/`PERSONALITY`，无 422），随后才卡在 "Ensure workers.dev subdomain" ❌（Cloudflare `HTTP 403`，CF 基建前置，非代码）。**证明守卫根治了原 422**——空 optional 变量不再让 deploy job 在该步崩。autoupdate 唯一剩余阻断 = Cloudflare workers.dev 子域权限（需给 smoke repo 的 `CLOUDFLARE_API_TOKEN` secret 加权限并注册子域，与 v2 无关）。
+
+**Git 提交（本地，未 push）**：`altShiftClawCore` @ `phase-r/refactor` — `5c259eb` fix(i18n+telegram) 反引号+错误转义、`a2aed86` docs CurrentRefactor；`altShiftClawToolkit` @ `fix/default-catalog-naming` — `053eb80` fix(workflow) 守卫；`altShiftClawAdminPage` @ `main` — `b7886c8` fix(seed) 守卫。`src-v2/db/d1.js`、`src-v2/telegram/flows/skills-callbacks.js`、`wrangler.v2.toml` 为前一轮 smoke 的未提交改动，未纳入本次提交。
+
 ---
 
 ## 9. 待办与下一步
