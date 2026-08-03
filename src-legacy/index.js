@@ -1,5 +1,8 @@
 import zhCNTranslation from "./i18n/zh-CN.json";
 import enTranslation from "./i18n/en.json";
+import contentTypeShim from "./modules/content-type-shim.js";
+import naclShim from "./modules/tweetnacl-shim.js";
+import * as WorkflowNotifications from "./modules/workflow-notifications.js";
 
 const translations = {
   "zh-CN": zhCNTranslation,
@@ -42,6 +45,11 @@ function t(key, params = {}, lang = "en") {
   }
   return result;
 }
+
+// Module-scope alias of the i18n `t` function. Inside `Of(e, t, r)` the param
+// `t` (config) shadows module `t`, so ctx.t's arrow must reference it via this
+// alias — otherwise e.t(...) calls the config object ("t is not a function").
+var i18nT = t;
 
 async function getLanguage(services) {
   let lang = null;
@@ -99,269 +107,17 @@ var Ou = (e, t, r) => (
   Qg(t || !e || !e.__esModule ? Hi(r, "default", { value: e, enumerable: !0 }) : r, e)
 );
 // ╔══════════════════════════════════════════════════════════════════════════════
-// ║ [MODULE kc] content-type parser  —  VENDOR
-// ║ MIME/media type parsing (npm: content-type)
+// ║ [MODULE Sa] workflow_notifications CRUD  —  BUSINESS (extracted to src/modules/workflow-notifications.js)
+// ║ Symbols re-exported here under original mangled names so existing call sites stay unchanged.
 // ╚══════════════════════════════════════════════════════════════════════════════
-var kc = zi((T0, ts) => {
-  "use strict";
-  var Io = function () {};
-  Io.prototype = Object.create(null);
-  var Eo =
-      /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu,
-    So = /\\([\v\u0020-\u00ff])/gu,
-    yc = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u,
-    $r = { type: "", parameters: new Io() };
-  Object.freeze($r.parameters);
-  Object.freeze($r);
-  function _c(e) {
-    if (typeof e != "string")
-      throw new TypeError("argument header is required and must be a string");
-    let t = e.indexOf(";"),
-      r = t !== -1 ? e.slice(0, t).trim() : e.trim();
-    if (yc.test(r) === !1) throw new TypeError("invalid media type");
-    let n = { type: r.toLowerCase(), parameters: new Io() };
-    if (t === -1) return n;
-    let s, o, i;
-    for (Eo.lastIndex = t; (o = Eo.exec(e));) {
-      if (o.index !== t) throw new TypeError("invalid parameter format");
-      ((t += o[0].length),
-        (s = o[1].toLowerCase()),
-        (i = o[2]),
-        i[0] === '"' && ((i = i.slice(1, i.length - 1)), So.test(i) && (i = i.replace(So, "$1"))),
-        (n.parameters[s] = i));
-    }
-    if (t !== e.length) throw new TypeError("invalid parameter format");
-    return n;
-  }
-  function Tc(e) {
-    if (typeof e != "string") return $r;
-    let t = e.indexOf(";"),
-      r = t !== -1 ? e.slice(0, t).trim() : e.trim();
-    if (yc.test(r) === !1) return $r;
-    let n = { type: r.toLowerCase(), parameters: new Io() };
-    if (t === -1) return n;
-    let s, o, i;
-    for (Eo.lastIndex = t; (o = Eo.exec(e));) {
-      if (o.index !== t) return $r;
-      ((t += o[0].length),
-        (s = o[1].toLowerCase()),
-        (i = o[2]),
-        i[0] === '"' && ((i = i.slice(1, i.length - 1)), So.test(i) && (i = i.replace(So, "$1"))),
-        (n.parameters[s] = i));
-    }
-    return t !== e.length ? $r : n;
-  }
-  ts.exports.default = { parse: _c, safeParse: Tc };
-  ts.exports.parse = _c;
-  ts.exports.safeParse = Tc;
-  ts.exports.defaultContentType = $r;
-});
-var Sa = {};
-Mu(Sa, {
-  createWorkflowNotification: () => Gt,
-  deleteWorkflowNotificationByRequestId: () => Ea,
-  getRecentPendingNotificationByWorkflowPath: () => ka,
-  getWorkflowNotificationByRequestId: () => At,
-  getWorkflowNotificationByRunId: () => Xt,
-  initWorkflowNotificationsTable: () => Ta,
-  updateWorkflowNotificationByRequestId: () => Ne,
-});
-function me(e) {
-  if (e == null) return null;
-  let t = String(e).trim();
-  return t === "" ? null : t;
-}
-function uw(e) {
-  if (e == null || e === "") return null;
-  let t = Number.parseInt(String(e), 10);
-  return Number.isInteger(t) ? t : null;
-}
-function _a(e) {
-  if (!e) return null;
-  let t = me(e.id),
-    r = me(e.request_id),
-    n = me(e.repo),
-    s = me(e.workflow_name),
-    o = me(e.channel),
-    i = me(e.event_name),
-    a = me(e.status),
-    l = me(e.created_at),
-    c = me(e.updated_at);
-  return !t || !r || !n || !s || !o || !i || !a || !l || !c
-    ? null
-    : {
-        id: t,
-        requestId: r,
-        repo: n,
-        workflowName: s,
-        workflowPath: me(e.workflow_path),
-        title: me(e.title),
-        channel: o,
-        chatId: me(e.chat_id),
-        messageId: me(e.message_id),
-        eventName: i,
-        status: a,
-        conclusion: me(e.conclusion),
-        workflowRunId: uw(e.workflow_run_id),
-        workflowRef: me(e.workflow_ref),
-        headBranch: me(e.head_branch),
-        headSha: me(e.head_sha),
-        sourceType: me(e.source_type),
-        sourceId: me(e.source_id),
-        payloadJson: me(e.payload_json),
-        errorMessage: me(e.error_message),
-        createdAt: l,
-        updatedAt: c,
-        completedAt: me(e.completed_at),
-        notifiedAt: me(e.notified_at),
-      };
-}
-async function Ta(e) {
-  (await e
-    .prepare(
-      `CREATE TABLE IF NOT EXISTS workflow_notifications (
-      id TEXT PRIMARY KEY,
-      request_id TEXT NOT NULL UNIQUE,
-      repo TEXT NOT NULL,
-      workflow_name TEXT NOT NULL,
-      workflow_path TEXT,
-      title TEXT,
-      channel TEXT NOT NULL,
-      chat_id TEXT,
-      message_id TEXT,
-      event_name TEXT NOT NULL DEFAULT 'workflow_dispatch',
-      status TEXT NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'requested', 'in_progress', 'completed', 'notified', 'failed_to_notify')),
-      conclusion TEXT,
-      workflow_run_id INTEGER,
-      workflow_ref TEXT,
-      head_branch TEXT,
-      head_sha TEXT,
-      source_type TEXT,
-      source_id TEXT,
-      payload_json TEXT,
-      error_message TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-      completed_at TEXT,
-      notified_at TEXT
-    )`,
-    )
-    .run(),
-    await e
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_workflow_notifications_repo_workflow_created
-      ON workflow_notifications (repo, workflow_name, created_at DESC)`,
-      )
-      .run(),
-    await e
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_workflow_notifications_status_created
-      ON workflow_notifications (status, created_at DESC)`,
-      )
-      .run(),
-    await e
-      .prepare(
-        `CREATE INDEX IF NOT EXISTS idx_workflow_notifications_run_id
-      ON workflow_notifications (workflow_run_id)`,
-      )
-      .run());
-}
-async function Gt(e, t) {
-  let r = t.id?.trim() || crypto.randomUUID(),
-    n = new Date().toISOString();
-  await e
-    .prepare(
-      `INSERT INTO workflow_notifications (
-      id, request_id, repo, workflow_name, workflow_path, title, channel, chat_id, message_id,
-      event_name, status, workflow_ref, head_branch, head_sha, source_type, source_id, payload_json,
-      created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(
-      r,
-      t.requestId,
-      t.repo,
-      t.workflowName,
-      me(t.workflowPath),
-      me(t.title),
-      t.channel,
-      me(t.chatId),
-      me(t.messageId),
-      t.eventName?.trim() || "workflow_dispatch",
-      t.status || "pending",
-      me(t.workflowRef),
-      me(t.headBranch),
-      me(t.headSha),
-      me(t.sourceType),
-      me(t.sourceId),
-      me(t.payloadJson),
-      n,
-      n,
-    )
-    .run();
-  let s = await At(e, t.requestId);
-  if (!s) throw new Error(`Failed to create workflow notification for request_id=${t.requestId}`);
-  return s;
-}
-async function At(e, t) {
-  let r = await e
-    .prepare("SELECT * FROM workflow_notifications WHERE request_id = ? LIMIT 1")
-    .bind(t)
-    .first();
-  return _a(r);
-}
-async function Xt(e, t) {
-  let r = await e
-    .prepare("SELECT * FROM workflow_notifications WHERE workflow_run_id = ? LIMIT 1")
-    .bind(t)
-    .first();
-  return _a(r);
-}
-async function Ne(e, t, r) {
-  await e
-    .prepare(
-      `UPDATE workflow_notifications
-        SET status = COALESCE(?, status),
-            conclusion = COALESCE(?, conclusion),
-            workflow_run_id = COALESCE(?, workflow_run_id),
-            workflow_ref = COALESCE(?, workflow_ref),
-            head_branch = COALESCE(?, head_branch),
-            head_sha = COALESCE(?, head_sha),
-            error_message = COALESCE(?, error_message),
-            completed_at = COALESCE(?, completed_at),
-            notified_at = COALESCE(?, notified_at),
-            updated_at = datetime('now')
-      WHERE request_id = ?`,
-    )
-    .bind(
-      me(r.status),
-      me(r.conclusion),
-      r.workflowRunId ?? null,
-      me(r.workflowRef),
-      me(r.headBranch),
-      me(r.headSha),
-      me(r.errorMessage),
-      me(r.completedAt),
-      me(r.notifiedAt),
-      t,
-    )
-    .run();
-}
-async function ka(e, t) {
-  let r = await e
-    .prepare(
-      `SELECT * FROM workflow_notifications
-     WHERE workflow_path = ? AND status = 'pending'
-     ORDER BY created_at DESC LIMIT 1`,
-    )
-    .bind(t)
-    .first();
-  return _a(r);
-}
-async function Ea(e, t) {
-  await e.prepare("DELETE FROM workflow_notifications WHERE request_id = ?").bind(t).run();
-}
+var Sa = WorkflowNotifications;
+var Ta = WorkflowNotifications.Ta,
+  Gt = WorkflowNotifications.Gt,
+  At = WorkflowNotifications.At,
+  Xt = WorkflowNotifications.Xt,
+  Ne = WorkflowNotifications.Ne,
+  ka = WorkflowNotifications.ka,
+  Ea = WorkflowNotifications.Ea;
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Et] grammY (Telegram framework)  —  VENDOR
 // ║ Telegram Bot framework: filter query, context, middleware (npm: grammy)
@@ -4850,7 +4606,7 @@ function tr() {
 }
 function Bo() {
   return new F()
-    .text("\u23ED\uFE0F \u7565\u904E", "schedule_payload_skip:current")
+    .text(t("kb.skip", {}, glang()), "schedule_payload_skip:current")
     .row()
     .text(t("kb.cancelSetup", {}, glang()), "schedule_flow_cancel:current");
 }
@@ -4966,13 +4722,13 @@ function Wa(e) {
     .text(t("kb.removeFromList", {}, glang()), `skills_remove_from_list:${e}`)
     .text(t("kb.updateFromList", {}, glang()), `skills_update_from_list:${e}`)
     .row()
-    .text("\u{1F519} \u4E0A\u4E00\u6B65", "skills_preview_back:0");
+    .text(t("kb.backOneStep", {}, glang()), "skills_preview_back:0");
 }
 function Xd(e) {
   return new F()
     .text(t("kb.confirmRemove", {}, glang()), `skills_remove_confirm_from_list:${e}`)
     .row()
-    .text("\u{1F519} \u4E0A\u4E00\u6B65", `skills_remove_back:${e}`);
+    .text(t("kb.backOneStep", {}, glang()), `skills_remove_back:${e}`);
 }
 function us(e, t = 0, r) {
   let n = new F();
@@ -5093,9 +4849,9 @@ var Kr,
       ($a = 8),
       (Gd = 36),
       (Fd = Object.freeze({
-        awaiting_name: "\u540D\u7A31",
-        awaiting_description: "\u63CF\u8FF0",
-        awaiting_template: "\u7BC4\u672C",
+        awaiting_name: "Name",
+        awaiting_description: "Description",
+        awaiting_template: "Template",
       })));
   });
 async function Ge(e, t) {
@@ -5126,7 +4882,7 @@ async function Ke(e, t) {
     if (!r) return null;
     let n = JSON.parse(r);
     return (
-      console.log("[Telegram new-flow] \u8B80\u53D6\u6D41\u7A0B\u72C0\u614B\u6210\u529F", {
+      console.log(i18nT("log.newFlow.readSuccess", {}, glang()), {
         chatId: t,
         state: n,
       }),
@@ -5134,7 +4890,7 @@ async function Ke(e, t) {
     );
   } catch {
     return (
-      console.warn("[Telegram new-flow] \u8B80\u53D6\u6D41\u7A0B\u72C0\u614B\u5931\u6557", {
+      console.warn(i18nT("log.newFlow.readFailed", {}, glang()), {
         chatId: t,
       }),
       null
@@ -5143,7 +4899,7 @@ async function Ke(e, t) {
 }
 async function Be(e, t, r) {
   nr(t) &&
-    (console.log("[Telegram new-flow] \u5BEB\u5165\u6D41\u7A0B\u72C0\u614B", {
+    (console.log(i18nT("log.newFlow.write", {}, glang()), {
       chatId: t,
       state: r,
       ttlSeconds: "infinity",
@@ -5152,7 +4908,7 @@ async function Be(e, t, r) {
 }
 async function Dt(e, t) {
   nr(t) &&
-    (console.log("[Telegram new-flow] \u6E05\u9664\u6D41\u7A0B\u72C0\u614B", { chatId: t }),
+    (console.log(i18nT("log.newFlow.clear", {}, glang()), { chatId: t }),
     await e.delete(`${qa}${t}`));
 }
 async function sr(e, t) {
@@ -5426,29 +5182,32 @@ function Bt(e, gLang = glang()) {
 var zr,
   xs = Oe(() => {
     "use strict";
-    zr = ["\u65E5", "\u4E00", "\u4E8C", "\u4E09", "\u56DB", "\u4E94", "\u516D"];
+    zr = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   });
-function gp(e) {
-  let t = ["\u2139\uFE0F \u5C0F\u9F8D\u8766\u8CC7\u8A0A", _y(e)];
+function gp(e, gLang = glang()) {
+  let lines = [t("core.infoCardTitle", {}, gLang), _y(e)];
   return (
-    t.push(
+    lines.push(
       "",
-      "\u{1F916} \u4F7F\u7528\u6A21\u578B",
-      ...Ty(e),
+      t("core.infoCardModels", {}, gLang),
+      ...Ty(e, gLang),
       "",
-      "\u{1F4C4} \u5DF2\u5957\u7528\u7BC4\u672C",
-      O(e.templateName?.trim() || "\u7121"),
+      t("core.infoCardLLM", {}, gLang),
+      ...llmCardLines(e, gLang),
       "",
-      "\u{1F9E9} \u5DF2\u5B89\u88DD\u6280\u80FD",
-      ...ky(e.skills),
+      t("core.infoCardTemplate", {}, gLang),
+      O(e.templateName?.trim() || t("core.none", {}, gLang)),
       "",
-      "\u23F0 \u5DF2\u8A2D\u5B9A\u6392\u7A0B",
-      ...Ey(e.schedules.items),
+      t("core.infoCardSkills", {}, gLang),
+      ...ky(e.skills, gLang),
       "",
-      "\u2692\uFE0F \u4EFB\u52D9\u57F7\u884C\u72C0\u614B",
-      ...Sy(e.workflow),
+      t("core.infoCardSchedules", {}, gLang),
+      ...Ey(e.schedules.items, gLang),
+      "",
+      t("core.infoCardTaskStatus", {}, gLang),
+      ...Sy(e.workflow, gLang),
     ),
-    t.join(`
+    lines.join(`
 `)
   );
 }
@@ -5461,6 +5220,26 @@ function Ty(e, gLang = glang()) {
   return srcs.length === 0
     ? [ps(e.models.fallbackLabel || t("schedule.workflow_defined_label", {}, gLang))]
     : srcs.map((r) => zo(O(`${yy[r.source]} (${r.model.trim()})`)));
+}
+function llmCardLines(e, gLang = glang()) {
+  let p = e.llm?.provider ?? null,
+    m = e.llm?.model ?? null;
+  return [
+    zo(
+      O(
+        `${t("core.llmProviderLabel", {}, gLang)}: ${
+          p ? p : t("core.llmNotSet", {}, gLang)
+        }`,
+      ),
+    ),
+    zo(
+      O(
+        `${t("core.llmModelLabel", {}, gLang)}: ${
+          m ? m : t("core.llmNotSet", {}, gLang)
+        }`,
+      ),
+    ),
+  ];
 }
 function ky(e, gLang = glang()) {
   return e.length > 0
@@ -5483,15 +5262,15 @@ function Ey(e, gLang = glang()) {
           sch.shouldNotify ? t("schedule.notify_open", {}, gLang) : t("schedule.notify_close", {}, gLang),
         ];
         return (
-          sch.nextRunAt && r.push(`下次執行：${Bt(sch.nextRunAt, gLang)}`),
-          sch.prompt && r.push(`提示：${sch.prompt}`),
+          sch.nextRunAt && r.push(t("schedule.cardNextRun", { time: Bt(sch.nextRunAt, gLang) }, gLang)),
+          sch.prompt && r.push(t("schedule.cardPrompt", { prompt: sch.prompt }, gLang)),
           ps(r.join("｜"))
         );
       });
 }
 function Sy(e, gLang = glang()) {
   return e.exists
-    ? [zo(`${O("File: ")}${vy(e)}`), zo(`${O("Status: ")}${Cy(e)}`)]
+    ? [zo(`${O("File: ")}${vy(e)}`), zo(`${O("Status: ")}${Cy(e, gLang)}`)]
     : [
         O(
           `No workflow configured yet. You can run /edit to reset the template and enable the Lobster workflow.`,
@@ -5505,12 +5284,12 @@ function Iy(e) {
 function vy(e) {
   return e.url ? hp(e.file, e.url) : O(e.file);
 }
-function Cy(e) {
+function Cy(e, gLang = glang()) {
   return !e.enabled || e.status === "disabled"
-    ? O("\u505C\u7528")
+    ? O(t("schedule.workflowState.disabled", {}, gLang))
     : e.status === "running" && e.activeRun
-      ? `\u555F\u7528 \\(\u6B63\u5728\u57F7\u884C\u4EFB\u52D9 ${Iy(e.activeRun)}\\)`
-      : "\u555F\u7528 \\(\u9592\u7F6E\u4E2D\\)";
+      ? t("schedule.workflowState.running", { run: Iy(e.activeRun) }, gLang)
+      : t("schedule.workflowState.idle", {}, gLang);
 }
 function zo(e) {
   return `\\- ${e}`;
@@ -5528,9 +5307,9 @@ var by,
     "use strict";
     Xe();
     ((by = Object.freeze({
-      active: "\u555F\u7528",
-      paused: "\u66AB\u505C",
-      cancelled: "\u5DF2\u53D6\u6D88",
+      active: "active",
+      paused: "paused",
+      cancelled: "cancelled",
     })),
       (yy = Object.freeze({ copilot: "Copilot CLI", codex: "Codex CLI" })),
       (fp = { parse_mode: "MarkdownV2" }));
@@ -6032,10 +5811,10 @@ function yr(e) {
 function Rn(e) {
   return Number.isInteger(e) && e > 0 ? `issue-${e}` : "main";
 }
-async function Zo(e, t, r, n, s) {
-  let i = (await e.repos.getContent({ owner: t, repo: r, path: n, ref: s })).data;
+async function Zo(e, owner, r, n, s) {
+  let i = (await e.repos.getContent({ owner, repo: r, path: n, ref: s })).data;
   if (Array.isArray(i) || i.type !== "file")
-    throw new Error(`${n} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+    throw new Error(t("errors.notAFile", { name: n }, glang()));
   return i.encoding === "base64" ? St(i.content) : i.content;
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
@@ -6058,16 +5837,18 @@ function Ly(e) {
   return e.status === 403 && e.headers.get("x-ratelimit-remaining") === "0";
 }
 function Dy(e) {
-  let t = e.headers.get("x-ratelimit-remaining"),
-    r = e.headers.get("x-ratelimit-reset");
-  if (t !== "0") return "";
-  let n = r ? Number(r) : 0;
-  if (n > 0) {
-    let s = Math.max(0, n - Math.floor(Date.now() / 1e3)),
-      o = Math.ceil(s / 60);
-    return ` (\u5DF2\u9054 API \u901F\u7387\u4E0A\u9650\uFF0C${o > 0 ? `\u7D04 ${o} \u5206\u9418` : "\u5373\u5C07"}\u5F8C\u91CD\u7F6E)`;
+  let rem = e.headers.get("x-ratelimit-remaining"),
+    reset = e.headers.get("x-ratelimit-reset");
+  if (rem !== "0") return "";
+  let resetNum = reset ? Number(reset) : 0;
+  if (resetNum > 0) {
+    let secs = Math.max(0, resetNum - Math.floor(Date.now() / 1e3)),
+      mins = Math.ceil(secs / 60);
+    return mins > 0
+      ? " (" + t("api.rateLimit.minutes", { minutes: mins }, glang()) + ")"
+      : " (" + t("api.rateLimit.soon", {}, glang()) + ")";
   }
-  return " (\u5DF2\u9054 API \u901F\u7387\u4E0A\u9650)";
+  return " (" + t("api.rateLimit.bare", {}, glang()) + ")";
 }
 async function An(e, t) {
   let r = $y(t),
@@ -6233,24 +6014,24 @@ var Op,
     Yr();
     ((Op = []),
       (Uy = {
-        "audio-transcriber": "\u8A9E\u97F3\u8F49\u6587\u5B57",
-        "call-agent-via-issue": "Issue \u4EE3\u7406\u59D4\u6D3E",
-        "deep-researcher": "\u6DF1\u5EA6\u7814\u7A76",
-        "felo-search": "Felo \u5373\u6642\u641C\u5C0B",
-        "felo-slides": "Felo \u7C21\u5831\u751F\u6210",
-        "felo-web-fetch": "Felo \u7DB2\u9801\u64F7\u53D6",
-        "felo-x-search": "Felo X \u641C\u5C0B",
-        "find-skills": "\u6280\u80FD\u63A2\u7D22",
-        "google-stitch": "Google Stitch \u8A2D\u8A08\u751F\u6210",
-        "image-describer": "\u5716\u7247\u63CF\u8FF0\u8207\u8FA8\u8B58",
-        "meeting-note-formatter": "\u6703\u8B70\u7B46\u8A18\u6574\u7406",
-        "gemini-nanobanana": "Nano Banana \u5716\u50CF\u751F\u6210",
-        "playwright-cli": "\u7DB2\u9801\u81EA\u52D5\u5316\u6E2C\u8A66",
-        sendgrid: "SendGrid \u90F5\u4EF6\u767C\u9001",
-        "skill-creator": "\u6280\u80FD\u5EFA\u7ACB\u8207\u512A\u5316",
-        summary: "\u5167\u5BB9\u6458\u8981\uFF08\u7DB2\u9801/PDF/\u5F71\u7247\uFF09",
-        "telegram-notify": "Telegram \u901A\u77E5",
-        "tools-package-builder": "Tools \u5957\u4EF6\u5EFA\u7ACB\u5668",
+        "audio-transcriber": 1,
+        "call-agent-via-issue": 1,
+        "deep-researcher": 1,
+        "felo-search": 1,
+        "felo-slides": 1,
+        "felo-web-fetch": 1,
+        "felo-x-search": 1,
+        "find-skills": 1,
+        "google-stitch": 1,
+        "image-describer": 1,
+        "meeting-note-formatter": 1,
+        "gemini-nanobanana": 1,
+        "playwright-cli": 1,
+        sendgrid: 1,
+        "skill-creator": 1,
+        summary: 1,
+        "telegram-notify": 1,
+        "tools-package-builder": 1,
       }),
       (By = ["tools-package-builder", "skill-creator"]),
       (jy = new Map(Op.map((e) => [e.key, e]))));
@@ -6340,7 +6121,7 @@ async function tl(e, t, r, n) {
   } catch (_) {
     yr(_)
       ? (l = !1)
-      : console.warn("[workspace] \u8B80\u53D6 issue \u5206\u652F\u72C0\u614B\u5931\u6557", {
+      : console.warn(i18nT("log.workspace.readIssueBranchFailed", {}, glang()), {
           issueNumber: s,
           error: _ instanceof Error ? _.message : String(_),
         });
@@ -6362,7 +6143,7 @@ async function tl(e, t, r, n) {
   } catch (_) {
     yr(_)
       ? ((c = !1), (d = !1))
-      : console.warn("[workspace] \u8B80\u53D6 workflow \u72C0\u614B\u5931\u6557", {
+      : console.warn(i18nT("log.workspace.readWorkflowFailed", {}, glang()), {
           issueNumber: s,
           error: _ instanceof Error ? _.message : String(_),
         });
@@ -6382,11 +6163,11 @@ async function jp(e, t, r, n) {
   let s = await Ts(e, t, r, n);
   return s.workflowExists && s.workflowEnabled;
 }
-async function Wp(e, t, r, n, s) {
+async function Wp(e, owner, r, n, s) {
   try {
-    let i = (await e.repos.getContent({ owner: t, repo: r, path: s, ref: n })).data;
+    let i = (await e.repos.getContent({ owner, repo: r, path: s, ref: n })).data;
     if (Array.isArray(i) || i.type !== "file")
-      throw new Error(`${s} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+      throw new Error(t("errors.notAFile", { name: s }, glang()));
     return { content: i.encoding === "base64" ? St(i.content) : i.content, sha: i.sha };
   } catch (o) {
     if (yr(o)) return { content: "" };
@@ -6410,7 +6191,7 @@ async function Zr(e, t, r, n, s, o) {
     a = `artifacts/${s}/user.md`,
     c = `${(typeof o == "string" ? o.trim() : "") || "(empty)"}
 `;
-  await Jy(e, t, r, i, a, c, `chore: \u66F4\u65B0 issue #${n} comment #${s} user artifact`);
+  await Jy(e, t, r, i, a, c, `chore: update issue #${n} comment #${s} user artifact`);
 }
 async function xn(e, t, r, n, s) {
   let o = `issue-${n}`,
@@ -6428,16 +6209,16 @@ ${l}`;
     owner: t,
     repo: r,
     path: i,
-    message: `chore: \u66F4\u65B0 issue #${n} \u5C0D\u8A71\u7D00\u9304`,
+    message: `chore: update issue #${n} conversation log`,
     content: hs(d),
     branch: o,
     ...(a.sha ? { sha: a.sha } : {}),
   });
 }
-async function qp(e, t, r, n, s) {
-  await xn(e, t, r, n, {
+async function qp(e, owner, r, n, s) {
+  await xn(e, owner, r, n, {
     role: "assistant",
-    source: "\u5C0F\u9F8D\u8766",
+    source: t("system.source_name", {}, glang()),
     delivery: "telegram",
     issue_number: n,
     comment_id: s.commentId ?? null,
@@ -6478,13 +6259,14 @@ var ar = Oe(() => {
 async function Hp(e) {
   let t = Number.parseInt(String(e.issueNumber), 10),
     r = Rn(t),
-    [n, s, o, i, a, l] = await Promise.all([
+    [n, s, o, i, a, l, u] = await Promise.all([
       Zy(e.octokit, e.owner, e.repo, t),
       ei(e.octokit, e.owner, e.repo, r),
       e_(e.d1, e.repoFullName, t),
       t_(e.d1, e.repoFullName, t),
       r_(e.octokit, e.owner, e.repo, r),
       s_(e.octokit, e.owner, e.repo, t),
+      llmReadSettingsSafe(e.octokit, e.owner, e.repo, t),
     ]);
   return {
     issue: { number: t, title: n.title, state: n.state, branch: r, exists: n.exists },
@@ -6496,8 +6278,18 @@ async function Hp(e) {
       hasConfiguredModel: a.some((c) => c.model !== null),
       fallbackLabel: null,
     },
+    llm: u,
     workflow: l,
   };
+}
+async function llmReadSettingsSafe(e, t, r, n) {
+  try {
+    let s = await llmReadSettings(e, t, r, n);
+    return { provider: s.defaultProvider ?? null, model: s.defaultModel ?? null };
+  } catch (o) {
+    console.error(i18nT("log.issueStatus.readLLMSettingsFailed", {}, glang()), o);
+    return { provider: null, model: null };
+  }
 }
 async function Zy(e, t, r, n) {
   try {
@@ -6509,7 +6301,7 @@ async function Zy(e, t, r, n) {
     };
   } catch (s) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6 issue \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readIssueFailed", {}, glang()), {
         issueNumber: n,
         error: s instanceof Error ? s.message : String(s),
       }),
@@ -6522,7 +6314,7 @@ async function e_(e, t, r) {
     return await gs(e, t, r);
   } catch (n) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6\u6392\u7A0B\u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readScheduleFailed", {}, glang()), {
         issueNumber: r,
         error: n instanceof Error ? n.message : String(n),
       }),
@@ -6535,7 +6327,7 @@ async function t_(e, t, r) {
     return (await Qr(e, t, r))?.template ?? null;
   } catch (n) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6\u7BC4\u672C metadata \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readTemplateMetaFailed", {}, glang()), {
         issueNumber: r,
         error: n instanceof Error ? n.message : String(n),
       }),
@@ -6563,7 +6355,7 @@ async function n_(e, t, r, n, s) {
   } catch (o) {
     return (
       yr(o) ||
-        console.warn("[issue-status] \u8B80\u53D6\u5206\u652F\u6A94\u6848\u5931\u6557", {
+        console.warn(i18nT("log.issueStatus.readBranchFileFailed", {}, glang()), {
           branch: n,
           path: s,
           error: o instanceof Error ? o.message : String(o),
@@ -6616,7 +6408,7 @@ async function o_(e, t, r, n) {
     }));
   } catch (s) {
     return (
-      console.warn("[issue-status] \u8B80\u53D6 workflow runs \u5931\u6557", {
+      console.warn(i18nT("log.issueStatus.readWorkflowRunsFailed", {}, glang()), {
         workflowId: n,
         error: s instanceof Error ? s.message : String(s),
       }),
@@ -6679,7 +6471,7 @@ async function Es(e, t, r = "issue-status") {
   try {
     await ks(e, t);
   } catch (n) {
-    console.error(`[${r}] \u50B3\u9001 issue \u72C0\u614B\u8A0A\u606F\u5931\u6557`, n);
+    console.error(i18nT("log.issueStatus.sendMessageFailed", { tag: r }, glang()), n);
   }
 }
 function u_(e) {
@@ -6971,13 +6763,13 @@ async function Pn(e, t, r, n, s, o) {
   } catch (l) {
     if (B_(l))
       return (
-        console.log(`\u5206\u652F ${n} \u5DF2\u5B58\u5728\uFF0C\u7565\u904E\u5EFA\u7ACB`),
+        console.log(i18nT("log.branch.existsSkip", { branch: n }, glang())),
         { ok: !0, branch: n }
       );
     throw l;
   }
   return (
-    console.log(`\u5DF2\u5EFA\u7ACB orphan \u5206\u652F ${n}\uFF08${a.sha}\uFF09`),
+    console.log(i18nT("log.branch.orphanCreated", { branch: n, sha: a.sha }, glang())),
     { ok: !0, branch: n, commitSha: a.sha }
   );
 }
@@ -6998,7 +6790,7 @@ async function ai(e, t, r, n, s, o) {
   return (
     await e.rest.git.updateRef({ owner: t, repo: r, ref: `heads/${n}`, sha: m.sha }),
     console.log(
-      `\u5DF2\u91CD\u8A2D\u5206\u652F ${n} \u7684\u7BC4\u672C\u6A94\u6848\uFF08${m.sha}\uFF09`,
+      i18nT("log.branch.templateReset", { branch: n, sha: m.sha }, glang()),
     ),
     { ok: !0, branch: n, commitSha: m.sha }
   );
@@ -7014,27 +6806,25 @@ function W_(e, t) {
   return t.personality ? e.replace(/\{\{personality\}\}/g, t.personality) : e;
 }
 function q_(e) {
-  return `\u7BC4\u672C ${e} \u5C1A\u672A\u5B89\u88DD\u5230\u9F8D\u8766\u5821\uFF08templates/${e}/ \u4E0D\u5B58\u5728\uFF09`;
+  return t("templates.notInstalled", { name: e }, glang());
 }
 function fm(e) {
-  return (
-    e instanceof Error && e.message.includes("\u5C1A\u672A\u5B89\u88DD\u5230\u9F8D\u8766\u5821")
-  );
+  return e instanceof Error && e.code === "TEMPLATE_NOT_INSTALLED";
 }
-function K_(e, t) {
-  return `\u8B80\u53D6\u7BC4\u672C ${e} \u5931\u6557\uFF1A${t}`;
+function K_(e, detail) {
+  return t("templates.readFailed", { name: e, error: detail }, glang());
 }
 function gm(e) {
-  return e instanceof Error && e.message.startsWith("\u8B80\u53D6\u7BC4\u672C ");
+  return e instanceof Error && e.code === "TEMPLATE_READ_FAILED";
 }
-function hm(e, t, r) {
+function hm(e, pfx, r) {
   if (!e?.length) return [];
   let n = [];
   for (let s of e) {
-    let o = t ? `${t}/${s.name}` : s.name;
+    let o = pfx ? `${pfx}/${s.name}` : s.name;
     if (s.type === "blob" && s.object?.__typename === "Blob") {
       if (s.object.isBinary)
-        throw new Error(`template \u6A94\u6848 ${o} \u70BA binary\uFF0C\u7121\u6CD5\u8B80\u53D6`);
+        throw new Error(t("templates.fileBinary", { path: o }, glang()));
       if (/^\.github\/workflows\//i.test(o)) continue;
       n.push({ path: o, content: W_(s.object.text ?? "", r) });
       continue;
@@ -7042,22 +6832,22 @@ function hm(e, t, r) {
     if (s.type === "tree" && s.object?.__typename === "Tree") {
       if (!Array.isArray(s.object.entries))
         throw new Error(
-          `template \u76EE\u9304 ${o}/ \u5DE2\u72C0\u6DF1\u5EA6\u8D85\u904E\u55AE\u6B21\u67E5\u8A62\u652F\u63F4\u7BC4\u570D`,
+          t("templates.nestedTooDeep", { path: o }, glang()),
         );
       n.push(...hm(s.object.entries, o, r));
     }
   }
   return n;
 }
-async function H_(e, t, r, n) {
+async function H_(e, owner, r, n) {
   let s = await e.request("POST /graphql", {
       query: j_,
-      variables: { owner: t, repo: r, expression: `main:templates/${n}` },
+      variables: { owner, repo: r, expression: `main:templates/${n}` },
     }),
     o = Array.isArray(s.data?.errors) ? s.data.errors : [];
   if (o.length > 0) {
-    let a = o[0]?.message?.trim() || "\u672A\u77E5 GraphQL \u932F\u8AA4";
-    throw new Error(K_(n, a));
+    let a = o[0]?.message?.trim() || t("templates.unknownGraphqlError", {}, glang());
+    throw Object.assign(new Error(K_(n, a)), { code: "TEMPLATE_READ_FAILED" });
   }
   let i = s.data?.data?.repository?.object;
   return !i || i.__typename !== "Tree" ? null : i;
@@ -7073,7 +6863,7 @@ async function tn(e, t, r) {
 }
 async function Er(e, t, r, n, s = {}) {
   let o = await H_(e, t, r, n);
-  if (!o) throw new Error(q_(n));
+  if (!o) throw Object.assign(new Error(q_(n)), { code: "TEMPLATE_NOT_INSTALLED" });
   return hm(o.entries, "", s);
 }
 var j_,
@@ -7184,13 +6974,13 @@ function wm(e) {
   return e instanceof Error ? e.message.includes("Not Found") || e.message.includes("404") : !1;
 }
 function Q_(e, t) {
-  let r = `\u{1F99E} \u57F7\u884C\u5C0F\u9F8D\u8766\u4EFB\u52D9 #${t}`;
+  let r = `\u{1F99E} Execute Lobster Task #${t}`;
   return String(e || "").replace(z_, `$1'${r}'$3`);
 }
-async function bm(e, t, r, n, s) {
-  let i = (await e.repos.getContent({ owner: t, repo: r, path: n, ref: s })).data;
+async function bm(e, owner, r, n, s) {
+  let i = (await e.repos.getContent({ owner, repo: r, path: n, ref: s })).data;
   if (Array.isArray(i) || i.type !== "file")
-    throw new Error(`${n} \u4E0D\u662F\u4E00\u500B\u6A94\u6848`);
+    throw new Error(t("errors.notAFile", { name: n }, glang()));
   return { content: i.encoding === "base64" ? St(i.content) : i.content, sha: i.sha };
 }
 async function V_(e, t, r, n, s, o, i, a) {
@@ -7221,9 +7011,9 @@ async function Sr(e, t, r, n, s = "default") {
   }
   let d = Q_(c.content, n);
   d !== c.content
-    ? console.log(`\u5DF2\u5C07 ${l} \u7684 workflow name \u6539\u70BA issue #${n}`)
+    ? console.log(i18nT("log.sync.workflowRenamed", { file: l, issue: n }, glang()))
     : console.log(
-        `${l} \u672A\u627E\u5230 "name: \u57F7\u884C\u5C0F\u9F8D\u8766\u4EFB\u52D9" \u6A23\u5F0F\uFF0Cworkflow name \u7DAD\u6301\u539F\u6A23`,
+        i18nT("log.sync.workflowNameNotFound", { file: l }, glang()),
       );
   let m;
   try {
@@ -7233,12 +7023,12 @@ async function Sr(e, t, r, n, s = "default") {
   }
   if (m?.content === d) {
     console.log(
-      `${l} \u5DF2\u5B58\u5728\u65BC ${o} \u4E14\u5167\u5BB9\u76F8\u540C\uFF0C\u7565\u904E\u540C\u6B65`,
+      i18nT("log.sync.alreadyInSync", { file: l, repo: o }, glang()),
     );
     return;
   }
-  (await V_(e, t, r, l, d, `chore: \u6E96\u5099 issue #${n} workflow`, o, m?.sha),
-    console.log(`\u5DF2\u5728 ${o} \u540C\u6B65 ${l}`));
+  (await V_(e, t, r, l, d, `chore: prepare issue #${n} workflow`, o, m?.sha),
+    console.log(i18nT("log.sync.done", { repo: o, file: l }, glang())));
 }
 async function ym(e, t, r, n, s, o) {
   let i = await Ge(t, o);
@@ -7272,7 +7062,7 @@ var z_,
 function ml(e) {
   if (typeof e != "string") return null;
   let t = e.trim().toLowerCase();
-  return ["true", "1", "yes", "y", "on", "enable", "enabled", "\u662F", "\u555F\u7528"].includes(t)
+  return ["true", "1", "yes", "y", "on", "enable", "enabled", "\u662F", "\u555F\u7528", "\u542F\u7528"].includes(t)
     ? !0
     : ["false", "0", "no", "n", "off", "disable", "disabled", "\u5426", "\u505C\u7528"].includes(t)
       ? !1
@@ -7292,8 +7082,8 @@ function It(e) {
 }
 function Mn(e) {
   return typeof e != "string"
-    ? "(\u672A\u586B\u5BEB)"
-    : e.replace(/\s+/g, " ").trim() || "(\u672A\u586B\u5BEB)";
+    ? t("core.unfilled", {}, glang())
+    : e.replace(/\s+/g, " ").trim() || t("core.unfilled", {}, glang());
 }
 // ╔══════════════════════════════════════════════════════════════════════════════
 // ║ [MODULE Ms] new-flow state (part 1)  —  BUSINESS
@@ -7351,10 +7141,10 @@ var fl,
       "awaiting_workflow_enabled",
     ])),
       (Tm = Object.freeze({
-        awaiting_name: "\u540D\u7A31",
-        awaiting_description: "\u63CF\u8FF0",
-        awaiting_template_reset: "\u7BC4\u672C",
-        awaiting_workflow_enabled: "\u6D3E\u5DE5\u8A2D\u5B9A",
+        awaiting_name: 1,
+        awaiting_description: 1,
+        awaiting_template_reset: 1,
+        awaiting_workflow_enabled: 1,
       })),
       (rC = el.map((e) => e.key)));
   });
@@ -7569,13 +7359,13 @@ async function nT(e, t, r, n, s, o) {
             r,
             i,
             w,
-            `chore: \u521D\u59CB\u5316 issue #${n} orphan \u5206\u652F\uFF08\u91CD\u5EFA\uFF0C\u7BC4\u672C\uFF1A${l}\uFF09`,
+            `chore: init issue #${n} orphan branch (rebuild, template: ${l})`,
           ),
           l
         );
       } catch (m) {
         console.warn(
-          "[/edit] \u91CD\u5EFA issue \u5206\u652F\u6642\u8B80\u53D6\u7BC4\u672C\u5931\u6557",
+          i18nT("log.editNew.rebuildBranchReadTemplateFailed", {}, glang()),
           { issueNumber: n, templateName: d, error: m instanceof Error ? m.message : String(m) },
         );
       }
@@ -7588,7 +7378,7 @@ async function nT(e, t, r, n, s, o) {
       r,
       i,
       [{ path: ".gitkeep", content: "" }],
-      `chore: \u521D\u59CB\u5316 issue #${n} orphan \u5206\u652F\uFF08\u7121\u7BC4\u672C\u56DE\u9000\uFF09`,
+      `chore: init issue #${n} orphan branch (no template fallback)`,
     ),
     l
   );
@@ -7604,7 +7394,7 @@ async function sT(e, t, r, n, s) {
         return (await Sr(e, t, r, n, l), l);
       } catch (c) {
         ((i = c),
-          console.warn("[/edit] issue workflow \u540C\u6B65\u5931\u6557", {
+          console.warn(i18nT("log.editNew.workflowSyncFailed", {}, glang()), {
             issueNumber: n,
             templateName: l,
             error: c instanceof Error ? c.message : String(c),
@@ -7612,7 +7402,7 @@ async function sT(e, t, r, n, s) {
       }
     }
   }
-  throw i ?? new Error("\u540C\u6B65 issue workflow \u5931\u6557\u3002");
+  throw i ?? new Error("Sync issue workflow failed.");
 }
 async function Os(e, t) {
   let { octokit: r, store: n, d1: s, config: o } = e.services,
@@ -7624,7 +7414,7 @@ async function Os(e, t) {
     y = Kp(t),
     _ = ci({ meta: d === "edit" ? (t.originalTelegramMeta ?? w) : w, agentProfile: y }),
     I = { title: t.name ?? "", body: _ };
-  console.log("[/new] \u6E96\u5099\u9001\u51FA\u5C0F\u9F8D\u8766\u8CC7\u6599", {
+  console.log(i18nT("log.editNew.preparingLobsterData", {}, glang()), {
     chatId: c,
     mode: d,
     targetIssueNumber: m,
@@ -7655,14 +7445,14 @@ async function Os(e, t) {
               ? await r.actions.enableWorkflow({ owner: i, repo: a, workflow_id: fe.id })
               : await r.actions.disableWorkflow({ owner: i, repo: a, workflow_id: fe.id }));
         } catch (ye) {
-          console.warn("[/edit] \u8A2D\u5B9A workflow \u72C0\u614B\u5931\u6557", {
+          console.warn(i18nT("log.editNew.setWorkflowStateFailed", {}, glang()), {
             issueNumber: m,
             error: ye instanceof Error ? ye.message : String(ye),
           });
         }
       }
       if (
-        (console.log("[/edit] GitHub Issue \u66F4\u65B0\u6210\u529F", {
+        (console.log(i18nT("log.editNew.issueUpdateOk", {}, glang()), {
           chatId: c,
           issueNumber: P.number,
         }),
@@ -7678,16 +7468,16 @@ async function Os(e, t) {
             a,
             `issue-${m}`,
             fe.map((X) => ({ path: X.path, content: X.content })),
-            `chore: \u91CD\u8A2D issue #${m} \u7BC4\u672C\uFF08\u7BC4\u672C\uFF1A${ve}\uFF09`,
+            `chore: reset issue #${m} template (template: ${ve})`,
           ),
             await Sr(r, i, a, m, ve),
             (K = ve),
-            console.log("[/edit] \u7BC4\u672C\u91CD\u8A2D\u6210\u529F", {
+            console.log(i18nT("log.editNew.templateResetOk", {}, glang()), {
               issueNumber: m,
               templateName: ve,
             }));
         } catch (fe) {
-          console.warn("[/edit] \u7BC4\u672C\u91CD\u8A2D\u5931\u6557", {
+          console.warn(i18nT("log.editNew.templateResetFailed", {}, glang()), {
             issueNumber: m,
             error: fe instanceof Error ? fe.message : String(fe),
           });
@@ -7715,11 +7505,11 @@ async function Os(e, t) {
         a,
         he,
         Y,
-        `chore: \u521D\u59CB\u5316 issue #${U.number} orphan \u5206\u652F\uFF08\u7BC4\u672C\uFF1A${K}\uFF09`,
+        `chore: init issue #${U.number} orphan branch (template: ${K})`,
       ),
         await Sr(r, i, a, U.number, K),
         await Vr(s, { repo: l, issueNumber: U.number, template: K }),
-        console.log("[/new] GitHub Issue \u5EFA\u7ACB\u6210\u529F", {
+        console.log(i18nT("log.editNew.issueCreateOk", {}, glang()), {
           chatId: c,
           issueNumber: P.number,
           branch: he,
@@ -7729,7 +7519,7 @@ async function Os(e, t) {
     S && c && (await rr(n, S, c));
   } catch (S) {
     throw (
-      console.error("[/new] GitHub Issue \u5BEB\u5165\u5931\u6557", {
+      console.error(i18nT("log.editNew.issueWriteFailed", {}, glang()), {
         chatId: c,
         mode: d,
         issueNumber: m,
@@ -7749,7 +7539,7 @@ async function Ns(e, t, r) {
     try {
       await ks(e, s);
     } catch (o) {
-      console.error("[/new] \u50B3\u9001\u72C0\u614B\u5361\u7247\u5931\u6557", {
+      console.error(i18nT("log.editNew.sendStatusCardFailed", {}, glang()), {
         issueNumber: s,
         error: o instanceof Error ? o.message : String(o),
       });
@@ -7789,7 +7579,7 @@ async function wl(e) {
         try {
           P = await tn(r, s, o);
         } catch (K) {
-          console.warn("[/edit] 讀取範本清單失敗", {
+          console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "edit" }, glang()), {
             error: K instanceof Error ? K.message : String(K),
           });
         }
@@ -7816,7 +7606,7 @@ async function wl(e) {
       try {
         w = await tn(r, s, o);
       } catch (I) {
-        console.warn("[/new] 讀取範本清單失敗", {
+        console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "new" }, glang()), {
           error: I instanceof Error ? I.message : String(I),
         });
       }
@@ -7871,14 +7661,14 @@ async function wl(e) {
         let w = await Os(e, m);
         await Ns(e, w, "reply");
       } catch (w) {
-        (console.error("[/edit] finishNewFlow 失敗", w),
+        (console.error(i18nT("log.editNew.finishNewFlowFailed", { command: "edit" }, glang()), w),
           await e.reply(
             t("newFlow.updateErrorRetryEdit", {}, glang()),
           ));
       }
       return;
     }
-    (console.warn("[/new] 未預期的文字輸入步驟", {
+    (console.warn(i18nT("log.editNew.unexpectedTextInputStep", { command: "new" }, glang()), {
       chatId: i,
       step: a.step,
     }),
@@ -7930,7 +7720,7 @@ async function bl(e) {
     try {
       d = await tn(r, s, o);
     } catch (y) {
-      console.warn("[/edit] 讀取範本清單失敗", {
+      console.warn(i18nT("log.editNew.readTemplateListFailed", { command: "edit" }, glang()), {
         error: y instanceof Error ? y.message : String(y),
       });
     }
@@ -7958,7 +7748,7 @@ async function bl(e) {
       let m = await Os(e, d);
       await Ns(e, m, "edit");
     } catch (m) {
-      (console.error("[/edit] finishNewFlow 保留欄位失敗", m),
+      (console.error(i18nT("log.editNew.finishNewFlowReservedFieldFailed", { command: "edit" }, glang()), m),
         await e.editMessageText(
           t("newFlow.updateErrorGeneric", {}, glang()),
         ));
@@ -7995,7 +7785,7 @@ async function yl(e) {
   try {
     w = await tn(r, s, o);
   } catch (y) {
-    (console.warn(`[/${d}] 重新驗證範本清單失敗`, {
+    (console.warn(i18nT("log.editNew.revalidateTemplateListFailed", { command: d }, glang()), {
       error: y instanceof Error ? y.message : String(y),
     }),
       await e.answerCallbackQuery(
@@ -8052,7 +7842,7 @@ ${y.text}`,
     let y = await Os(e, m);
     await Ns(e, y, "edit");
   } catch (y) {
-    (console.error("[/new] finishNewFlow 範本選擇失敗", y),
+    (console.error(i18nT("log.editNew.finishNewFlowTemplateChoiceFailed", { command: "new" }, glang()), y),
       await e.editMessageText(Cm(y)));
   }
 }
@@ -8090,7 +7880,7 @@ async function _l(e) {
     let a = await Os(e, i);
     await Ns(e, a, "edit");
   } catch (a) {
-    (console.error("[/edit] finishNewFlow workflow 選擇失敗", a),
+    (console.error(i18nT("log.editNew.finishNewFlowWorkflowChoiceFailed", { command: "edit" }, glang()), a),
       await e.editMessageText(
         t("newFlow.updateErrorGeneric", {}, glang()),
       ));
@@ -8220,7 +8010,7 @@ async function fi(e) {
       let o = await Os(e, s);
       await Ns(e, o, "edit");
     } catch (o) {
-      (console.error("[/new] finishNewFlow env skip 失敗", o),
+      (console.error(i18nT("log.editNew.finishNewFlowEnvSkipFailed", { command: "new" }, glang()), o),
         await e.editMessageText(Cm(o)));
     }
   }
@@ -8253,7 +8043,7 @@ async function Rm(e) {
     let { data: _ } = await ok.rest.issues.get({ owner: s, repo: o, issue_number: a });
     l = { number: _.number, title: _.title, body: _.body ?? null };
   } catch (_) {
-    (console.error("[/edit] \u8B80\u53D6 issue \u5931\u6557", {
+    (console.error(i18nT("log.editNew.readIssueFailed", { command: "edit" }, glang()), {
       chatId: i,
       activeIssueNumber: a,
       error: _ instanceof Error ? _.message : String(_),
@@ -8283,7 +8073,7 @@ async function Rm(e) {
     };
   (await Ut(r, i),
     await Be(r, i, w),
-    console.log("[/edit] \u9032\u5165\u7B49\u5F85\u540D\u7A31\u968E\u6BB5", {
+    console.log(i18nT("log.editNew.enteringNameStep", { command: "edit" }, glang()), {
       chatId: i,
       issueNumber: l.number,
     }));
@@ -8324,7 +8114,7 @@ var Gs,
         r = e.chat?.id;
       if (!r) return;
       (console.log(
-        "[/new] \u6536\u5230 /new \u6307\u4EE4\uFF0C\u9032\u5165\u7B49\u5F85\u540D\u7A31\u968E\u6BB5",
+        i18nT("log.editNew.commandReceivedEnteringName", { command: "new" }, glang()),
         { chatId: r },
       ),
         await Ut(t, r),
@@ -8336,2229 +8126,6 @@ var Gs,
       await Rm(e);
     });
   });
-// ╔══════════════════════════════════════════════════════════════════════════════
-// ║ [MODULE cf] crypto PRNG (part)  —  VENDOR
-// ║ Random number/crypto (tweetnacl related)
-// ╚══════════════════════════════════════════════════════════════════════════════
-var cf = zi(() => {});
-// ╔══════════════════════════════════════════════════════════════════════════════
-// ║ [MODULE df] tweetnacl (crypto)  —  VENDOR
-// ║ NaCl crypto: signature/encryption (npm: tweetnacl)
-// ╚══════════════════════════════════════════════════════════════════════════════
-var df = zi((YR, Si) => {
-  (function (e) {
-    "use strict";
-    var t = function (p) {
-        var g,
-          f = new Float64Array(16);
-        if (p) for (g = 0; g < p.length; g++) f[g] = p[g];
-        return f;
-      },
-      r = function () {
-        throw new Error("no PRNG");
-      },
-      n = new Uint8Array(16),
-      s = new Uint8Array(32);
-    s[0] = 9;
-    var o = t(),
-      i = t([1]),
-      a = t([56129, 1]),
-      l = t([
-        30883, 4953, 19914, 30187, 55467, 16705, 2637, 112, 59544, 30585, 16505, 36039, 65139,
-        11119, 27886, 20995,
-      ]),
-      c = t([
-        61785, 9906, 39828, 60374, 45398, 33411, 5274, 224, 53552, 61171, 33010, 6542, 64743, 22239,
-        55772, 9222,
-      ]),
-      d = t([
-        54554, 36645, 11616, 51542, 42930, 38181, 51040, 26924, 56412, 64982, 57905, 49316, 21502,
-        52590, 14035, 8553,
-      ]),
-      m = t([
-        26200, 26214, 26214, 26214, 26214, 26214, 26214, 26214, 26214, 26214, 26214, 26214, 26214,
-        26214, 26214, 26214,
-      ]),
-      w = t([
-        41136, 18958, 6951, 50414, 58488, 44335, 6150, 12099, 55207, 15867, 153, 11085, 57099,
-        20417, 9344, 11139,
-      ]);
-    function y(p, g, f, u) {
-      ((p[g] = (f >> 24) & 255),
-        (p[g + 1] = (f >> 16) & 255),
-        (p[g + 2] = (f >> 8) & 255),
-        (p[g + 3] = f & 255),
-        (p[g + 4] = (u >> 24) & 255),
-        (p[g + 5] = (u >> 16) & 255),
-        (p[g + 6] = (u >> 8) & 255),
-        (p[g + 7] = u & 255));
-    }
-    function _(p, g, f, u, h) {
-      var T,
-        E = 0;
-      for (T = 0; T < h; T++) E |= p[g + T] ^ f[u + T];
-      return (1 & ((E - 1) >>> 8)) - 1;
-    }
-    function I(p, g, f, u) {
-      return _(p, g, f, u, 16);
-    }
-    function P(p, g, f, u) {
-      return _(p, g, f, u, 32);
-    }
-    function S(p, g, f, u) {
-      for (
-        var h = (u[0] & 255) | ((u[1] & 255) << 8) | ((u[2] & 255) << 16) | ((u[3] & 255) << 24),
-          T = (f[0] & 255) | ((f[1] & 255) << 8) | ((f[2] & 255) << 16) | ((f[3] & 255) << 24),
-          E = (f[4] & 255) | ((f[5] & 255) << 8) | ((f[6] & 255) << 16) | ((f[7] & 255) << 24),
-          A = (f[8] & 255) | ((f[9] & 255) << 8) | ((f[10] & 255) << 16) | ((f[11] & 255) << 24),
-          G = (f[12] & 255) | ((f[13] & 255) << 8) | ((f[14] & 255) << 16) | ((f[15] & 255) << 24),
-          z = (u[4] & 255) | ((u[5] & 255) << 8) | ((u[6] & 255) << 16) | ((u[7] & 255) << 24),
-          L = (g[0] & 255) | ((g[1] & 255) << 8) | ((g[2] & 255) << 16) | ((g[3] & 255) << 24),
-          ke = (g[4] & 255) | ((g[5] & 255) << 8) | ((g[6] & 255) << 16) | ((g[7] & 255) << 24),
-          j = (g[8] & 255) | ((g[9] & 255) << 8) | ((g[10] & 255) << 16) | ((g[11] & 255) << 24),
-          Z = (g[12] & 255) | ((g[13] & 255) << 8) | ((g[14] & 255) << 16) | ((g[15] & 255) << 24),
-          ee = (u[8] & 255) | ((u[9] & 255) << 8) | ((u[10] & 255) << 16) | ((u[11] & 255) << 24),
-          ue = (f[16] & 255) | ((f[17] & 255) << 8) | ((f[18] & 255) << 16) | ((f[19] & 255) << 24),
-          ie = (f[20] & 255) | ((f[21] & 255) << 8) | ((f[22] & 255) << 16) | ((f[23] & 255) << 24),
-          te = (f[24] & 255) | ((f[25] & 255) << 8) | ((f[26] & 255) << 16) | ((f[27] & 255) << 24),
-          ne = (f[28] & 255) | ((f[29] & 255) << 8) | ((f[30] & 255) << 16) | ((f[31] & 255) << 24),
-          re = (u[12] & 255) | ((u[13] & 255) << 8) | ((u[14] & 255) << 16) | ((u[15] & 255) << 24),
-          W = h,
-          Q = T,
-          D = E,
-          q = A,
-          H = G,
-          $ = z,
-          v = L,
-          C = ke,
-          M = j,
-          R = Z,
-          x = ee,
-          N = ue,
-          J = ie,
-          ce = te,
-          pe = ne,
-          de = re,
-          b,
-          we = 0;
-        we < 20;
-        we += 2
-      )
-        ((b = (W + J) | 0),
-          (H ^= (b << 7) | (b >>> 25)),
-          (b = (H + W) | 0),
-          (M ^= (b << 9) | (b >>> 23)),
-          (b = (M + H) | 0),
-          (J ^= (b << 13) | (b >>> 19)),
-          (b = (J + M) | 0),
-          (W ^= (b << 18) | (b >>> 14)),
-          (b = ($ + Q) | 0),
-          (R ^= (b << 7) | (b >>> 25)),
-          (b = (R + $) | 0),
-          (ce ^= (b << 9) | (b >>> 23)),
-          (b = (ce + R) | 0),
-          (Q ^= (b << 13) | (b >>> 19)),
-          (b = (Q + ce) | 0),
-          ($ ^= (b << 18) | (b >>> 14)),
-          (b = (x + v) | 0),
-          (pe ^= (b << 7) | (b >>> 25)),
-          (b = (pe + x) | 0),
-          (D ^= (b << 9) | (b >>> 23)),
-          (b = (D + pe) | 0),
-          (v ^= (b << 13) | (b >>> 19)),
-          (b = (v + D) | 0),
-          (x ^= (b << 18) | (b >>> 14)),
-          (b = (de + N) | 0),
-          (q ^= (b << 7) | (b >>> 25)),
-          (b = (q + de) | 0),
-          (C ^= (b << 9) | (b >>> 23)),
-          (b = (C + q) | 0),
-          (N ^= (b << 13) | (b >>> 19)),
-          (b = (N + C) | 0),
-          (de ^= (b << 18) | (b >>> 14)),
-          (b = (W + q) | 0),
-          (Q ^= (b << 7) | (b >>> 25)),
-          (b = (Q + W) | 0),
-          (D ^= (b << 9) | (b >>> 23)),
-          (b = (D + Q) | 0),
-          (q ^= (b << 13) | (b >>> 19)),
-          (b = (q + D) | 0),
-          (W ^= (b << 18) | (b >>> 14)),
-          (b = ($ + H) | 0),
-          (v ^= (b << 7) | (b >>> 25)),
-          (b = (v + $) | 0),
-          (C ^= (b << 9) | (b >>> 23)),
-          (b = (C + v) | 0),
-          (H ^= (b << 13) | (b >>> 19)),
-          (b = (H + C) | 0),
-          ($ ^= (b << 18) | (b >>> 14)),
-          (b = (x + R) | 0),
-          (N ^= (b << 7) | (b >>> 25)),
-          (b = (N + x) | 0),
-          (M ^= (b << 9) | (b >>> 23)),
-          (b = (M + N) | 0),
-          (R ^= (b << 13) | (b >>> 19)),
-          (b = (R + M) | 0),
-          (x ^= (b << 18) | (b >>> 14)),
-          (b = (de + pe) | 0),
-          (J ^= (b << 7) | (b >>> 25)),
-          (b = (J + de) | 0),
-          (ce ^= (b << 9) | (b >>> 23)),
-          (b = (ce + J) | 0),
-          (pe ^= (b << 13) | (b >>> 19)),
-          (b = (pe + ce) | 0),
-          (de ^= (b << 18) | (b >>> 14)));
-      ((W = (W + h) | 0),
-        (Q = (Q + T) | 0),
-        (D = (D + E) | 0),
-        (q = (q + A) | 0),
-        (H = (H + G) | 0),
-        ($ = ($ + z) | 0),
-        (v = (v + L) | 0),
-        (C = (C + ke) | 0),
-        (M = (M + j) | 0),
-        (R = (R + Z) | 0),
-        (x = (x + ee) | 0),
-        (N = (N + ue) | 0),
-        (J = (J + ie) | 0),
-        (ce = (ce + te) | 0),
-        (pe = (pe + ne) | 0),
-        (de = (de + re) | 0),
-        (p[0] = (W >>> 0) & 255),
-        (p[1] = (W >>> 8) & 255),
-        (p[2] = (W >>> 16) & 255),
-        (p[3] = (W >>> 24) & 255),
-        (p[4] = (Q >>> 0) & 255),
-        (p[5] = (Q >>> 8) & 255),
-        (p[6] = (Q >>> 16) & 255),
-        (p[7] = (Q >>> 24) & 255),
-        (p[8] = (D >>> 0) & 255),
-        (p[9] = (D >>> 8) & 255),
-        (p[10] = (D >>> 16) & 255),
-        (p[11] = (D >>> 24) & 255),
-        (p[12] = (q >>> 0) & 255),
-        (p[13] = (q >>> 8) & 255),
-        (p[14] = (q >>> 16) & 255),
-        (p[15] = (q >>> 24) & 255),
-        (p[16] = (H >>> 0) & 255),
-        (p[17] = (H >>> 8) & 255),
-        (p[18] = (H >>> 16) & 255),
-        (p[19] = (H >>> 24) & 255),
-        (p[20] = ($ >>> 0) & 255),
-        (p[21] = ($ >>> 8) & 255),
-        (p[22] = ($ >>> 16) & 255),
-        (p[23] = ($ >>> 24) & 255),
-        (p[24] = (v >>> 0) & 255),
-        (p[25] = (v >>> 8) & 255),
-        (p[26] = (v >>> 16) & 255),
-        (p[27] = (v >>> 24) & 255),
-        (p[28] = (C >>> 0) & 255),
-        (p[29] = (C >>> 8) & 255),
-        (p[30] = (C >>> 16) & 255),
-        (p[31] = (C >>> 24) & 255),
-        (p[32] = (M >>> 0) & 255),
-        (p[33] = (M >>> 8) & 255),
-        (p[34] = (M >>> 16) & 255),
-        (p[35] = (M >>> 24) & 255),
-        (p[36] = (R >>> 0) & 255),
-        (p[37] = (R >>> 8) & 255),
-        (p[38] = (R >>> 16) & 255),
-        (p[39] = (R >>> 24) & 255),
-        (p[40] = (x >>> 0) & 255),
-        (p[41] = (x >>> 8) & 255),
-        (p[42] = (x >>> 16) & 255),
-        (p[43] = (x >>> 24) & 255),
-        (p[44] = (N >>> 0) & 255),
-        (p[45] = (N >>> 8) & 255),
-        (p[46] = (N >>> 16) & 255),
-        (p[47] = (N >>> 24) & 255),
-        (p[48] = (J >>> 0) & 255),
-        (p[49] = (J >>> 8) & 255),
-        (p[50] = (J >>> 16) & 255),
-        (p[51] = (J >>> 24) & 255),
-        (p[52] = (ce >>> 0) & 255),
-        (p[53] = (ce >>> 8) & 255),
-        (p[54] = (ce >>> 16) & 255),
-        (p[55] = (ce >>> 24) & 255),
-        (p[56] = (pe >>> 0) & 255),
-        (p[57] = (pe >>> 8) & 255),
-        (p[58] = (pe >>> 16) & 255),
-        (p[59] = (pe >>> 24) & 255),
-        (p[60] = (de >>> 0) & 255),
-        (p[61] = (de >>> 8) & 255),
-        (p[62] = (de >>> 16) & 255),
-        (p[63] = (de >>> 24) & 255));
-    }
-    function U(p, g, f, u) {
-      for (
-        var h = (u[0] & 255) | ((u[1] & 255) << 8) | ((u[2] & 255) << 16) | ((u[3] & 255) << 24),
-          T = (f[0] & 255) | ((f[1] & 255) << 8) | ((f[2] & 255) << 16) | ((f[3] & 255) << 24),
-          E = (f[4] & 255) | ((f[5] & 255) << 8) | ((f[6] & 255) << 16) | ((f[7] & 255) << 24),
-          A = (f[8] & 255) | ((f[9] & 255) << 8) | ((f[10] & 255) << 16) | ((f[11] & 255) << 24),
-          G = (f[12] & 255) | ((f[13] & 255) << 8) | ((f[14] & 255) << 16) | ((f[15] & 255) << 24),
-          z = (u[4] & 255) | ((u[5] & 255) << 8) | ((u[6] & 255) << 16) | ((u[7] & 255) << 24),
-          L = (g[0] & 255) | ((g[1] & 255) << 8) | ((g[2] & 255) << 16) | ((g[3] & 255) << 24),
-          ke = (g[4] & 255) | ((g[5] & 255) << 8) | ((g[6] & 255) << 16) | ((g[7] & 255) << 24),
-          j = (g[8] & 255) | ((g[9] & 255) << 8) | ((g[10] & 255) << 16) | ((g[11] & 255) << 24),
-          Z = (g[12] & 255) | ((g[13] & 255) << 8) | ((g[14] & 255) << 16) | ((g[15] & 255) << 24),
-          ee = (u[8] & 255) | ((u[9] & 255) << 8) | ((u[10] & 255) << 16) | ((u[11] & 255) << 24),
-          ue = (f[16] & 255) | ((f[17] & 255) << 8) | ((f[18] & 255) << 16) | ((f[19] & 255) << 24),
-          ie = (f[20] & 255) | ((f[21] & 255) << 8) | ((f[22] & 255) << 16) | ((f[23] & 255) << 24),
-          te = (f[24] & 255) | ((f[25] & 255) << 8) | ((f[26] & 255) << 16) | ((f[27] & 255) << 24),
-          ne = (f[28] & 255) | ((f[29] & 255) << 8) | ((f[30] & 255) << 16) | ((f[31] & 255) << 24),
-          re = (u[12] & 255) | ((u[13] & 255) << 8) | ((u[14] & 255) << 16) | ((u[15] & 255) << 24),
-          W = h,
-          Q = T,
-          D = E,
-          q = A,
-          H = G,
-          $ = z,
-          v = L,
-          C = ke,
-          M = j,
-          R = Z,
-          x = ee,
-          N = ue,
-          J = ie,
-          ce = te,
-          pe = ne,
-          de = re,
-          b,
-          we = 0;
-        we < 20;
-        we += 2
-      )
-        ((b = (W + J) | 0),
-          (H ^= (b << 7) | (b >>> 25)),
-          (b = (H + W) | 0),
-          (M ^= (b << 9) | (b >>> 23)),
-          (b = (M + H) | 0),
-          (J ^= (b << 13) | (b >>> 19)),
-          (b = (J + M) | 0),
-          (W ^= (b << 18) | (b >>> 14)),
-          (b = ($ + Q) | 0),
-          (R ^= (b << 7) | (b >>> 25)),
-          (b = (R + $) | 0),
-          (ce ^= (b << 9) | (b >>> 23)),
-          (b = (ce + R) | 0),
-          (Q ^= (b << 13) | (b >>> 19)),
-          (b = (Q + ce) | 0),
-          ($ ^= (b << 18) | (b >>> 14)),
-          (b = (x + v) | 0),
-          (pe ^= (b << 7) | (b >>> 25)),
-          (b = (pe + x) | 0),
-          (D ^= (b << 9) | (b >>> 23)),
-          (b = (D + pe) | 0),
-          (v ^= (b << 13) | (b >>> 19)),
-          (b = (v + D) | 0),
-          (x ^= (b << 18) | (b >>> 14)),
-          (b = (de + N) | 0),
-          (q ^= (b << 7) | (b >>> 25)),
-          (b = (q + de) | 0),
-          (C ^= (b << 9) | (b >>> 23)),
-          (b = (C + q) | 0),
-          (N ^= (b << 13) | (b >>> 19)),
-          (b = (N + C) | 0),
-          (de ^= (b << 18) | (b >>> 14)),
-          (b = (W + q) | 0),
-          (Q ^= (b << 7) | (b >>> 25)),
-          (b = (Q + W) | 0),
-          (D ^= (b << 9) | (b >>> 23)),
-          (b = (D + Q) | 0),
-          (q ^= (b << 13) | (b >>> 19)),
-          (b = (q + D) | 0),
-          (W ^= (b << 18) | (b >>> 14)),
-          (b = ($ + H) | 0),
-          (v ^= (b << 7) | (b >>> 25)),
-          (b = (v + $) | 0),
-          (C ^= (b << 9) | (b >>> 23)),
-          (b = (C + v) | 0),
-          (H ^= (b << 13) | (b >>> 19)),
-          (b = (H + C) | 0),
-          ($ ^= (b << 18) | (b >>> 14)),
-          (b = (x + R) | 0),
-          (N ^= (b << 7) | (b >>> 25)),
-          (b = (N + x) | 0),
-          (M ^= (b << 9) | (b >>> 23)),
-          (b = (M + N) | 0),
-          (R ^= (b << 13) | (b >>> 19)),
-          (b = (R + M) | 0),
-          (x ^= (b << 18) | (b >>> 14)),
-          (b = (de + pe) | 0),
-          (J ^= (b << 7) | (b >>> 25)),
-          (b = (J + de) | 0),
-          (ce ^= (b << 9) | (b >>> 23)),
-          (b = (ce + J) | 0),
-          (pe ^= (b << 13) | (b >>> 19)),
-          (b = (pe + ce) | 0),
-          (de ^= (b << 18) | (b >>> 14)));
-      ((p[0] = (W >>> 0) & 255),
-        (p[1] = (W >>> 8) & 255),
-        (p[2] = (W >>> 16) & 255),
-        (p[3] = (W >>> 24) & 255),
-        (p[4] = ($ >>> 0) & 255),
-        (p[5] = ($ >>> 8) & 255),
-        (p[6] = ($ >>> 16) & 255),
-        (p[7] = ($ >>> 24) & 255),
-        (p[8] = (x >>> 0) & 255),
-        (p[9] = (x >>> 8) & 255),
-        (p[10] = (x >>> 16) & 255),
-        (p[11] = (x >>> 24) & 255),
-        (p[12] = (de >>> 0) & 255),
-        (p[13] = (de >>> 8) & 255),
-        (p[14] = (de >>> 16) & 255),
-        (p[15] = (de >>> 24) & 255),
-        (p[16] = (v >>> 0) & 255),
-        (p[17] = (v >>> 8) & 255),
-        (p[18] = (v >>> 16) & 255),
-        (p[19] = (v >>> 24) & 255),
-        (p[20] = (C >>> 0) & 255),
-        (p[21] = (C >>> 8) & 255),
-        (p[22] = (C >>> 16) & 255),
-        (p[23] = (C >>> 24) & 255),
-        (p[24] = (M >>> 0) & 255),
-        (p[25] = (M >>> 8) & 255),
-        (p[26] = (M >>> 16) & 255),
-        (p[27] = (M >>> 24) & 255),
-        (p[28] = (R >>> 0) & 255),
-        (p[29] = (R >>> 8) & 255),
-        (p[30] = (R >>> 16) & 255),
-        (p[31] = (R >>> 24) & 255));
-    }
-    function K(p, g, f, u) {
-      S(p, g, f, u);
-    }
-    function Ce(p, g, f, u) {
-      U(p, g, f, u);
-    }
-    var Re = new Uint8Array([
-      101, 120, 112, 97, 110, 100, 32, 51, 50, 45, 98, 121, 116, 101, 32, 107,
-    ]);
-    function Y(p, g, f, u, h, T, E) {
-      var A = new Uint8Array(16),
-        G = new Uint8Array(64),
-        z,
-        L;
-      for (L = 0; L < 16; L++) A[L] = 0;
-      for (L = 0; L < 8; L++) A[L] = T[L];
-      for (; h >= 64;) {
-        for (K(G, A, E, Re), L = 0; L < 64; L++) p[g + L] = f[u + L] ^ G[L];
-        for (z = 1, L = 8; L < 16; L++)
-          ((z = (z + (A[L] & 255)) | 0), (A[L] = z & 255), (z >>>= 8));
-        ((h -= 64), (g += 64), (u += 64));
-      }
-      if (h > 0) for (K(G, A, E, Re), L = 0; L < h; L++) p[g + L] = f[u + L] ^ G[L];
-      return 0;
-    }
-    function he(p, g, f, u, h) {
-      var T = new Uint8Array(16),
-        E = new Uint8Array(64),
-        A,
-        G;
-      for (G = 0; G < 16; G++) T[G] = 0;
-      for (G = 0; G < 8; G++) T[G] = u[G];
-      for (; f >= 64;) {
-        for (K(E, T, h, Re), G = 0; G < 64; G++) p[g + G] = E[G];
-        for (A = 1, G = 8; G < 16; G++)
-          ((A = (A + (T[G] & 255)) | 0), (T[G] = A & 255), (A >>>= 8));
-        ((f -= 64), (g += 64));
-      }
-      if (f > 0) for (K(E, T, h, Re), G = 0; G < f; G++) p[g + G] = E[G];
-      return 0;
-    }
-    function ve(p, g, f, u, h) {
-      var T = new Uint8Array(32);
-      Ce(T, u, h, Re);
-      for (var E = new Uint8Array(8), A = 0; A < 8; A++) E[A] = u[A + 16];
-      return he(p, g, f, E, T);
-    }
-    function ye(p, g, f, u, h, T, E) {
-      var A = new Uint8Array(32);
-      Ce(A, T, E, Re);
-      for (var G = new Uint8Array(8), z = 0; z < 8; z++) G[z] = T[z + 16];
-      return Y(p, g, f, u, h, G, A);
-    }
-    var fe = function (p) {
-      ((this.buffer = new Uint8Array(16)),
-        (this.r = new Uint16Array(10)),
-        (this.h = new Uint16Array(10)),
-        (this.pad = new Uint16Array(8)),
-        (this.leftover = 0),
-        (this.fin = 0));
-      var g, f, u, h, T, E, A, G;
-      ((g = (p[0] & 255) | ((p[1] & 255) << 8)),
-        (this.r[0] = g & 8191),
-        (f = (p[2] & 255) | ((p[3] & 255) << 8)),
-        (this.r[1] = ((g >>> 13) | (f << 3)) & 8191),
-        (u = (p[4] & 255) | ((p[5] & 255) << 8)),
-        (this.r[2] = ((f >>> 10) | (u << 6)) & 7939),
-        (h = (p[6] & 255) | ((p[7] & 255) << 8)),
-        (this.r[3] = ((u >>> 7) | (h << 9)) & 8191),
-        (T = (p[8] & 255) | ((p[9] & 255) << 8)),
-        (this.r[4] = ((h >>> 4) | (T << 12)) & 255),
-        (this.r[5] = (T >>> 1) & 8190),
-        (E = (p[10] & 255) | ((p[11] & 255) << 8)),
-        (this.r[6] = ((T >>> 14) | (E << 2)) & 8191),
-        (A = (p[12] & 255) | ((p[13] & 255) << 8)),
-        (this.r[7] = ((E >>> 11) | (A << 5)) & 8065),
-        (G = (p[14] & 255) | ((p[15] & 255) << 8)),
-        (this.r[8] = ((A >>> 8) | (G << 8)) & 8191),
-        (this.r[9] = (G >>> 5) & 127),
-        (this.pad[0] = (p[16] & 255) | ((p[17] & 255) << 8)),
-        (this.pad[1] = (p[18] & 255) | ((p[19] & 255) << 8)),
-        (this.pad[2] = (p[20] & 255) | ((p[21] & 255) << 8)),
-        (this.pad[3] = (p[22] & 255) | ((p[23] & 255) << 8)),
-        (this.pad[4] = (p[24] & 255) | ((p[25] & 255) << 8)),
-        (this.pad[5] = (p[26] & 255) | ((p[27] & 255) << 8)),
-        (this.pad[6] = (p[28] & 255) | ((p[29] & 255) << 8)),
-        (this.pad[7] = (p[30] & 255) | ((p[31] & 255) << 8)));
-    };
-    ((fe.prototype.blocks = function (p, g, f) {
-      for (
-        var u = this.fin ? 0 : 2048,
-          h,
-          T,
-          E,
-          A,
-          G,
-          z,
-          L,
-          ke,
-          j,
-          Z,
-          ee,
-          ue,
-          ie,
-          te,
-          ne,
-          re,
-          W,
-          Q,
-          D,
-          q = this.h[0],
-          H = this.h[1],
-          $ = this.h[2],
-          v = this.h[3],
-          C = this.h[4],
-          M = this.h[5],
-          R = this.h[6],
-          x = this.h[7],
-          N = this.h[8],
-          J = this.h[9],
-          ce = this.r[0],
-          pe = this.r[1],
-          de = this.r[2],
-          b = this.r[3],
-          we = this.r[4],
-          Ee = this.r[5],
-          Se = this.r[6],
-          ge = this.r[7],
-          _e = this.r[8],
-          Te = this.r[9];
-        f >= 16;
-      )
-        ((h = (p[g + 0] & 255) | ((p[g + 1] & 255) << 8)),
-          (q += h & 8191),
-          (T = (p[g + 2] & 255) | ((p[g + 3] & 255) << 8)),
-          (H += ((h >>> 13) | (T << 3)) & 8191),
-          (E = (p[g + 4] & 255) | ((p[g + 5] & 255) << 8)),
-          ($ += ((T >>> 10) | (E << 6)) & 8191),
-          (A = (p[g + 6] & 255) | ((p[g + 7] & 255) << 8)),
-          (v += ((E >>> 7) | (A << 9)) & 8191),
-          (G = (p[g + 8] & 255) | ((p[g + 9] & 255) << 8)),
-          (C += ((A >>> 4) | (G << 12)) & 8191),
-          (M += (G >>> 1) & 8191),
-          (z = (p[g + 10] & 255) | ((p[g + 11] & 255) << 8)),
-          (R += ((G >>> 14) | (z << 2)) & 8191),
-          (L = (p[g + 12] & 255) | ((p[g + 13] & 255) << 8)),
-          (x += ((z >>> 11) | (L << 5)) & 8191),
-          (ke = (p[g + 14] & 255) | ((p[g + 15] & 255) << 8)),
-          (N += ((L >>> 8) | (ke << 8)) & 8191),
-          (J += (ke >>> 5) | u),
-          (j = 0),
-          (Z = j),
-          (Z += q * ce),
-          (Z += H * (5 * Te)),
-          (Z += $ * (5 * _e)),
-          (Z += v * (5 * ge)),
-          (Z += C * (5 * Se)),
-          (j = Z >>> 13),
-          (Z &= 8191),
-          (Z += M * (5 * Ee)),
-          (Z += R * (5 * we)),
-          (Z += x * (5 * b)),
-          (Z += N * (5 * de)),
-          (Z += J * (5 * pe)),
-          (j += Z >>> 13),
-          (Z &= 8191),
-          (ee = j),
-          (ee += q * pe),
-          (ee += H * ce),
-          (ee += $ * (5 * Te)),
-          (ee += v * (5 * _e)),
-          (ee += C * (5 * ge)),
-          (j = ee >>> 13),
-          (ee &= 8191),
-          (ee += M * (5 * Se)),
-          (ee += R * (5 * Ee)),
-          (ee += x * (5 * we)),
-          (ee += N * (5 * b)),
-          (ee += J * (5 * de)),
-          (j += ee >>> 13),
-          (ee &= 8191),
-          (ue = j),
-          (ue += q * de),
-          (ue += H * pe),
-          (ue += $ * ce),
-          (ue += v * (5 * Te)),
-          (ue += C * (5 * _e)),
-          (j = ue >>> 13),
-          (ue &= 8191),
-          (ue += M * (5 * ge)),
-          (ue += R * (5 * Se)),
-          (ue += x * (5 * Ee)),
-          (ue += N * (5 * we)),
-          (ue += J * (5 * b)),
-          (j += ue >>> 13),
-          (ue &= 8191),
-          (ie = j),
-          (ie += q * b),
-          (ie += H * de),
-          (ie += $ * pe),
-          (ie += v * ce),
-          (ie += C * (5 * Te)),
-          (j = ie >>> 13),
-          (ie &= 8191),
-          (ie += M * (5 * _e)),
-          (ie += R * (5 * ge)),
-          (ie += x * (5 * Se)),
-          (ie += N * (5 * Ee)),
-          (ie += J * (5 * we)),
-          (j += ie >>> 13),
-          (ie &= 8191),
-          (te = j),
-          (te += q * we),
-          (te += H * b),
-          (te += $ * de),
-          (te += v * pe),
-          (te += C * ce),
-          (j = te >>> 13),
-          (te &= 8191),
-          (te += M * (5 * Te)),
-          (te += R * (5 * _e)),
-          (te += x * (5 * ge)),
-          (te += N * (5 * Se)),
-          (te += J * (5 * Ee)),
-          (j += te >>> 13),
-          (te &= 8191),
-          (ne = j),
-          (ne += q * Ee),
-          (ne += H * we),
-          (ne += $ * b),
-          (ne += v * de),
-          (ne += C * pe),
-          (j = ne >>> 13),
-          (ne &= 8191),
-          (ne += M * ce),
-          (ne += R * (5 * Te)),
-          (ne += x * (5 * _e)),
-          (ne += N * (5 * ge)),
-          (ne += J * (5 * Se)),
-          (j += ne >>> 13),
-          (ne &= 8191),
-          (re = j),
-          (re += q * Se),
-          (re += H * Ee),
-          (re += $ * we),
-          (re += v * b),
-          (re += C * de),
-          (j = re >>> 13),
-          (re &= 8191),
-          (re += M * pe),
-          (re += R * ce),
-          (re += x * (5 * Te)),
-          (re += N * (5 * _e)),
-          (re += J * (5 * ge)),
-          (j += re >>> 13),
-          (re &= 8191),
-          (W = j),
-          (W += q * ge),
-          (W += H * Se),
-          (W += $ * Ee),
-          (W += v * we),
-          (W += C * b),
-          (j = W >>> 13),
-          (W &= 8191),
-          (W += M * de),
-          (W += R * pe),
-          (W += x * ce),
-          (W += N * (5 * Te)),
-          (W += J * (5 * _e)),
-          (j += W >>> 13),
-          (W &= 8191),
-          (Q = j),
-          (Q += q * _e),
-          (Q += H * ge),
-          (Q += $ * Se),
-          (Q += v * Ee),
-          (Q += C * we),
-          (j = Q >>> 13),
-          (Q &= 8191),
-          (Q += M * b),
-          (Q += R * de),
-          (Q += x * pe),
-          (Q += N * ce),
-          (Q += J * (5 * Te)),
-          (j += Q >>> 13),
-          (Q &= 8191),
-          (D = j),
-          (D += q * Te),
-          (D += H * _e),
-          (D += $ * ge),
-          (D += v * Se),
-          (D += C * Ee),
-          (j = D >>> 13),
-          (D &= 8191),
-          (D += M * we),
-          (D += R * b),
-          (D += x * de),
-          (D += N * pe),
-          (D += J * ce),
-          (j += D >>> 13),
-          (D &= 8191),
-          (j = ((j << 2) + j) | 0),
-          (j = (j + Z) | 0),
-          (Z = j & 8191),
-          (j = j >>> 13),
-          (ee += j),
-          (q = Z),
-          (H = ee),
-          ($ = ue),
-          (v = ie),
-          (C = te),
-          (M = ne),
-          (R = re),
-          (x = W),
-          (N = Q),
-          (J = D),
-          (g += 16),
-          (f -= 16));
-      ((this.h[0] = q),
-        (this.h[1] = H),
-        (this.h[2] = $),
-        (this.h[3] = v),
-        (this.h[4] = C),
-        (this.h[5] = M),
-        (this.h[6] = R),
-        (this.h[7] = x),
-        (this.h[8] = N),
-        (this.h[9] = J));
-    }),
-      (fe.prototype.finish = function (p, g) {
-        var f = new Uint16Array(10),
-          u,
-          h,
-          T,
-          E;
-        if (this.leftover) {
-          for (E = this.leftover, this.buffer[E++] = 1; E < 16; E++) this.buffer[E] = 0;
-          ((this.fin = 1), this.blocks(this.buffer, 0, 16));
-        }
-        for (u = this.h[1] >>> 13, this.h[1] &= 8191, E = 2; E < 10; E++)
-          ((this.h[E] += u), (u = this.h[E] >>> 13), (this.h[E] &= 8191));
-        for (
-          this.h[0] += u * 5,
-            u = this.h[0] >>> 13,
-            this.h[0] &= 8191,
-            this.h[1] += u,
-            u = this.h[1] >>> 13,
-            this.h[1] &= 8191,
-            this.h[2] += u,
-            f[0] = this.h[0] + 5,
-            u = f[0] >>> 13,
-            f[0] &= 8191,
-            E = 1;
-          E < 10;
-          E++
-        )
-          ((f[E] = this.h[E] + u), (u = f[E] >>> 13), (f[E] &= 8191));
-        for (f[9] -= 8192, h = (u ^ 1) - 1, E = 0; E < 10; E++) f[E] &= h;
-        for (h = ~h, E = 0; E < 10; E++) this.h[E] = (this.h[E] & h) | f[E];
-        for (
-          this.h[0] = (this.h[0] | (this.h[1] << 13)) & 65535,
-            this.h[1] = ((this.h[1] >>> 3) | (this.h[2] << 10)) & 65535,
-            this.h[2] = ((this.h[2] >>> 6) | (this.h[3] << 7)) & 65535,
-            this.h[3] = ((this.h[3] >>> 9) | (this.h[4] << 4)) & 65535,
-            this.h[4] = ((this.h[4] >>> 12) | (this.h[5] << 1) | (this.h[6] << 14)) & 65535,
-            this.h[5] = ((this.h[6] >>> 2) | (this.h[7] << 11)) & 65535,
-            this.h[6] = ((this.h[7] >>> 5) | (this.h[8] << 8)) & 65535,
-            this.h[7] = ((this.h[8] >>> 8) | (this.h[9] << 5)) & 65535,
-            T = this.h[0] + this.pad[0],
-            this.h[0] = T & 65535,
-            E = 1;
-          E < 8;
-          E++
-        )
-          ((T = (((this.h[E] + this.pad[E]) | 0) + (T >>> 16)) | 0), (this.h[E] = T & 65535));
-        ((p[g + 0] = (this.h[0] >>> 0) & 255),
-          (p[g + 1] = (this.h[0] >>> 8) & 255),
-          (p[g + 2] = (this.h[1] >>> 0) & 255),
-          (p[g + 3] = (this.h[1] >>> 8) & 255),
-          (p[g + 4] = (this.h[2] >>> 0) & 255),
-          (p[g + 5] = (this.h[2] >>> 8) & 255),
-          (p[g + 6] = (this.h[3] >>> 0) & 255),
-          (p[g + 7] = (this.h[3] >>> 8) & 255),
-          (p[g + 8] = (this.h[4] >>> 0) & 255),
-          (p[g + 9] = (this.h[4] >>> 8) & 255),
-          (p[g + 10] = (this.h[5] >>> 0) & 255),
-          (p[g + 11] = (this.h[5] >>> 8) & 255),
-          (p[g + 12] = (this.h[6] >>> 0) & 255),
-          (p[g + 13] = (this.h[6] >>> 8) & 255),
-          (p[g + 14] = (this.h[7] >>> 0) & 255),
-          (p[g + 15] = (this.h[7] >>> 8) & 255));
-      }),
-      (fe.prototype.update = function (p, g, f) {
-        var u, h;
-        if (this.leftover) {
-          for (h = 16 - this.leftover, h > f && (h = f), u = 0; u < h; u++)
-            this.buffer[this.leftover + u] = p[g + u];
-          if (((f -= h), (g += h), (this.leftover += h), this.leftover < 16)) return;
-          (this.blocks(this.buffer, 0, 16), (this.leftover = 0));
-        }
-        if ((f >= 16 && ((h = f - (f % 16)), this.blocks(p, g, h), (g += h), (f -= h)), f)) {
-          for (u = 0; u < f; u++) this.buffer[this.leftover + u] = p[g + u];
-          this.leftover += f;
-        }
-      }));
-    function X(p, g, f, u, h, T) {
-      var E = new fe(T);
-      return (E.update(f, u, h), E.finish(p, g), 0);
-    }
-    function Pe(p, g, f, u, h, T) {
-      var E = new Uint8Array(16);
-      return (X(E, 0, f, u, h, T), I(p, g, E, 0));
-    }
-    function ut(p, g, f, u, h) {
-      var T;
-      if (f < 32) return -1;
-      for (ye(p, 0, g, 0, f, u, h), X(p, 16, p, 32, f - 32, p), T = 0; T < 16; T++) p[T] = 0;
-      return 0;
-    }
-    function Me(p, g, f, u, h) {
-      var T,
-        E = new Uint8Array(32);
-      if (f < 32 || (ve(E, 0, 32, u, h), Pe(g, 16, g, 32, f - 32, E) !== 0)) return -1;
-      for (ye(p, 0, g, 0, f, u, h), T = 0; T < 32; T++) p[T] = 0;
-      return 0;
-    }
-    function Qe(p, g) {
-      var f;
-      for (f = 0; f < 16; f++) p[f] = g[f] | 0;
-    }
-    function Pr(p) {
-      var g,
-        f,
-        u = 1;
-      for (g = 0; g < 16; g++)
-        ((f = p[g] + u + 65535), (u = Math.floor(f / 65536)), (p[g] = f - u * 65536));
-      p[0] += u - 1 + 37 * (u - 1);
-    }
-    function Mt(p, g, f) {
-      for (var u, h = ~(f - 1), T = 0; T < 16; T++)
-        ((u = h & (p[T] ^ g[T])), (p[T] ^= u), (g[T] ^= u));
-    }
-    function Ot(p, g) {
-      var f,
-        u,
-        h,
-        T = t(),
-        E = t();
-      for (f = 0; f < 16; f++) E[f] = g[f];
-      for (Pr(E), Pr(E), Pr(E), u = 0; u < 2; u++) {
-        for (T[0] = E[0] - 65517, f = 1; f < 15; f++)
-          ((T[f] = E[f] - 65535 - ((T[f - 1] >> 16) & 1)), (T[f - 1] &= 65535));
-        ((T[15] = E[15] - 32767 - ((T[14] >> 16) & 1)),
-          (h = (T[15] >> 16) & 1),
-          (T[14] &= 65535),
-          Mt(E, T, 1 - h));
-      }
-      for (f = 0; f < 16; f++) ((p[2 * f] = E[f] & 255), (p[2 * f + 1] = E[f] >> 8));
-    }
-    function ro(p, g) {
-      var f = new Uint8Array(32),
-        u = new Uint8Array(32);
-      return (Ot(f, p), Ot(u, g), P(f, 0, u, 0));
-    }
-    function ae(p) {
-      var g = new Uint8Array(32);
-      return (Ot(g, p), g[0] & 1);
-    }
-    function pt(p, g) {
-      var f;
-      for (f = 0; f < 16; f++) p[f] = g[2 * f] + (g[2 * f + 1] << 8);
-      p[15] &= 32767;
-    }
-    function Fe(p, g, f) {
-      for (var u = 0; u < 16; u++) p[u] = g[u] + f[u];
-    }
-    function qe(p, g, f) {
-      for (var u = 0; u < 16; u++) p[u] = g[u] - f[u];
-    }
-    function le(p, g, f) {
-      var u,
-        h,
-        T = 0,
-        E = 0,
-        A = 0,
-        G = 0,
-        z = 0,
-        L = 0,
-        ke = 0,
-        j = 0,
-        Z = 0,
-        ee = 0,
-        ue = 0,
-        ie = 0,
-        te = 0,
-        ne = 0,
-        re = 0,
-        W = 0,
-        Q = 0,
-        D = 0,
-        q = 0,
-        H = 0,
-        $ = 0,
-        v = 0,
-        C = 0,
-        M = 0,
-        R = 0,
-        x = 0,
-        N = 0,
-        J = 0,
-        ce = 0,
-        pe = 0,
-        de = 0,
-        b = f[0],
-        we = f[1],
-        Ee = f[2],
-        Se = f[3],
-        ge = f[4],
-        _e = f[5],
-        Te = f[6],
-        je = f[7],
-        Ae = f[8],
-        Le = f[9],
-        De = f[10],
-        Ue = f[11],
-        ze = f[12],
-        rt = f[13],
-        nt = f[14],
-        st = f[15];
-      ((u = g[0]),
-        (T += u * b),
-        (E += u * we),
-        (A += u * Ee),
-        (G += u * Se),
-        (z += u * ge),
-        (L += u * _e),
-        (ke += u * Te),
-        (j += u * je),
-        (Z += u * Ae),
-        (ee += u * Le),
-        (ue += u * De),
-        (ie += u * Ue),
-        (te += u * ze),
-        (ne += u * rt),
-        (re += u * nt),
-        (W += u * st),
-        (u = g[1]),
-        (E += u * b),
-        (A += u * we),
-        (G += u * Ee),
-        (z += u * Se),
-        (L += u * ge),
-        (ke += u * _e),
-        (j += u * Te),
-        (Z += u * je),
-        (ee += u * Ae),
-        (ue += u * Le),
-        (ie += u * De),
-        (te += u * Ue),
-        (ne += u * ze),
-        (re += u * rt),
-        (W += u * nt),
-        (Q += u * st),
-        (u = g[2]),
-        (A += u * b),
-        (G += u * we),
-        (z += u * Ee),
-        (L += u * Se),
-        (ke += u * ge),
-        (j += u * _e),
-        (Z += u * Te),
-        (ee += u * je),
-        (ue += u * Ae),
-        (ie += u * Le),
-        (te += u * De),
-        (ne += u * Ue),
-        (re += u * ze),
-        (W += u * rt),
-        (Q += u * nt),
-        (D += u * st),
-        (u = g[3]),
-        (G += u * b),
-        (z += u * we),
-        (L += u * Ee),
-        (ke += u * Se),
-        (j += u * ge),
-        (Z += u * _e),
-        (ee += u * Te),
-        (ue += u * je),
-        (ie += u * Ae),
-        (te += u * Le),
-        (ne += u * De),
-        (re += u * Ue),
-        (W += u * ze),
-        (Q += u * rt),
-        (D += u * nt),
-        (q += u * st),
-        (u = g[4]),
-        (z += u * b),
-        (L += u * we),
-        (ke += u * Ee),
-        (j += u * Se),
-        (Z += u * ge),
-        (ee += u * _e),
-        (ue += u * Te),
-        (ie += u * je),
-        (te += u * Ae),
-        (ne += u * Le),
-        (re += u * De),
-        (W += u * Ue),
-        (Q += u * ze),
-        (D += u * rt),
-        (q += u * nt),
-        (H += u * st),
-        (u = g[5]),
-        (L += u * b),
-        (ke += u * we),
-        (j += u * Ee),
-        (Z += u * Se),
-        (ee += u * ge),
-        (ue += u * _e),
-        (ie += u * Te),
-        (te += u * je),
-        (ne += u * Ae),
-        (re += u * Le),
-        (W += u * De),
-        (Q += u * Ue),
-        (D += u * ze),
-        (q += u * rt),
-        (H += u * nt),
-        ($ += u * st),
-        (u = g[6]),
-        (ke += u * b),
-        (j += u * we),
-        (Z += u * Ee),
-        (ee += u * Se),
-        (ue += u * ge),
-        (ie += u * _e),
-        (te += u * Te),
-        (ne += u * je),
-        (re += u * Ae),
-        (W += u * Le),
-        (Q += u * De),
-        (D += u * Ue),
-        (q += u * ze),
-        (H += u * rt),
-        ($ += u * nt),
-        (v += u * st),
-        (u = g[7]),
-        (j += u * b),
-        (Z += u * we),
-        (ee += u * Ee),
-        (ue += u * Se),
-        (ie += u * ge),
-        (te += u * _e),
-        (ne += u * Te),
-        (re += u * je),
-        (W += u * Ae),
-        (Q += u * Le),
-        (D += u * De),
-        (q += u * Ue),
-        (H += u * ze),
-        ($ += u * rt),
-        (v += u * nt),
-        (C += u * st),
-        (u = g[8]),
-        (Z += u * b),
-        (ee += u * we),
-        (ue += u * Ee),
-        (ie += u * Se),
-        (te += u * ge),
-        (ne += u * _e),
-        (re += u * Te),
-        (W += u * je),
-        (Q += u * Ae),
-        (D += u * Le),
-        (q += u * De),
-        (H += u * Ue),
-        ($ += u * ze),
-        (v += u * rt),
-        (C += u * nt),
-        (M += u * st),
-        (u = g[9]),
-        (ee += u * b),
-        (ue += u * we),
-        (ie += u * Ee),
-        (te += u * Se),
-        (ne += u * ge),
-        (re += u * _e),
-        (W += u * Te),
-        (Q += u * je),
-        (D += u * Ae),
-        (q += u * Le),
-        (H += u * De),
-        ($ += u * Ue),
-        (v += u * ze),
-        (C += u * rt),
-        (M += u * nt),
-        (R += u * st),
-        (u = g[10]),
-        (ue += u * b),
-        (ie += u * we),
-        (te += u * Ee),
-        (ne += u * Se),
-        (re += u * ge),
-        (W += u * _e),
-        (Q += u * Te),
-        (D += u * je),
-        (q += u * Ae),
-        (H += u * Le),
-        ($ += u * De),
-        (v += u * Ue),
-        (C += u * ze),
-        (M += u * rt),
-        (R += u * nt),
-        (x += u * st),
-        (u = g[11]),
-        (ie += u * b),
-        (te += u * we),
-        (ne += u * Ee),
-        (re += u * Se),
-        (W += u * ge),
-        (Q += u * _e),
-        (D += u * Te),
-        (q += u * je),
-        (H += u * Ae),
-        ($ += u * Le),
-        (v += u * De),
-        (C += u * Ue),
-        (M += u * ze),
-        (R += u * rt),
-        (x += u * nt),
-        (N += u * st),
-        (u = g[12]),
-        (te += u * b),
-        (ne += u * we),
-        (re += u * Ee),
-        (W += u * Se),
-        (Q += u * ge),
-        (D += u * _e),
-        (q += u * Te),
-        (H += u * je),
-        ($ += u * Ae),
-        (v += u * Le),
-        (C += u * De),
-        (M += u * Ue),
-        (R += u * ze),
-        (x += u * rt),
-        (N += u * nt),
-        (J += u * st),
-        (u = g[13]),
-        (ne += u * b),
-        (re += u * we),
-        (W += u * Ee),
-        (Q += u * Se),
-        (D += u * ge),
-        (q += u * _e),
-        (H += u * Te),
-        ($ += u * je),
-        (v += u * Ae),
-        (C += u * Le),
-        (M += u * De),
-        (R += u * Ue),
-        (x += u * ze),
-        (N += u * rt),
-        (J += u * nt),
-        (ce += u * st),
-        (u = g[14]),
-        (re += u * b),
-        (W += u * we),
-        (Q += u * Ee),
-        (D += u * Se),
-        (q += u * ge),
-        (H += u * _e),
-        ($ += u * Te),
-        (v += u * je),
-        (C += u * Ae),
-        (M += u * Le),
-        (R += u * De),
-        (x += u * Ue),
-        (N += u * ze),
-        (J += u * rt),
-        (ce += u * nt),
-        (pe += u * st),
-        (u = g[15]),
-        (W += u * b),
-        (Q += u * we),
-        (D += u * Ee),
-        (q += u * Se),
-        (H += u * ge),
-        ($ += u * _e),
-        (v += u * Te),
-        (C += u * je),
-        (M += u * Ae),
-        (R += u * Le),
-        (x += u * De),
-        (N += u * Ue),
-        (J += u * ze),
-        (ce += u * rt),
-        (pe += u * nt),
-        (de += u * st),
-        (T += 38 * Q),
-        (E += 38 * D),
-        (A += 38 * q),
-        (G += 38 * H),
-        (z += 38 * $),
-        (L += 38 * v),
-        (ke += 38 * C),
-        (j += 38 * M),
-        (Z += 38 * R),
-        (ee += 38 * x),
-        (ue += 38 * N),
-        (ie += 38 * J),
-        (te += 38 * ce),
-        (ne += 38 * pe),
-        (re += 38 * de),
-        (h = 1),
-        (u = T + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (T = u - h * 65536),
-        (u = E + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (E = u - h * 65536),
-        (u = A + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (A = u - h * 65536),
-        (u = G + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (G = u - h * 65536),
-        (u = z + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (z = u - h * 65536),
-        (u = L + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (L = u - h * 65536),
-        (u = ke + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ke = u - h * 65536),
-        (u = j + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (j = u - h * 65536),
-        (u = Z + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (Z = u - h * 65536),
-        (u = ee + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ee = u - h * 65536),
-        (u = ue + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ue = u - h * 65536),
-        (u = ie + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ie = u - h * 65536),
-        (u = te + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (te = u - h * 65536),
-        (u = ne + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ne = u - h * 65536),
-        (u = re + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (re = u - h * 65536),
-        (u = W + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (W = u - h * 65536),
-        (T += h - 1 + 37 * (h - 1)),
-        (h = 1),
-        (u = T + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (T = u - h * 65536),
-        (u = E + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (E = u - h * 65536),
-        (u = A + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (A = u - h * 65536),
-        (u = G + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (G = u - h * 65536),
-        (u = z + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (z = u - h * 65536),
-        (u = L + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (L = u - h * 65536),
-        (u = ke + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ke = u - h * 65536),
-        (u = j + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (j = u - h * 65536),
-        (u = Z + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (Z = u - h * 65536),
-        (u = ee + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ee = u - h * 65536),
-        (u = ue + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ue = u - h * 65536),
-        (u = ie + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ie = u - h * 65536),
-        (u = te + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (te = u - h * 65536),
-        (u = ne + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (ne = u - h * 65536),
-        (u = re + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (re = u - h * 65536),
-        (u = W + h + 65535),
-        (h = Math.floor(u / 65536)),
-        (W = u - h * 65536),
-        (T += h - 1 + 37 * (h - 1)),
-        (p[0] = T),
-        (p[1] = E),
-        (p[2] = A),
-        (p[3] = G),
-        (p[4] = z),
-        (p[5] = L),
-        (p[6] = ke),
-        (p[7] = j),
-        (p[8] = Z),
-        (p[9] = ee),
-        (p[10] = ue),
-        (p[11] = ie),
-        (p[12] = te),
-        (p[13] = ne),
-        (p[14] = re),
-        (p[15] = W));
-    }
-    function tt(p, g) {
-      le(p, g, g);
-    }
-    function _u(p, g) {
-      var f = t(),
-        u;
-      for (u = 0; u < 16; u++) f[u] = g[u];
-      for (u = 253; u >= 0; u--) (tt(f, f), u !== 2 && u !== 4 && le(f, f, g));
-      for (u = 0; u < 16; u++) p[u] = f[u];
-    }
-    function Tu(p, g) {
-      var f = t(),
-        u;
-      for (u = 0; u < 16; u++) f[u] = g[u];
-      for (u = 250; u >= 0; u--) (tt(f, f), u !== 1 && le(f, f, g));
-      for (u = 0; u < 16; u++) p[u] = f[u];
-    }
-    function no(p, g, f) {
-      var u = new Uint8Array(32),
-        h = new Float64Array(80),
-        T,
-        E,
-        A = t(),
-        G = t(),
-        z = t(),
-        L = t(),
-        ke = t(),
-        j = t();
-      for (E = 0; E < 31; E++) u[E] = g[E];
-      for (u[31] = (g[31] & 127) | 64, u[0] &= 248, pt(h, f), E = 0; E < 16; E++)
-        ((G[E] = h[E]), (L[E] = A[E] = z[E] = 0));
-      for (A[0] = L[0] = 1, E = 254; E >= 0; --E)
-        ((T = (u[E >>> 3] >>> (E & 7)) & 1),
-          Mt(A, G, T),
-          Mt(z, L, T),
-          Fe(ke, A, z),
-          qe(A, A, z),
-          Fe(z, G, L),
-          qe(G, G, L),
-          tt(L, ke),
-          tt(j, A),
-          le(A, z, A),
-          le(z, G, ke),
-          Fe(ke, A, z),
-          qe(A, A, z),
-          tt(G, A),
-          qe(z, L, j),
-          le(A, z, a),
-          Fe(A, A, L),
-          le(z, z, A),
-          le(A, L, j),
-          le(L, G, h),
-          tt(G, ke),
-          Mt(A, G, T),
-          Mt(z, L, T));
-      for (E = 0; E < 16; E++)
-        ((h[E + 16] = A[E]), (h[E + 32] = z[E]), (h[E + 48] = G[E]), (h[E + 64] = L[E]));
-      var Z = h.subarray(32),
-        ee = h.subarray(16);
-      return (_u(Z, Z), le(ee, ee, Z), Ot(p, ee), 0);
-    }
-    function so(p, g) {
-      return no(p, g, s);
-    }
-    function ku(p, g) {
-      return (r(g, 32), so(p, g));
-    }
-    function oo(p, g, f) {
-      var u = new Uint8Array(32);
-      return (no(u, f, g), Ce(p, n, u, Re));
-    }
-    var Eu = ut,
-      Fg = Me;
-    function $g(p, g, f, u, h, T) {
-      var E = new Uint8Array(32);
-      return (oo(E, h, T), Eu(p, g, f, u, E));
-    }
-    function Lg(p, g, f, u, h, T) {
-      var E = new Uint8Array(32);
-      return (oo(E, h, T), Fg(p, g, f, u, E));
-    }
-    var Su = [
-      1116352408, 3609767458, 1899447441, 602891725, 3049323471, 3964484399, 3921009573, 2173295548,
-      961987163, 4081628472, 1508970993, 3053834265, 2453635748, 2937671579, 2870763221, 3664609560,
-      3624381080, 2734883394, 310598401, 1164996542, 607225278, 1323610764, 1426881987, 3590304994,
-      1925078388, 4068182383, 2162078206, 991336113, 2614888103, 633803317, 3248222580, 3479774868,
-      3835390401, 2666613458, 4022224774, 944711139, 264347078, 2341262773, 604807628, 2007800933,
-      770255983, 1495990901, 1249150122, 1856431235, 1555081692, 3175218132, 1996064986, 2198950837,
-      2554220882, 3999719339, 2821834349, 766784016, 2952996808, 2566594879, 3210313671, 3203337956,
-      3336571891, 1034457026, 3584528711, 2466948901, 113926993, 3758326383, 338241895, 168717936,
-      666307205, 1188179964, 773529912, 1546045734, 1294757372, 1522805485, 1396182291, 2643833823,
-      1695183700, 2343527390, 1986661051, 1014477480, 2177026350, 1206759142, 2456956037, 344077627,
-      2730485921, 1290863460, 2820302411, 3158454273, 3259730800, 3505952657, 3345764771, 106217008,
-      3516065817, 3606008344, 3600352804, 1432725776, 4094571909, 1467031594, 275423344, 851169720,
-      430227734, 3100823752, 506948616, 1363258195, 659060556, 3750685593, 883997877, 3785050280,
-      958139571, 3318307427, 1322822218, 3812723403, 1537002063, 2003034995, 1747873779, 3602036899,
-      1955562222, 1575990012, 2024104815, 1125592928, 2227730452, 2716904306, 2361852424, 442776044,
-      2428436474, 593698344, 2756734187, 3733110249, 3204031479, 2999351573, 3329325298, 3815920427,
-      3391569614, 3928383900, 3515267271, 566280711, 3940187606, 3454069534, 4118630271, 4000239992,
-      116418474, 1914138554, 174292421, 2731055270, 289380356, 3203993006, 460393269, 320620315,
-      685471733, 587496836, 852142971, 1086792851, 1017036298, 365543100, 1126000580, 2618297676,
-      1288033470, 3409855158, 1501505948, 4234509866, 1607167915, 987167468, 1816402316, 1246189591,
-    ];
-    function Iu(p, g, f, u) {
-      for (
-        var h = new Int32Array(16),
-          T = new Int32Array(16),
-          E,
-          A,
-          G,
-          z,
-          L,
-          ke,
-          j,
-          Z,
-          ee,
-          ue,
-          ie,
-          te,
-          ne,
-          re,
-          W,
-          Q,
-          D,
-          q,
-          H,
-          $,
-          v,
-          C,
-          M,
-          R,
-          x,
-          N,
-          J = p[0],
-          ce = p[1],
-          pe = p[2],
-          de = p[3],
-          b = p[4],
-          we = p[5],
-          Ee = p[6],
-          Se = p[7],
-          ge = g[0],
-          _e = g[1],
-          Te = g[2],
-          je = g[3],
-          Ae = g[4],
-          Le = g[5],
-          De = g[6],
-          Ue = g[7],
-          ze = 0;
-        u >= 128;
-      ) {
-        for (H = 0; H < 16; H++)
-          (($ = 8 * H + ze),
-            (h[H] = (f[$ + 0] << 24) | (f[$ + 1] << 16) | (f[$ + 2] << 8) | f[$ + 3]),
-            (T[H] = (f[$ + 4] << 24) | (f[$ + 5] << 16) | (f[$ + 6] << 8) | f[$ + 7]));
-        for (H = 0; H < 80; H++)
-          if (
-            ((E = J),
-            (A = ce),
-            (G = pe),
-            (z = de),
-            (L = b),
-            (ke = we),
-            (j = Ee),
-            (Z = Se),
-            (ee = ge),
-            (ue = _e),
-            (ie = Te),
-            (te = je),
-            (ne = Ae),
-            (re = Le),
-            (W = De),
-            (Q = Ue),
-            (v = Se),
-            (C = Ue),
-            (M = C & 65535),
-            (R = C >>> 16),
-            (x = v & 65535),
-            (N = v >>> 16),
-            (v = ((b >>> 14) | (Ae << 18)) ^ ((b >>> 18) | (Ae << 14)) ^ ((Ae >>> 9) | (b << 23))),
-            (C = ((Ae >>> 14) | (b << 18)) ^ ((Ae >>> 18) | (b << 14)) ^ ((b >>> 9) | (Ae << 23))),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (v = (b & we) ^ (~b & Ee)),
-            (C = (Ae & Le) ^ (~Ae & De)),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (v = Su[H * 2]),
-            (C = Su[H * 2 + 1]),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (v = h[H % 16]),
-            (C = T[H % 16]),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (R += M >>> 16),
-            (x += R >>> 16),
-            (N += x >>> 16),
-            (D = (x & 65535) | (N << 16)),
-            (q = (M & 65535) | (R << 16)),
-            (v = D),
-            (C = q),
-            (M = C & 65535),
-            (R = C >>> 16),
-            (x = v & 65535),
-            (N = v >>> 16),
-            (v = ((J >>> 28) | (ge << 4)) ^ ((ge >>> 2) | (J << 30)) ^ ((ge >>> 7) | (J << 25))),
-            (C = ((ge >>> 28) | (J << 4)) ^ ((J >>> 2) | (ge << 30)) ^ ((J >>> 7) | (ge << 25))),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (v = (J & ce) ^ (J & pe) ^ (ce & pe)),
-            (C = (ge & _e) ^ (ge & Te) ^ (_e & Te)),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (R += M >>> 16),
-            (x += R >>> 16),
-            (N += x >>> 16),
-            (Z = (x & 65535) | (N << 16)),
-            (Q = (M & 65535) | (R << 16)),
-            (v = z),
-            (C = te),
-            (M = C & 65535),
-            (R = C >>> 16),
-            (x = v & 65535),
-            (N = v >>> 16),
-            (v = D),
-            (C = q),
-            (M += C & 65535),
-            (R += C >>> 16),
-            (x += v & 65535),
-            (N += v >>> 16),
-            (R += M >>> 16),
-            (x += R >>> 16),
-            (N += x >>> 16),
-            (z = (x & 65535) | (N << 16)),
-            (te = (M & 65535) | (R << 16)),
-            (ce = E),
-            (pe = A),
-            (de = G),
-            (b = z),
-            (we = L),
-            (Ee = ke),
-            (Se = j),
-            (J = Z),
-            (_e = ee),
-            (Te = ue),
-            (je = ie),
-            (Ae = te),
-            (Le = ne),
-            (De = re),
-            (Ue = W),
-            (ge = Q),
-            H % 16 === 15)
-          )
-            for ($ = 0; $ < 16; $++)
-              ((v = h[$]),
-                (C = T[$]),
-                (M = C & 65535),
-                (R = C >>> 16),
-                (x = v & 65535),
-                (N = v >>> 16),
-                (v = h[($ + 9) % 16]),
-                (C = T[($ + 9) % 16]),
-                (M += C & 65535),
-                (R += C >>> 16),
-                (x += v & 65535),
-                (N += v >>> 16),
-                (D = h[($ + 1) % 16]),
-                (q = T[($ + 1) % 16]),
-                (v = ((D >>> 1) | (q << 31)) ^ ((D >>> 8) | (q << 24)) ^ (D >>> 7)),
-                (C = ((q >>> 1) | (D << 31)) ^ ((q >>> 8) | (D << 24)) ^ ((q >>> 7) | (D << 25))),
-                (M += C & 65535),
-                (R += C >>> 16),
-                (x += v & 65535),
-                (N += v >>> 16),
-                (D = h[($ + 14) % 16]),
-                (q = T[($ + 14) % 16]),
-                (v = ((D >>> 19) | (q << 13)) ^ ((q >>> 29) | (D << 3)) ^ (D >>> 6)),
-                (C = ((q >>> 19) | (D << 13)) ^ ((D >>> 29) | (q << 3)) ^ ((q >>> 6) | (D << 26))),
-                (M += C & 65535),
-                (R += C >>> 16),
-                (x += v & 65535),
-                (N += v >>> 16),
-                (R += M >>> 16),
-                (x += R >>> 16),
-                (N += x >>> 16),
-                (h[$] = (x & 65535) | (N << 16)),
-                (T[$] = (M & 65535) | (R << 16)));
-        ((v = J),
-          (C = ge),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[0]),
-          (C = g[0]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[0] = J = (x & 65535) | (N << 16)),
-          (g[0] = ge = (M & 65535) | (R << 16)),
-          (v = ce),
-          (C = _e),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[1]),
-          (C = g[1]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[1] = ce = (x & 65535) | (N << 16)),
-          (g[1] = _e = (M & 65535) | (R << 16)),
-          (v = pe),
-          (C = Te),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[2]),
-          (C = g[2]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[2] = pe = (x & 65535) | (N << 16)),
-          (g[2] = Te = (M & 65535) | (R << 16)),
-          (v = de),
-          (C = je),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[3]),
-          (C = g[3]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[3] = de = (x & 65535) | (N << 16)),
-          (g[3] = je = (M & 65535) | (R << 16)),
-          (v = b),
-          (C = Ae),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[4]),
-          (C = g[4]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[4] = b = (x & 65535) | (N << 16)),
-          (g[4] = Ae = (M & 65535) | (R << 16)),
-          (v = we),
-          (C = Le),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[5]),
-          (C = g[5]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[5] = we = (x & 65535) | (N << 16)),
-          (g[5] = Le = (M & 65535) | (R << 16)),
-          (v = Ee),
-          (C = De),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[6]),
-          (C = g[6]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[6] = Ee = (x & 65535) | (N << 16)),
-          (g[6] = De = (M & 65535) | (R << 16)),
-          (v = Se),
-          (C = Ue),
-          (M = C & 65535),
-          (R = C >>> 16),
-          (x = v & 65535),
-          (N = v >>> 16),
-          (v = p[7]),
-          (C = g[7]),
-          (M += C & 65535),
-          (R += C >>> 16),
-          (x += v & 65535),
-          (N += v >>> 16),
-          (R += M >>> 16),
-          (x += R >>> 16),
-          (N += x >>> 16),
-          (p[7] = Se = (x & 65535) | (N << 16)),
-          (g[7] = Ue = (M & 65535) | (R << 16)),
-          (ze += 128),
-          (u -= 128));
-      }
-      return u;
-    }
-    function Mr(p, g, f) {
-      var u = new Int32Array(8),
-        h = new Int32Array(8),
-        T = new Uint8Array(256),
-        E,
-        A = f;
-      for (
-        u[0] = 1779033703,
-          u[1] = 3144134277,
-          u[2] = 1013904242,
-          u[3] = 2773480762,
-          u[4] = 1359893119,
-          u[5] = 2600822924,
-          u[6] = 528734635,
-          u[7] = 1541459225,
-          h[0] = 4089235720,
-          h[1] = 2227873595,
-          h[2] = 4271175723,
-          h[3] = 1595750129,
-          h[4] = 2917565137,
-          h[5] = 725511199,
-          h[6] = 4215389547,
-          h[7] = 327033209,
-          Iu(u, h, g, f),
-          f %= 128,
-          E = 0;
-        E < f;
-        E++
-      )
-        T[E] = g[A - f + E];
-      for (
-        T[f] = 128,
-          f = 256 - 128 * (f < 112 ? 1 : 0),
-          T[f - 9] = 0,
-          y(T, f - 8, (A / 536870912) | 0, A << 3),
-          Iu(u, h, T, f),
-          E = 0;
-        E < 8;
-        E++
-      )
-        y(p, 8 * E, u[E], h[E]);
-      return 0;
-    }
-    function io(p, g) {
-      var f = t(),
-        u = t(),
-        h = t(),
-        T = t(),
-        E = t(),
-        A = t(),
-        G = t(),
-        z = t(),
-        L = t();
-      (qe(f, p[1], p[0]),
-        qe(L, g[1], g[0]),
-        le(f, f, L),
-        Fe(u, p[0], p[1]),
-        Fe(L, g[0], g[1]),
-        le(u, u, L),
-        le(h, p[3], g[3]),
-        le(h, h, c),
-        le(T, p[2], g[2]),
-        Fe(T, T, T),
-        qe(E, u, f),
-        qe(A, T, h),
-        Fe(G, T, h),
-        Fe(z, u, f),
-        le(p[0], E, A),
-        le(p[1], z, G),
-        le(p[2], G, A),
-        le(p[3], E, z));
-    }
-    function vu(p, g, f) {
-      var u;
-      for (u = 0; u < 4; u++) Mt(p[u], g[u], f);
-    }
-    function Fi(p, g) {
-      var f = t(),
-        u = t(),
-        h = t();
-      (_u(h, g[2]), le(f, g[0], h), le(u, g[1], h), Ot(p, u), (p[31] ^= ae(f) << 7));
-    }
-    function $i(p, g, f) {
-      var u, h;
-      for (Qe(p[0], o), Qe(p[1], i), Qe(p[2], i), Qe(p[3], o), h = 255; h >= 0; --h)
-        ((u = (f[(h / 8) | 0] >> (h & 7)) & 1), vu(p, g, u), io(g, p), io(p, p), vu(p, g, u));
-    }
-    function ao(p, g) {
-      var f = [t(), t(), t(), t()];
-      (Qe(f[0], d), Qe(f[1], m), Qe(f[2], i), le(f[3], d, m), $i(p, f, g));
-    }
-    function Li(p, g, f) {
-      var u = new Uint8Array(64),
-        h = [t(), t(), t(), t()],
-        T;
-      for (
-        f || r(g, 32),
-          Mr(u, g, 32),
-          u[0] &= 248,
-          u[31] &= 127,
-          u[31] |= 64,
-          ao(h, u),
-          Fi(p, h),
-          T = 0;
-        T < 32;
-        T++
-      )
-        g[T + 32] = p[T];
-      return 0;
-    }
-    var lo = new Float64Array([
-      237, 211, 245, 92, 26, 99, 18, 88, 214, 156, 247, 162, 222, 249, 222, 20, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 16,
-    ]);
-    function Di(p, g) {
-      var f, u, h, T;
-      for (u = 63; u >= 32; --u) {
-        for (f = 0, h = u - 32, T = u - 12; h < T; ++h)
-          ((g[h] += f - 16 * g[u] * lo[h - (u - 32)]),
-            (f = Math.floor((g[h] + 128) / 256)),
-            (g[h] -= f * 256));
-        ((g[h] += f), (g[u] = 0));
-      }
-      for (f = 0, h = 0; h < 32; h++)
-        ((g[h] += f - (g[31] >> 4) * lo[h]), (f = g[h] >> 8), (g[h] &= 255));
-      for (h = 0; h < 32; h++) g[h] -= f * lo[h];
-      for (u = 0; u < 32; u++) ((g[u + 1] += g[u] >> 8), (p[u] = g[u] & 255));
-    }
-    function Ui(p) {
-      var g = new Float64Array(64),
-        f;
-      for (f = 0; f < 64; f++) g[f] = p[f];
-      for (f = 0; f < 64; f++) p[f] = 0;
-      Di(p, g);
-    }
-    function Cu(p, g, f, u) {
-      var h = new Uint8Array(64),
-        T = new Uint8Array(64),
-        E = new Uint8Array(64),
-        A,
-        G,
-        z = new Float64Array(64),
-        L = [t(), t(), t(), t()];
-      (Mr(h, u, 32), (h[0] &= 248), (h[31] &= 127), (h[31] |= 64));
-      var ke = f + 64;
-      for (A = 0; A < f; A++) p[64 + A] = g[A];
-      for (A = 0; A < 32; A++) p[32 + A] = h[32 + A];
-      for (Mr(E, p.subarray(32), f + 32), Ui(E), ao(L, E), Fi(p, L), A = 32; A < 64; A++)
-        p[A] = u[A];
-      for (Mr(T, p, f + 64), Ui(T), A = 0; A < 64; A++) z[A] = 0;
-      for (A = 0; A < 32; A++) z[A] = E[A];
-      for (A = 0; A < 32; A++) for (G = 0; G < 32; G++) z[A + G] += T[A] * h[G];
-      return (Di(p.subarray(32), z), ke);
-    }
-    function Dg(p, g) {
-      var f = t(),
-        u = t(),
-        h = t(),
-        T = t(),
-        E = t(),
-        A = t(),
-        G = t();
-      return (
-        Qe(p[2], i),
-        pt(p[1], g),
-        tt(h, p[1]),
-        le(T, h, l),
-        qe(h, h, p[2]),
-        Fe(T, p[2], T),
-        tt(E, T),
-        tt(A, E),
-        le(G, A, E),
-        le(f, G, h),
-        le(f, f, T),
-        Tu(f, f),
-        le(f, f, h),
-        le(f, f, T),
-        le(f, f, T),
-        le(p[0], f, T),
-        tt(u, p[0]),
-        le(u, u, T),
-        ro(u, h) && le(p[0], p[0], w),
-        tt(u, p[0]),
-        le(u, u, T),
-        ro(u, h) ? -1 : (ae(p[0]) === g[31] >> 7 && qe(p[0], o, p[0]), le(p[3], p[0], p[1]), 0)
-      );
-    }
-    function Bi(p, g, f, u) {
-      var h,
-        T = new Uint8Array(32),
-        E = new Uint8Array(64),
-        A = [t(), t(), t(), t()],
-        G = [t(), t(), t(), t()];
-      if (f < 64 || Dg(G, u)) return -1;
-      for (h = 0; h < f; h++) p[h] = g[h];
-      for (h = 0; h < 32; h++) p[h + 32] = u[h];
-      if (
-        (Mr(E, p, f),
-        Ui(E),
-        $i(A, G, E),
-        ao(G, g.subarray(32)),
-        io(A, G),
-        Fi(T, A),
-        (f -= 64),
-        P(g, 0, T, 0))
-      ) {
-        for (h = 0; h < f; h++) p[h] = 0;
-        return -1;
-      }
-      for (h = 0; h < f; h++) p[h] = g[h + 64];
-      return f;
-    }
-    var ji = 32,
-      uo = 24,
-      Hn = 32,
-      un = 16,
-      zn = 32,
-      co = 32,
-      Qn = 32,
-      Vn = 32,
-      Wi = 32,
-      Ru = uo,
-      Ug = Hn,
-      Bg = un,
-      Yt = 64,
-      Or = 32,
-      cn = 64,
-      qi = 32,
-      Ki = 64;
-    e.lowlevel = {
-      crypto_core_hsalsa20: Ce,
-      crypto_stream_xor: ye,
-      crypto_stream: ve,
-      crypto_stream_salsa20_xor: Y,
-      crypto_stream_salsa20: he,
-      crypto_onetimeauth: X,
-      crypto_onetimeauth_verify: Pe,
-      crypto_verify_16: I,
-      crypto_verify_32: P,
-      crypto_secretbox: ut,
-      crypto_secretbox_open: Me,
-      crypto_scalarmult: no,
-      crypto_scalarmult_base: so,
-      crypto_box_beforenm: oo,
-      crypto_box_afternm: Eu,
-      crypto_box: $g,
-      crypto_box_open: Lg,
-      crypto_box_keypair: ku,
-      crypto_hash: Mr,
-      crypto_sign: Cu,
-      crypto_sign_keypair: Li,
-      crypto_sign_open: Bi,
-      crypto_secretbox_KEYBYTES: ji,
-      crypto_secretbox_NONCEBYTES: uo,
-      crypto_secretbox_ZEROBYTES: Hn,
-      crypto_secretbox_BOXZEROBYTES: un,
-      crypto_scalarmult_BYTES: zn,
-      crypto_scalarmult_SCALARBYTES: co,
-      crypto_box_PUBLICKEYBYTES: Qn,
-      crypto_box_SECRETKEYBYTES: Vn,
-      crypto_box_BEFORENMBYTES: Wi,
-      crypto_box_NONCEBYTES: Ru,
-      crypto_box_ZEROBYTES: Ug,
-      crypto_box_BOXZEROBYTES: Bg,
-      crypto_sign_BYTES: Yt,
-      crypto_sign_PUBLICKEYBYTES: Or,
-      crypto_sign_SECRETKEYBYTES: cn,
-      crypto_sign_SEEDBYTES: qi,
-      crypto_hash_BYTES: Ki,
-      gf: t,
-      D: l,
-      L: lo,
-      pack25519: Ot,
-      unpack25519: pt,
-      M: le,
-      A: Fe,
-      S: tt,
-      Z: qe,
-      pow2523: Tu,
-      add: io,
-      set25519: Qe,
-      modL: Di,
-      scalarmult: $i,
-      scalarbase: ao,
-    };
-    function Au(p, g) {
-      if (p.length !== ji) throw new Error("bad key size");
-      if (g.length !== uo) throw new Error("bad nonce size");
-    }
-    function jg(p, g) {
-      if (p.length !== Qn) throw new Error("bad public key size");
-      if (g.length !== Vn) throw new Error("bad secret key size");
-    }
-    function bt() {
-      for (var p = 0; p < arguments.length; p++)
-        if (!(arguments[p] instanceof Uint8Array))
-          throw new TypeError("unexpected type, use Uint8Array");
-    }
-    function xu(p) {
-      for (var g = 0; g < p.length; g++) p[g] = 0;
-    }
-    ((e.randomBytes = function (p) {
-      var g = new Uint8Array(p);
-      return (r(g, p), g);
-    }),
-      (e.secretbox = function (p, g, f) {
-        (bt(p, g, f), Au(f, g));
-        for (
-          var u = new Uint8Array(Hn + p.length), h = new Uint8Array(u.length), T = 0;
-          T < p.length;
-          T++
-        )
-          u[T + Hn] = p[T];
-        return (ut(h, u, u.length, g, f), h.subarray(un));
-      }),
-      (e.secretbox.open = function (p, g, f) {
-        (bt(p, g, f), Au(f, g));
-        for (
-          var u = new Uint8Array(un + p.length), h = new Uint8Array(u.length), T = 0;
-          T < p.length;
-          T++
-        )
-          u[T + un] = p[T];
-        return u.length < 32 || Me(h, u, u.length, g, f) !== 0 ? null : h.subarray(Hn);
-      }),
-      (e.secretbox.keyLength = ji),
-      (e.secretbox.nonceLength = uo),
-      (e.secretbox.overheadLength = un),
-      (e.scalarMult = function (p, g) {
-        if ((bt(p, g), p.length !== co)) throw new Error("bad n size");
-        if (g.length !== zn) throw new Error("bad p size");
-        var f = new Uint8Array(zn);
-        return (no(f, p, g), f);
-      }),
-      (e.scalarMult.base = function (p) {
-        if ((bt(p), p.length !== co)) throw new Error("bad n size");
-        var g = new Uint8Array(zn);
-        return (so(g, p), g);
-      }),
-      (e.scalarMult.scalarLength = co),
-      (e.scalarMult.groupElementLength = zn),
-      (e.box = function (p, g, f, u) {
-        var h = e.box.before(f, u);
-        return e.secretbox(p, g, h);
-      }),
-      (e.box.before = function (p, g) {
-        (bt(p, g), jg(p, g));
-        var f = new Uint8Array(Wi);
-        return (oo(f, p, g), f);
-      }),
-      (e.box.after = e.secretbox),
-      (e.box.open = function (p, g, f, u) {
-        var h = e.box.before(f, u);
-        return e.secretbox.open(p, g, h);
-      }),
-      (e.box.open.after = e.secretbox.open),
-      (e.box.keyPair = function () {
-        var p = new Uint8Array(Qn),
-          g = new Uint8Array(Vn);
-        return (ku(p, g), { publicKey: p, secretKey: g });
-      }),
-      (e.box.keyPair.fromSecretKey = function (p) {
-        if ((bt(p), p.length !== Vn)) throw new Error("bad secret key size");
-        var g = new Uint8Array(Qn);
-        return (so(g, p), { publicKey: g, secretKey: new Uint8Array(p) });
-      }),
-      (e.box.publicKeyLength = Qn),
-      (e.box.secretKeyLength = Vn),
-      (e.box.sharedKeyLength = Wi),
-      (e.box.nonceLength = Ru),
-      (e.box.overheadLength = e.secretbox.overheadLength),
-      (e.sign = function (p, g) {
-        if ((bt(p, g), g.length !== cn)) throw new Error("bad secret key size");
-        var f = new Uint8Array(Yt + p.length);
-        return (Cu(f, p, p.length, g), f);
-      }),
-      (e.sign.open = function (p, g) {
-        if ((bt(p, g), g.length !== Or)) throw new Error("bad public key size");
-        var f = new Uint8Array(p.length),
-          u = Bi(f, p, p.length, g);
-        if (u < 0) return null;
-        for (var h = new Uint8Array(u), T = 0; T < h.length; T++) h[T] = f[T];
-        return h;
-      }),
-      (e.sign.detached = function (p, g) {
-        for (var f = e.sign(p, g), u = new Uint8Array(Yt), h = 0; h < u.length; h++) u[h] = f[h];
-        return u;
-      }),
-      (e.sign.detached.verify = function (p, g, f) {
-        if ((bt(p, g, f), g.length !== Yt)) throw new Error("bad signature size");
-        if (f.length !== Or) throw new Error("bad public key size");
-        var u = new Uint8Array(Yt + p.length),
-          h = new Uint8Array(Yt + p.length),
-          T;
-        for (T = 0; T < Yt; T++) u[T] = g[T];
-        for (T = 0; T < p.length; T++) u[T + Yt] = p[T];
-        return Bi(h, u, u.length, f) >= 0;
-      }),
-      (e.sign.keyPair = function () {
-        var p = new Uint8Array(Or),
-          g = new Uint8Array(cn);
-        return (Li(p, g), { publicKey: p, secretKey: g });
-      }),
-      (e.sign.keyPair.fromSecretKey = function (p) {
-        if ((bt(p), p.length !== cn)) throw new Error("bad secret key size");
-        for (var g = new Uint8Array(Or), f = 0; f < g.length; f++) g[f] = p[32 + f];
-        return { publicKey: g, secretKey: new Uint8Array(p) };
-      }),
-      (e.sign.keyPair.fromSeed = function (p) {
-        if ((bt(p), p.length !== qi)) throw new Error("bad seed size");
-        for (var g = new Uint8Array(Or), f = new Uint8Array(cn), u = 0; u < 32; u++) f[u] = p[u];
-        return (Li(g, f, !0), { publicKey: g, secretKey: f });
-      }),
-      (e.sign.publicKeyLength = Or),
-      (e.sign.secretKeyLength = cn),
-      (e.sign.seedLength = qi),
-      (e.sign.signatureLength = Yt),
-      (e.hash = function (p) {
-        bt(p);
-        var g = new Uint8Array(Ki);
-        return (Mr(g, p, p.length), g);
-      }),
-      (e.hash.hashLength = Ki),
-      (e.verify = function (p, g) {
-        return (
-          bt(p, g),
-          p.length === 0 || g.length === 0 || p.length !== g.length
-            ? !1
-            : _(p, 0, g, 0, p.length) === 0
-        );
-      }),
-      (e.setPRNG = function (p) {
-        r = p;
-      }),
-      (function () {
-        var p = typeof self < "u" ? self.crypto || self.msCrypto : null;
-        if (p && p.getRandomValues) {
-          var g = 65536;
-          e.setPRNG(function (f, u) {
-            var h,
-              T = new Uint8Array(u);
-            for (h = 0; h < u; h += g) p.getRandomValues(T.subarray(h, h + Math.min(u - h, g)));
-            for (h = 0; h < u; h++) f[h] = T[h];
-            xu(T);
-          });
-        } else
-          typeof Pu < "u" &&
-            ((p = cf()),
-            p &&
-              p.randomBytes &&
-              e.setPRNG(function (f, u) {
-                var h,
-                  T = p.randomBytes(u);
-                for (h = 0; h < u; h++) f[h] = T[h];
-                xu(T);
-              }));
-      })());
-  })(typeof Si < "u" && Si.exports ? Si.exports : (self.nacl = self.nacl || {}));
-});
 var Qi = (e, t, r) => (n, s) => {
   let o = -1;
   return i(0);
@@ -12044,7 +9611,7 @@ var bc = wc(null, yh);
 // ║ [MODULE Pc] @octokit + AI workflow  —  VENDOR+BIZ
 // ║ Octokit GitHub SDK (graphql/auth-token/request) + AI workflow param business logic
 // ╚══════════════════════════════════════════════════════════════════════════════
-var Pc = Ou(kc(), 1);
+var Pc = contentTypeShim;
 var xh = /^-?\d+$/,
   Ic = /^-?\d+n+$/,
   la = JSON.stringify,
@@ -14450,7 +12017,7 @@ function Pd(e) {
         a = typeof r.message?.text == "string" ? r.message.text.trim() : "";
       if (e.allowedFromId == null || e.allowedChatId == null) {
         (console.error(
-          "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID \u8207 TELEGRAM_ALLOWED_CHAT_ID \u5FC5\u9808\u540C\u6642\u8A2D\u5B9A\uFF0C\u62D2\u7D55\u6240\u6709\u8ACB\u6C42\u3002",
+          i18nT("log.access.notFullyConfigured", {}, glang()),
         ),
           await r.reply(
             t("access.notFullyConfigured", {}, glang()),
@@ -14527,7 +12094,7 @@ za.command("start", async (e) => {
       _ = await e.reply(w, { reply_markup: y });
     l && _.message_id && (await Sn(r, l, { mode: "list", messageId: _.message_id }));
   } catch (i) {
-    (console.error("[/start] 執行失敗", i),
+    (console.error(i18nT("log.command.executionFailed", { command: "start" }, glang()), i),
       await e.reply(
         t("core.startError", {}, gL),
       ));
@@ -14590,15 +12157,15 @@ function gy(e) {
     documentationUrl: t?.response?.data?.documentation_url ?? null,
   };
 }
-function hy(e) {
+function hy(e, lang) {
   switch ((e && typeof e == "object" ? e : null)?.status) {
     case 401:
     case 403:
-      return "\u274C /list \u7121\u6CD5\u8B80\u53D6 GitHub issue\uFF0C\u8ACB\u6AA2\u67E5 CLAW_SYS_GITHUB_TOKEN \u6B0A\u9650\u662F\u5426\u53EF\u8B80\u53D6 Issues\u3002";
+      return t("core.listErrorUnauthorized", {}, lang);
     case 404:
-      return "\u274C /list \u627E\u4E0D\u5230\u76EE\u6A19 GitHub \u5009\u5EAB\uFF0C\u8ACB\u6AA2\u67E5 GITHUB_OWNER \u8207 GITHUB_REPO \u8A2D\u5B9A\u3002";
+      return t("core.listErrorNotFound", {}, lang);
     default:
-      return "\u274C \u57F7\u884C /list \u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002";
+      return t("core.listErrorGeneric", {}, lang);
   }
 }
 Va.command("list", async (e) => {
@@ -14625,19 +12192,19 @@ Va.command("list", async (e) => {
       d = c ? l.find((I) => I.number === c) : null,
       m = c
         ? d
-          ? `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7684\u662F\uFF1A#${d.number} ${d.title || "\uFF08\u672A\u547D\u540D\u5C0F\u9F8D\u8766\uFF09"}`
-          : `\u{1F99E} \u76EE\u524D\u503C\u73ED\u7D00\u9304\u662F #${c}\uFF0C\u4F46\u76EE\u524D\u5217\u8868\u88E1\u627E\u4E0D\u5230\uFF08\u53EF\u80FD\u5DF2\u95DC\u9589\uFF09\u3002`
+          ? e.t("core.currentActive", { number: d.number, title: d.title || e.t("core.unnamedLobster") })
+          : e.t("core.currentActiveNotFound", { number: c })
         : null;
     if (l.length === 0) {
       i && (await Ut(r, i));
       let I = m
         ? `${m}
-\u{1F99E} \u76EE\u524D\u6C92\u6709\u4EFB\u4F55\u9F8D\u8766\uFF0C\u8ACB\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766\u3002`
-        : "\u{1F99E} \u76EE\u524D\u6C92\u6709\u4EFB\u4F55\u9F8D\u8766\uFF0C\u8ACB\u4F7F\u7528 /new \u5EFA\u7ACB\u65B0\u7684\u5C0F\u9F8D\u8766\u3002";
+${e.t("core.noLobstersYet")}`
+        : e.t("core.noLobstersYet");
       await e.reply(I);
       return;
     }
-    let w = [m, "\u{1F99E} \u4F60\u7684\u9F8D\u8766\u5011\uFF1A"].filter(Boolean).join(`
+    let w = [m, e.t("core.yourLobsters")].filter(Boolean).join(`
 `),
       y = Do(l),
       _ = await e.reply(w, { reply_markup: y });
@@ -14645,8 +12212,8 @@ Va.command("list", async (e) => {
       ? await Sn(r, i, { mode: "list", messageId: _.message_id })
       : i && (await Ut(r, i));
   } catch (a) {
-    (console.error("[/list] \u57F7\u884C\u5931\u6557", { owner: s, repo: o, chatId: i, ...gy(a) }),
-      await e.reply(hy(a)));
+    (console.error(i18nT("log.command.executionFailed", { command: "list" }, glang()), { owner: s, repo: o, chatId: i, ...gy(a) }),
+      await e.reply(hy(a, e.language)));
   }
 });
 Ie();
@@ -14660,15 +12227,15 @@ async function Qp(e) {
     let n = r ? await Ge(t, r) : null;
     if (!n || n <= 0) {
       await e.reply(
-        "\u{1F99E} \u76EE\u524D\u6C92\u6709\u6B63\u5728\u8FFD\u8E64\u7684\u5C0F\u9F8D\u8766\uFF0C\u5148\u7528 /new \u5EFA\u7ACB\u4E00\u96BB\u5427\u3002",
+        e.t("core.noTrackedLobster"),
       );
       return;
     }
     await ks(e, n);
   } catch (n) {
-    (console.error("[/current|/status] \u57F7\u884C\u5931\u6557", n),
+    (console.error(i18nT("log.command.executionFailed", { command: "current|status" }, glang()), n),
       await e.reply(
-        "\u274C \u67E5\u8A62\u76EE\u524D\u5C0F\u9F8D\u8766\u72C0\u614B\u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
+        e.t("core.statusError"),
       ));
   }
 }
@@ -14701,21 +12268,21 @@ rl.command("close", async (e) => {
     if (l.length === 0) {
       (i && (await Ut(r, i)),
         await e.reply(
-          "\u{1F99E} \u76EE\u524D\u6C92\u6709\u958B\u8457\u7684\u5C0F\u9F8D\u8766\u8036\uFF0C\u5927\u5BB6\u90FD\u5E73\u5B89\u6536\u5DE5\u4E2D\uFF0C\u53EF\u4EE5\u653E\u5FC3\u5598\u53E3\u6C23\u3002",
+          e.t("core.closeNoOpenLobsters"),
         ));
       return;
     }
     if (l.length === 1) {
       (i && (await Ut(r, i)),
         await e.reply(
-          "\u{1F99E} \u76EE\u524D\u53EA\u5269\u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u4E86\uFF0C\u6211\u5148\u5E6B\u4F60\u7559\u8457\u7260\uFF0C\u907F\u514D\u6574\u6C60\u90FD\u6536\u5DE5\u5566\u3002",
+          e.t("core.closeOnlyOneLobsterLeft"),
         ));
       return;
     }
     let c = [
-        "\u{1F99E} \u60F3\u8B93\u54EA\u4E00\u96BB\u5C0F\u9F8D\u8766\u5148\u4E0B\u73ED\u5462\uFF1F",
+        e.t("core.closeWhichLobster"),
         "",
-        "\u9EDE\u4E00\u96BB\u7D66\u6211\uFF0C\u6211\u6703\u518D\u5E6B\u4F60\u78BA\u8A8D\u4E00\u6B21\uFF0C\u4E0D\u6703\u8B93\u7260\u7A81\u7136\u5C31\u6536\u5DE5\u3002",
+        e.t("core.closeConfirmHint"),
       ].join(`
 `),
       d = Ud(l),
@@ -14724,9 +12291,9 @@ rl.command("close", async (e) => {
       ? await Sn(r, i, { mode: "close", messageId: m.message_id })
       : i && (await Ut(r, i));
   } catch (a) {
-    (console.error("[/close] \u57F7\u884C\u5931\u6557", a),
+    (console.error(i18nT("log.command.executionFailed", { command: "close" }, glang()), a),
       await e.reply(
-        "\u274C \u57F7\u884C /close \u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
+        e.t("core.closeError"),
       ));
   }
 });
@@ -14749,7 +12316,7 @@ function ni(e) {
     }
   }
   throw new Error(
-    "Workers AI \u672A\u56DE\u50B3\u53EF\u89E3\u6790\u7684 workflow inputs \u7D50\u679C\u3002",
+    "Workers AI did not return parseable workflow inputs.",
   );
 }
 function c_(e) {
@@ -14793,12 +12360,12 @@ function Vp(e) {
 }
 function si(e) {
   let t = e.trim();
-  if (!t) throw new Error("AI \u6C92\u6709\u56DE\u50B3 workflow \u53C3\u6578\u5167\u5BB9\u3002");
+  if (!t) throw new Error("AI did not return workflow parameter content.");
   let r = c_(t),
     n = d_(r),
     s = [r, n, Vp(r), Vp(n)].filter((o, i, a) => o && a.indexOf(o) === i);
   if (s.length === 0)
-    throw new Error("AI \u56DE\u50B3\u5167\u5BB9\u4E0D\u542B JSON \u7269\u4EF6\u3002");
+    throw new Error("AI response does not contain a JSON object.");
   for (let o of s)
     try {
       let i = JSON.parse(o);
@@ -14806,7 +12373,7 @@ function si(e) {
       return i;
     } catch {}
   throw new Error(
-    "AI \u56DE\u50B3\u5167\u5BB9\u4E0D\u662F\u6709\u6548\u7684 JSON \u7269\u4EF6\u3002",
+    "AI response is not a valid JSON object.",
   );
 }
 var p_ =
@@ -14829,7 +12396,7 @@ function Xp(e) {
 }
 function g_(e) {
   return !Array.isArray(e.inputs) || e.inputs.length === 0
-    ? "- \u9019\u500B workflow \u6C92\u6709\u5B9A\u7FA9\u4EFB\u4F55 workflow_dispatch inputs\u3002"
+    ? t("aiPrompt.parser.noInputs", {}, glang())
     : e.inputs.map((t) =>
         [
           `- ${t.name}`,
@@ -14860,21 +12427,9 @@ async function b_(e) {
   !Number.isFinite(e) || e <= 0 || (await new Promise((t) => setTimeout(t, e)));
 }
 function y_() {
-  return [
-    "\u4F60\u662F GitHub Actions workflow_dispatch \u53C3\u6578\u89E3\u6790\u5668\u3002",
-    "\u4EFB\u52D9\u662F\u6839\u64DA workflow input \u5B9A\u7FA9\u8207\u4F7F\u7528\u8005\u81EA\u7136\u8A9E\u8A00\uFF0C\u8F38\u51FA\u53EF\u76F4\u63A5 dispatch \u7684 JSON\u3002",
-    "\u53EA\u80FD\u4F7F\u7528 workflow \u5DF2\u5B9A\u7FA9\u7684 inputs \u540D\u7A31\uFF0C\u4E0D\u80FD\u634F\u9020\u4E0D\u5B58\u5728\u7684\u6B04\u4F4D\u3002",
-    "\u82E5\u4F7F\u7528\u8005\u8A0A\u606F\u4E2D\u51FA\u73FE key=value \u7247\u6BB5\uFF0C\u4E14 key \u525B\u597D\u662F workflow \u5DF2\u5B9A\u7FA9\u7684 input \u540D\u7A31\uFF0C\u5FC5\u9808\u512A\u5148\u76F4\u63A5\u63A1\u7528\u8A72\u503C\u3002",
-    "\u5C0D\u65BC key=value \u8F38\u5165\uFF0C\u4E0D\u8981\u7FFB\u8B6F key\u3001\u4E0D\u8981\u6539\u5BEB value\u3001\u4E0D\u8981\u81EA\u884C\u88DC\u63A8\u8AD6\uFF0C\u9664\u975E\u503C\u662F\u7A7A\u7684\u3002",
-    "\u82E5\u540C\u4E00\u500B\u6B04\u4F4D\u540C\u6642\u51FA\u73FE\u5728 key=value \u8207\u81EA\u7136\u8A9E\u8A00\u6558\u8FF0\u4E2D\uFF0C\u512A\u5148\u4EE5 key=value \u70BA\u6E96\u3002",
-    "\u82E5\u5FC5\u586B\u6B04\u4F4D\u7121\u6CD5\u5B89\u5168\u63A8\u65B7\uFF0C\u8ACB\u653E\u9032 missingRequired\u3002",
-    "\u82E5 workflow \u6709 default\uFF0C\u4E14\u4F7F\u7528\u8005\u6C92\u6709\u660E\u78BA\u8986\u84CB\uFF0C\u53EF\u76F4\u63A5\u6CBF\u7528 default\u3002",
-    "\u53EA\u8F38\u51FA\u55AE\u4E00 JSON \u7269\u4EF6\uFF0C\u683C\u5F0F\u5982\u4E0B\uFF1A",
-    '{"inputs":{"input_name":"value"},"missingRequired":["required_input"]}',
-  ].join(`
-`);
+  return t("aiPrompt.parser.systemPrompt", {}, glang());
 }
-function __(e, t) {
+function __(e, msg) {
   let r = String(e.source || "").trim(),
     n = r
       ? r.length > Jp
@@ -14896,33 +12451,31 @@ function __(e, t) {
     n,
     "",
     "key=value rule:",
-    '- \u82E5 user message \u4E2D\u51FA\u73FE line_worker_name=foo \u9019\u985E\u7247\u6BB5\uFF0C\u8ACB\u76F4\u63A5\u653E\u9032 inputs.line_worker_name = "foo"',
-    "- \u50C5\u63A5\u53D7 workflow \u5DF2\u5B9A\u7FA9\u7684 input \u540D\u7A31\u4F5C\u70BA key",
+    "- " + t("aiPrompt.parser.rule1", {}, glang()),
+    "- " + t("aiPrompt.parser.rule2", {}, glang()),
     "",
     "user message:",
-    t || "(empty)",
+    msg || "(empty)",
   ].join(`
 `);
 }
 function T_(e) {
-  let t = {};
+  let props = {};
   for (let r of e.inputs) {
     let n = r.type === "boolean" ? "boolean" : "string";
-    t[r.name] = { type: n, description: r.description || `workflow \u53C3\u6578\uFF1A${r.name}` };
+    props[r.name] = { type: n, description: r.description || t("aiPrompt.parser.paramDescription", { name: r.name }, glang()) };
   }
   return {
     type: "object",
     properties: {
       inputs: {
         type: "object",
-        description:
-          "\u6839\u64DA\u4F7F\u7528\u8005\u8A0A\u606F\u63A8\u5C0E\u51FA\u7684 workflow_dispatch \u53C3\u6578",
-        properties: t,
+        description: t("aiPrompt.parser.inputsDescription", {}, glang()),
+        properties: props,
       },
       missingRequired: {
         type: "array",
-        description:
-          "\u4ECD\u7136\u7121\u6CD5\u5B89\u5168\u63A8\u65B7\u7684\u5FC5\u586B workflow \u53C3\u6578\u540D\u7A31",
+        description: t("aiPrompt.parser.missingRequiredDescription", {}, glang()),
         items: { type: "string", enum: e.inputs.map((r) => r.name) },
       },
     },
@@ -14953,7 +12506,7 @@ async function Zp(e, t, r, n) {
     o = r.inputs.filter((l) => l.required && !_r(l.defaultValue)).map((l) => l.name);
   if (!s && o.length > 0) return { inputs: oi(r.inputs), missingRequired: o };
   if (r.inputs.length === 0) return { inputs: {}, missingRequired: [] };
-  console.log("[Workflow dispatch] \u4F7F\u7528 Workers AI \u63A8\u5C0E workflow inputs", {
+  console.log(i18nT("log.workflow.dispatchUsingAI", {}, glang()), {
     workflowName: r.workflowName,
     model: t,
   });
@@ -14977,7 +12530,7 @@ async function Zp(e, t, r, n) {
       if (((a = c), l >= i.maxAttempts)) break;
       let d = w_(l, i.initialBackoffMs);
       (console.warn(
-        "[Workflow dispatch] Workers AI \u63A8\u5C0E workflow inputs \u5931\u6557\uFF0C\u6E96\u5099\u91CD\u8A66",
+        i18nT("log.workflow.dispatchAIFailedRetry", {}, glang()),
         {
           workflowName: r.workflowName,
           attempt: l,
@@ -14990,62 +12543,62 @@ async function Zp(e, t, r, n) {
     }
   throw a instanceof Error
     ? a
-    : new Error("Workers AI \u63A8\u5C0E workflow inputs \u5931\u6557\u3002");
+    : new Error("Workers AI failed to infer workflow inputs.");
 }
 Xe();
 async function Is(e, t, r, n, s, o) {
   await e.actions.createWorkflowDispatch({ owner: t, repo: r, workflow_id: n, ref: s, inputs: o });
 }
-function nl(e, t) {
-  let r = Object.entries(t || {}).filter(([, n]) => _r(n));
+function nl(e, inputs) {
+  let r = Object.entries(inputs || {}).filter(([, n]) => _r(n));
   return [
-    `\u2699\uFE0F \u5DF2\u89F8\u767C workflow \`${O(e.workflowName)}\`\u3002`,
+    t("core.workflowTriggered", { name: O(e.workflowName) }, glang()),
     "",
     ...(r.length > 0
       ? r.map(([n, s]) => `\\- ${O(n)}: ${O(Xp(n) ? "[REDACTED]" : s)}`)
-      : ["\\- \u9019\u500B workflow \u6C92\u6709\u984D\u5916\u8F38\u5165\u53C3\u6578\u3002"]),
+      : [t("core.workflowNoInputs", {}, glang())]),
   ].join(`
 `);
 }
-function em(e, t) {
-  let r = Array.isArray(t) ? t.filter(Boolean) : [];
+function em(e, missing) {
+  let r = Array.isArray(missing) ? missing.filter(Boolean) : [];
   return [
-    `\u26A0\uFE0F \u7121\u6CD5\u89F8\u767C workflow \`${O(e.workflowName)}\`\u3002`,
+    t("core.workflowCannotTrigger", { name: O(e.workflowName) }, glang()),
     "",
-    "\u7F3A\u5C11\u5FC5\u586B\u53C3\u6578\uFF1A",
+    t("core.workflowMissingRequiredInputs", {}, glang()),
     ...r.map((n) => `\\- ${O(n)}`),
     "",
-    "\u8ACB\u76F4\u63A5\u7528\u81EA\u7136\u8A9E\u8A00\u628A\u9019\u4E9B\u503C\u88DC\u9F4A\u5F8C\u518D\u9001\u4E00\u6B21\u3002",
+    t("core.workflowProvideInputsPrompt", {}, glang()),
   ].join(`
 `);
 }
 Xe();
 var sl = new se();
 sl.command("clear", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: octo, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
   if (!a) {
     await e.reply(
-      "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002",
+      O(t("core.noActiveLobsterSelected", {}, glang())),
       { parse_mode: "MarkdownV2" },
     );
     return;
   }
   try {
-    let l = await t.repos.get({ owner: s, repo: o });
-    (await Is(t, s, o, "clear-memory.yml", l.data.default_branch, { active_issue: String(a) }),
-      await e.reply(`\u{1F9F9} \u5DF2\u6E05\u9664\u5C0F\u9F8D\u8766 \\#${a} \u8A18\u61B6`, {
+    let l = await octo.repos.get({ owner: s, repo: o });
+    (await Is(octo, s, o, "clear-memory.yml", l.data.default_branch, { active_issue: String(a) }),
+      await e.reply(t("core.memoryCleared", { number: a }, glang()), {
         parse_mode: "MarkdownV2",
       }));
   } catch (l) {
-    (console.error("[/clear] dispatchWorkflow \u5931\u6557", {
+    (console.error(i18nT("log.workflow.clearDispatchFailed", { command: "clear" }, glang()), {
       issueNumber: a,
       error: l instanceof Error ? l.message : String(l),
     }),
       await e.reply(
-        `\u274C \u89F8\u767C workflow \`${O("\u{1F9F9} \u6E05\u9664\u5C0F\u9F8D\u8766\u8A18\u61B6")}\` \u5931\u6557\uFF1A${O(l instanceof Error ? l.message : "\u672A\u77E5\u932F\u8AA4")}`,
+        t("core.triggerWorkflowFailed", { name: O(t("core.clearMemoryWorkflow", {}, glang())), error: O(l instanceof Error ? l.message : t("core.unknownError", {}, glang())) }, glang()),
         { parse_mode: "MarkdownV2" },
       ));
   }
@@ -15073,13 +12626,13 @@ Ve();
 Xe();
 var Sl = new se();
 async function Il(e) {
-  let { store: t, config: r } = e.services,
+  let { store: st, config: r } = e.services,
     n = e.chat?.id;
   if (!n) return;
-  let s = await Ge(t, n);
+  let s = await Ge(st, n);
   if (!s) {
     await e.reply(
-      "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002",
+      t("core.noActiveLobsterSelected", {}, glang()),
     );
     return;
   }
@@ -15099,17 +12652,17 @@ async function Il(e) {
     ]);
     ((o = m), (i = w), (a = y?.data?.title || void 0));
   } catch (m) {
-    console.error("[/skills] listRemoteSkills \u5931\u6557", m);
+    console.error(i18nT("log.command.skillsListFailed", {}, glang()), m);
     let w = m instanceof Error ? m.message : String(m);
-    await e.reply(`\u274C \u53D6\u5F97\u6280\u80FD\u6E05\u55AE\u5931\u6557\uFF1A${w}`);
+    await e.reply(t("skills.getFailed", { error: w }, glang()));
     return;
   }
   if (!o || o.length === 0) {
-    await e.reply("\u{1F50D} \u76EE\u524D\u6C92\u6709\u53EF\u5B89\u88DD\u7684\u6280\u80FD\u3002");
+    await e.reply(t("skills.noAvailableSkills", {}, glang()));
     return;
   }
   let l = new Set(i);
-  await ht(t, n, {
+  await ht(st, n, {
     skillName: "",
     step: "selecting",
     issueNumber: s,
@@ -15118,7 +12671,7 @@ async function Il(e) {
   });
   let c = a ? `\u{1F99E} ${a} #${s}` : `\u{1F99E} #${s}`,
     d = as(o, 0, l);
-  await e.reply(`\u{1F6E0} \u9078\u64C7\u8981\u5B89\u88DD\u7684\u6280\u80FD\u5230 ${c}`, {
+  await e.reply(t("skills.select_install", { target: c }, glang()), {
     reply_markup: d,
   });
 }
@@ -15126,10 +12679,10 @@ Sl.command("skills", async (e) => {
   await Il(e);
 });
 async function Pm(e) {
-  let { store: t } = e.services,
+  let { store: st } = e.services,
     r = e.chat?.id;
   if (!r) return;
-  let n = await at(t, r);
+  let n = await at(st, r);
   if (!n || n.step !== "awaiting_env") return;
   let s = (e.message?.text ?? "").trim(),
     o = n.requiredEnvs ?? [],
@@ -15137,7 +12690,7 @@ async function Pm(e) {
     a = { ...(n.collectedEnvs ?? {}) },
     l = o[i] ?? "";
   if (!s) {
-    await e.reply(`\u26A0\uFE0F \u8ACB\u8F38\u5165 *${O(l)}* \u7684\u503C`, {
+    await e.reply(t("skills.pleaseEnterEnvValue", { envName: O(l) }, glang()), {
       parse_mode: "MarkdownV2",
       reply_markup: ls(),
     });
@@ -15147,18 +12700,16 @@ async function Pm(e) {
   let c = i + 1,
     d = n.promptMessageId;
   if (c < o.length) {
-    (await ht(t, r, { ...n, currentEnvIndex: c, collectedEnvs: a }), await xm(e, r));
-    let m = `\u{1F511} \u8ACB\u8F38\u5165 *${O(o[c])}* \u7684\u503C
-
-\uFF08${c + 1}/${o.length}\uFF09`,
+    (await ht(st, r, { ...n, currentEnvIndex: c, collectedEnvs: a }), await xm(e, r));
+    let m = t("skills.enterEnvValue", { envName: O(o[c]), current: c + 1, total: o.length }, glang()),
       w = { parse_mode: "MarkdownV2", reply_markup: ls() };
     d ? await e.api.editMessageText(r, d, m, w) : await e.reply(m, w);
   } else {
-    (await ht(t, r, { ...n, step: "confirm_install", collectedEnvs: a }), await xm(e, r));
+    (await ht(st, r, { ...n, step: "confirm_install", collectedEnvs: a }), await xm(e, r));
     let m = n.issueNumber,
       w = n.issueTitle,
       y = w ? `\u{1F99E} ${O(w)} \\#${m}` : `\u{1F99E} \\#${m}`,
-      _ = `\u78BA\u8A8D\u5B89\u88DD\u6280\u80FD *${O(n.skillName)}* \u5230 ${y}\uFF1F`,
+      _ = t("skills.confirm_install", { skillName: O(n.skillName), target: y }, glang()),
       I = { parse_mode: "MarkdownV2", reply_markup: Wo(n.skillName) };
     d ? await e.api.editMessageText(r, d, _, I) : await e.reply(_, I);
   }
@@ -15197,31 +12748,19 @@ var Gm = "jeffsia-blacksmith",
   Fm = "altShiftClawToolkit",
   $m = "main",
   aT = 5 * 6e4,
-  Mm = {
-    default: "\u9810\u8A2D\u7BC4\u672C",
-    summary: "\u6458\u8981\u7BC4\u672C",
-    "image-generation": "\u5716\u50CF\u751F\u6210\u7BC4\u672C",
-  },
-  Om = {
-    default:
-      "\u901A\u7528\u4EFB\u52D9\u7528\u7BC4\u672C\uFF0C\u9069\u5408\u5927\u591A\u6578\u958B\u767C\u8207\u81EA\u52D5\u5316\u6D41\u7A0B\u3002",
-    summary:
-      "\u504F\u91CD\u6458\u8981\u3001\u6574\u7406\u8207\u91CD\u9EDE\u63D0\u7149\u7684\u4EFB\u52D9\u7BC4\u672C\u3002",
-    "image-generation":
-      "\u504F\u91CD\u5716\u50CF\u751F\u6210\u3001\u7D20\u6750\u7522\u51FA\u8207\u8996\u89BA\u4EFB\u52D9\u7684\u7BC4\u672C\u3002",
-  },
+  templateCatalogIds = new Set(["default", "summary", "image-generation"]),
   qt = null;
+function TmLabel(id) {
+  return templateCatalogIds.has(id) ? t("templates.name_" + id.replace(/-/g, "_"), {}, glang()) : null;
+}
+function TmDesc(id) {
+  return templateCatalogIds.has(id) ? t("templates.desc_" + id.replace(/-/g, "_"), {}, glang()) : null;
+}
 function Nm(e) {
-  let t = String(e || "").trim();
-  return t
-    ? Mm[t]
-      ? Mm[t]
-      : t
-          .split(/[-_]/g)
-          .filter(Boolean)
-          .map((r) => r.charAt(0).toUpperCase() + r.slice(1))
-          .join(" ")
-    : "\u7BC4\u672C";
+  let id = String(e || "").trim();
+  if (!id) return t("templates.fallback_name", {}, glang());
+  let lbl = TmLabel(id);
+  return lbl || id.split(/[-_]/g).filter(Boolean).map((r) => r.charAt(0).toUpperCase() + r.slice(1)).join(" ");
 }
 async function On(e) {
   if (qt && Date.now() - qt.fetchedAt < aT) return qt.templates;
@@ -15244,8 +12783,8 @@ async function On(e) {
     throw n;
   }
 }
-async function Lm(e, t) {
-  let r = String(t || "").trim();
+async function Lm(e, tplId) {
+  let r = String(tplId || "").trim();
   if (!r) return null;
   let n = await rn(e, r);
   return n
@@ -15253,12 +12792,12 @@ async function Lm(e, t) {
         name: n.name?.trim() || Nm(r),
         description:
           n.description ||
-          Om[r] ||
-          `\u540C\u6B65 templates/${r} \u5230\u76EE\u524D\u5C08\u6848\u3002`,
+          TmDesc(r) ||
+          t("templates.sync_desc", { name: r }, glang()),
       }
     : {
         name: Nm(r),
-        description: Om[r] ?? `\u540C\u6B65 templates/${r} \u5230\u76EE\u524D\u5C08\u6848\u3002`,
+        description: TmDesc(r) ?? t("templates.sync_desc", { name: r }, glang()),
       };
 }
 function lT(e) {
@@ -15346,21 +12885,21 @@ async function Dm(e, t, r, n) {
 Ve();
 var Cl = new se();
 Cl.command("templates", async (e) => {
-  let { store: t, config: r } = e.services,
+  let { store: st, config: r } = e.services,
     n = e.chat?.id;
   if (!n) return;
-  (await be(t, n)) && (await oe(t, n, { templateName: "", step: "selecting" }));
+  (await be(st, n)) && (await oe(st, n, { templateName: "", step: "selecting" }));
   let o;
   try {
     o = await On(r.github);
   } catch (c) {
-    console.error("[/templates] listRemoteTemplates \u5931\u6557", c);
+    console.error(i18nT("log.command.templatesListFailed", {}, glang()), c);
     let d = c instanceof Error ? c.message : String(c);
-    await e.reply(`\u274C \u53D6\u5F97\u7BC4\u672C\u6E05\u55AE\u5931\u6557\uFF1A${d}`);
+    await e.reply(t("templates.getFailed", { error: d }, glang()));
     return;
   }
   if (!o.length) {
-    await e.reply("\u{1F50D} \u76EE\u524D\u6C92\u6709\u53EF\u5B89\u88DD\u7684\u7BC4\u672C\u3002");
+    await e.reply(t("templates.noAvailableTemplates", {}, glang()));
     return;
   }
   let { octokit: i } = e.services,
@@ -15371,9 +12910,9 @@ Cl.command("templates", async (e) => {
       }),
     ),
     l = new Set(a.filter((c) => c.installed).map((c) => c.name));
-  (await oe(t, n, { templateName: "", step: "selecting" }),
+  (await oe(st, n, { templateName: "", step: "selecting" }),
     await e.reply(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      t("templates.selectInstallTo", {}, glang()),
       { reply_markup: us(o, 0, l) },
     ));
 });
@@ -15584,24 +13123,24 @@ function Km(e, t) {
   return { visibleInputs: { ...e }, dispatchInputs: { ...e, request_id: t } };
 }
 function Hm(e) {
-  return `\u23F3 \u6B63\u5728\u89F8\u767C workflow \`${O(e)}\`\u3002`;
+  return t("core.workflowTriggering", { name: O(e) }, glang());
 }
 function Rl(e) {
   return (e && e.match(_T)?.[1]?.trim()) || null;
 }
-function zm(e, t) {
+function zm(e, fallback) {
   switch (e) {
     case "success":
-      return "\u2705 \u5DF2\u6210\u529F\u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u3002";
+      return t("core.coreUpdateSuccess", {}, glang());
     case "cancelled":
-      return "\u26A0\uFE0F \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u5DF2\u53D6\u6D88\u3002";
+      return t("core.coreUpdateCancelled", {}, glang());
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return "\u274C \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log\u3002";
+      return t("core.coreUpdateFailed", {}, glang());
     default:
-      return `\u2139\uFE0F \u66F4\u65B0\u9F8D\u8766\u5821\u6838\u5FC3\u6D41\u7A0B\u5DF2\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(e || t || "unknown")}`;
+      return t("core.coreUpdateEnded", { result: O(e || fallback || "unknown") }, glang());
   }
 }
 Et();
@@ -15614,39 +13153,32 @@ function bi(e) {
   return `\\#${e}`;
 }
 function Pl() {
-  return "\u26A0\uFE0F \u5C1A\u672A\u9078\u64C7\u5C0F\u9F8D\u8766\uFF0C\u8ACB\u5148\u7528 /list \u9078\u64C7\u3002";
+  return O(t("core.noActiveLobsterSelected", {}, glang()));
 }
 function Qm(e) {
-  return `\u26A0\uFE0F \u627E\u4E0D\u5230 workflow ${nn(e)}\u3002`;
+  return t("core.workflowNotFound", { name: nn(e) }, glang());
 }
 function TT(e) {
-  return `\u274C \u555F\u7528 workflow ${nn(e)} \u5931\u6557\u3002`;
+  return t("core.enableWorkflowFailed", { name: nn(e) }, glang());
 }
 function kT(e) {
-  return `\u274C \u505C\u7528 workflow ${nn(e)} \u5931\u6557\u3002`;
+  return t("core.disableWorkflowFailed", { name: nn(e) }, glang());
 }
-function ET(e, t) {
-  return `\u2139\uFE0F \u5C0F\u9F8D\u8766 ${bi(e)} \u5C1A\u672A\u5EFA\u7ACB workflow\uFF08${nn(t)} \u4E0D\u5B58\u5728\uFF09\u3002`;
+function ET(e, path) {
+  return t("core.workflowNotCreatedYet", { number: bi(e), name: nn(path) }, glang());
 }
-function ST(e, t, r, n) {
-  return [
-    `\u{1F527} \u5C0F\u9F8D\u8766 ${bi(e)} \u7684 workflow \u72C0\u614B`,
-    "",
-    `\u{1F4C4} \u6A94\u6848\uFF1A${nn(t)}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${O(r)}`,
-    `\u{1F194} ID\uFF1A${n}`,
-  ].join(`
-`);
+function ST(e, file, r, n) {
+  return t("core.workflowStatusCard", { number: bi(e), name: nn(file), status: O(r), id: n }, glang());
 }
 function IT() {
-  return "\u274C \u67E5\u8A62 workflow \u72C0\u614B\u6642\u767C\u751F\u932F\u8AA4\u3002";
+  return t("core.queryWorkflowFailed", {}, glang());
 }
 function vT(e) {
-  return `\u274C \u63A8\u5C0E workflow \`${O(e)}\` \u53C3\u6578\u6642\u767C\u751F\u932F\u8AA4\u3002`;
+  return t("core.inferWorkflowFailed", { name: O(e) }, glang());
 }
-function Al(e, t) {
-  let r = O(t instanceof Error ? t.message : "\u672A\u77E5\u932F\u8AA4");
-  return `\u274C \u89F8\u767C workflow \`${O(e)}\` \u5931\u6557\uFF1A${r}`;
+function Al(e, err) {
+  let r = O(err instanceof Error ? err.message : t("core.unknownError", {}, glang()));
+  return t("core.triggerWorkflowFailed", { name: O(e), error: r }, glang());
 }
 function xl(e, t) {
   return e.inputs.some((r) => r.name === t);
@@ -15662,7 +13194,7 @@ function CT(e, t) {
   );
 }
 Fn.command("enable", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -15672,23 +13204,23 @@ Fn.command("enable", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((m) => m.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(Qm(l), He);
       return;
     }
-    (await t.actions.enableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
+    (await ok.actions.enableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
       await e.reply(
-        `\u2705 \u5DF2\u555F\u7528 workflow ${nn(l)}\uFF0C\u5C0F\u9F8D\u8766 ${bi(a)} \u5C07\u81EA\u52D5\u63A5\u53D7\u6D3E\u5DE5\u3002`,
+        t("core.workflowEnabledOk", { name: nn(l), number: bi(a) }, glang()),
         He,
       ));
   } catch (c) {
-    (console.error("[/enable] \u555F\u7528 workflow \u5931\u6557", c), await e.reply(TT(l), He));
+    (console.error(i18nT("log.workflow.enableFailed", { command: "enable" }, glang()), c), await e.reply(TT(l), He));
   }
 });
 Fn.command("disable", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -15698,23 +13230,23 @@ Fn.command("disable", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((m) => m.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(Qm(l), He);
       return;
     }
-    (await t.actions.disableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
+    (await ok.actions.disableWorkflow({ owner: s, repo: o, workflow_id: d.id }),
       await e.reply(
-        `\u2705 \u5DF2\u505C\u7528 workflow ${nn(l)}\uFF0C\u5C0F\u9F8D\u8766 ${bi(a)} \u66AB\u6642\u4E0D\u63A5\u53D7\u6D3E\u5DE5\u3002`,
+        t("core.workflowDisabledOk", { name: nn(l), number: bi(a) }, glang()),
         He,
       ));
   } catch (c) {
-    (console.error("[/disable] \u505C\u7528 workflow \u5931\u6557", c), await e.reply(kT(l), He));
+    (console.error(i18nT("log.workflow.disableFailed", { command: "disable" }, glang()), c), await e.reply(kT(l), He));
   }
 });
 Fn.command("workflow", async (e) => {
-  let { octokit: t, store: r, config: n } = e.services,
+  let { octokit: ok, store: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = e.chat?.id,
     a = i ? await Ge(r, i) : null;
@@ -15724,7 +13256,7 @@ Fn.command("workflow", async (e) => {
   }
   let l = `issue-${a}.yml`;
   try {
-    let { data: c } = await t.actions.listRepoWorkflows({ owner: s, repo: o }),
+    let { data: c } = await ok.actions.listRepoWorkflows({ owner: s, repo: o }),
       d = c.workflows.find((w) => w.path === `.github/workflows/${l}`);
     if (!d) {
       await e.reply(ET(a, l), He);
@@ -15732,13 +13264,13 @@ Fn.command("workflow", async (e) => {
     }
     let m =
       d.state === "active"
-        ? "\u555F\u7528\u4E2D"
+        ? t("schedule.workflowStateActive", {}, glang())
         : d.state === "disabled_manually"
-          ? "\u5DF2\u624B\u52D5\u505C\u7528"
+          ? t("schedule.workflowStateDisabledManually", {}, glang())
           : d.state;
     await e.reply(ST(a, l, m, d.id), He);
   } catch (c) {
-    (console.error("[/workflow] \u67E5\u8A62 workflow \u5931\u6557", c), await e.reply(IT(), He));
+    (console.error(i18nT("log.workflow.queryFailed", { command: "workflow" }, glang()), c), await e.reply(IT(), He));
   }
 });
 Fn.on("message:text", async (e, t) => {
@@ -15757,7 +13289,7 @@ async function RT(e, t, r) {
     l = await jm(n, i, a, t);
   } catch (w) {
     return (
-      console.warn("[workflow] resolveWorkflowCommand \u5931\u6557", {
+      console.warn(i18nT("log.workflow.resolveCommandFailed", {}, glang()), {
         commandName: t,
         error: w instanceof Error ? w.message : String(w),
       }),
@@ -15777,7 +13309,7 @@ async function RT(e, t, r) {
     }
   } catch (w) {
     return (
-      console.error("[workflow] inferWorkflowDispatchInputs \u5931\u6557", {
+      console.error(i18nT("log.workflow.inferInputsFailed", {}, glang()), {
         commandName: t,
         error: w instanceof Error ? w.message : String(w),
       }),
@@ -15811,7 +13343,7 @@ async function RT(e, t, r) {
           await Is(n, i, a, l.workflowFile, l.ref, I),
           await e.api.editMessageText(e.chat.id, P.message_id, nl(l, w), He));
       } catch (U) {
-        (console.error("[workflow] autoupdate notification dispatch \u5931\u6557", {
+        (console.error(i18nT("log.workflow.autoupdateDispatchFailed", {}, glang()), {
           commandName: t,
           error: U instanceof Error ? U.message : String(U),
         }),
@@ -15826,7 +13358,7 @@ async function RT(e, t, r) {
     }
     (await Is(n, i, a, l.workflowFile, l.ref, w), await e.reply(nl(l, w), He));
   } catch (w) {
-    (console.error("[workflow] dispatchWorkflow \u5931\u6557", {
+    (console.error(i18nT("log.workflow.dispatchFailed", {}, glang()), {
       commandName: t,
       error: w instanceof Error ? w.message : String(w),
     }),
@@ -15848,110 +13380,79 @@ function $n(e) {
   return `${e.ruleType} | ${t}`;
 }
 function Vm(e) {
-  return e === "paused" ? "\u5DF2\u505C\u7528" : "\u555F\u7528\u4E2D";
+  return e === "paused" ? t("schedule.statusPaused", {}, glang()) : t("schedule.statusActive", {}, glang());
 }
 function Ln(e) {
-  return (typeof e == "string" ? e.trim() : "") || "\uFF08\u672A\u8A2D\u5B9A\uFF09";
+  return (typeof e == "string" ? e.trim() : "") || t("core.notSet", {}, glang());
 }
 function Ml(e) {
-  let t = e.issueTitle.trim();
-  return t ? `${t} (#${e.issueNumber})` : `\u5C0F\u9F8D\u8766 #${e.issueNumber}`;
+  let title = e.issueTitle.trim();
+  return title ? `${title} (#${e.issueNumber})` : t("core.lobsterHash", { issueNumber: e.issueNumber }, glang());
 }
-function Ol(e, t, r) {
-  let n = [`\u{1F5C2}\uFE0F \u{1F99E} ${e} (#${t}) \u7684\u6392\u7A0B\u5217\u8868`, ""];
+function Ol(e, issueNum, r) {
+  let n = [t("schedule.listTitle", { name: e, issueNumber: issueNum }, glang()), ""];
   return r.length === 0
-    ? (n.push("\u76EE\u524D\u9084\u6C92\u6709\u6392\u7A0B\u3002"),
-      n.join(`
-`))
+    ? (n.push(t("schedule.listEmpty", {}, glang())), n.join("\n"))
     : (r.forEach((s, o) => {
         (n.push(`${o + 1}. ${$n(s)}`),
-          n.push(`   \u{1F194} ${s.id}`),
-          n.push(`   \u23ED\uFE0F ${Bt(s.nextRunAt)}`));
+          n.push(`   🆔 ${s.id}`),
+          n.push(`   ⏭️ ${Bt(s.nextRunAt)}`));
       }),
-      n.push("", "\u8ACB\u9EDE\u4E0B\u65B9\u6309\u9215\u7BA1\u7406\u6307\u5B9A\u6392\u7A0B\u3002"),
-      n.join(`
-`));
+      n.push("", t("schedule.listManageHint", {}, glang())),
+      n.join("\n"));
 }
-function Nl(e, t, r) {
+function Nl(e, issueNum, r) {
   return [
-    `\u{1F5C2}\uFE0F \u{1F99E} ${e} (#${t}) \u6392\u7A0B\u8A73\u60C5`,
+    t("schedule.card.detailTitle", { name: e, issueNumber: issueNum }, glang()),
     "",
-    `\u{1F194} ${r.id}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${Vm(r.status)}`,
-    `\u{1F5D3}\uFE0F \u898F\u5247\uFF1A${br(r)}`,
-    `\u23ED\uFE0F \u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(r.nextRunAt)}`,
-    `\u{1F514} \u901A\u77E5\uFF1A${r.shouldNotify ? "\u958B\u555F" : "\u95DC\u9589"}`,
+    t("schedule.card.id", { id: r.id }, glang()),
+    t("schedule.card.status", { status: Vm(r.status) }, glang()),
+    t("schedule.card.rule", { rule: br(r) }, glang()),
+    t("schedule.card.nextRun", { nextRun: Bt(r.nextRunAt) }, glang()),
+    t("schedule.card.notify", { state: r.shouldNotify ? t("schedule.card.notifyOn", {}, glang()) : t("schedule.card.notifyOff", {}, glang()) }, glang()),
     "",
-    `\u{1F4DD} \u4EFB\u52D9\uFF1A${r.prompt}`,
-    `\u{1F4E6} Payload\uFF1A${Ln(r.eventData)}`,
-  ].join(`
-`);
+    t("schedule.card.task", { prompt: r.prompt }, glang()),
+    t("schedule.card.payload", { payload: Ln(r.eventData) }, glang()),
+  ].join("\n");
 }
-function Jm(e, t) {
-  return [
-    `\u{1F4DD} (1/4) \u6B63\u5728\u70BA \u{1F99E} ${e} (#${t}) \u8A2D\u5B9A\u6392\u7A0B`,
-    "",
-    "\u8ACB\u544A\u8A34\u6211\u4F60\u5E0C\u671B\u9019\u96BB\u5C0F\u9F8D\u8766\u5B9A\u671F\u57F7\u884C\u7684\u4EFB\u52D9\u662F\u4EC0\u9EBC\uFF1F\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09",
-  ].join(`
-`);
+function Jm(e, issueNum) {
+  return t("schedule.setupTaskPrompt", { name: e, issueNumber: issueNum }, glang());
 }
 function Ym(e) {
-  return `\u270F\uFE0F (1/2) \u8ACB\u8F38\u5165\u6392\u7A0B ${e} \u7684\u65B0\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09`;
+  return t("schedule.editTaskPrompt", { name: e }, glang());
 }
 function Xm(e) {
-  return [
-    `\u{1F552} (1/2) \u8ACB\u8F38\u5165\u6392\u7A0B ${e} \u7684\u65B0\u57F7\u884C\u6642\u9593`,
-    "",
-    "\u4F8B\u5982\uFF1A\u6BCF 5 \u5206\u9418\u3001\u6BCF\u5C0F\u6642\u6574\u9EDE\u3001\u6BCF\u5929\u4E2D\u534812\u9EDE\u3001\u6BCF\u9031\u4E00\u4E0B\u53482\u9EDE\u3001\u661F\u671F\u4E00\u8DDF\u661F\u671F\u4E09\u7684\u4E0B\u5348\u4E09\u9EDE\u3001\u6BCF\u500B\u5DE5\u4F5C\u65E5\u4E0B\u53482\u9EDE\u3001\u6BCF\u500B\u5047\u65E5\u65E9\u4E0A9\u9EDE\u3001\u6BCF\u59299:00\u300112:00\u300115:00\u300118:00\u300121:00\u300124:00\u57F7\u884C\u4E00\u6B21",
-  ].join(`
-`);
+  return t("schedule.editTimePrompt", { name: e }, glang());
 }
-function Zm(e, t) {
-  return [
-    `\u{1F4E6} (1/2) \u8ACB\u8A2D\u5B9A\u6392\u7A0B ${e} \u7684 Payload \u8CC7\u6599\uFF1F(\u53EF\u9078)`,
-    "",
-    `\u76EE\u524D\u503C\uFF1A${Ln(t)}`,
-    "\u76F4\u63A5\u8F38\u5165\u65B0\u7684 Payload \u5167\u5BB9\uFF0C\u6216\u9EDE\u9078\u300C\u7565\u904E\u300D\u6E05\u7A7A\u3002",
-    "\u82E5\u8F38\u5165\u7684\u662F JSON object\uFF0C\u6392\u7A0B\u89F8\u767C\u6642\u6703\u4FDD\u7559\u539F\u59CB event_data\uFF0C\u4E26\u984D\u5916\u5C55\u958B\u6210 workflow inputs\u3002",
-  ].join(`
-`);
+function Zm(e, cur) {
+  return t("schedule.editPayloadPrompt", { name: e, current: Ln(cur) }, glang());
 }
 function Dn(e) {
-  let t = [
-    "\u{1F5C2}\uFE0F \u9019\u500B\u804A\u5929\u76EE\u524D\u7684\u6392\u7A0B\u5217\u8868",
-    "",
-  ];
+  let lines = [t("schedule.thisChatListTitle", {}, glang()), ""];
   return e.length === 0
-    ? (t.push("\u76EE\u524D\u6C92\u6709\u6392\u7A0B\u3002"),
-      t.join(`
-`))
+    ? (lines.push(t("schedule.thisChatListEmpty", {}, glang())), lines.join("\n"))
     : (e.forEach((r, n) => {
-        (t.push(`${n + 1}. ${Ml(r)}\uFF5C${$n(r)}`),
-          t.push(`   \u{1F194} ${r.id}`),
-          t.push(`   \u23ED\uFE0F ${Bt(r.nextRunAt)}`));
+        (lines.push(`${n + 1}. ${Ml(r)}｜${$n(r)}`),
+          lines.push(`   🆔 ${r.id}`),
+          lines.push(`   ⏭️ ${Bt(r.nextRunAt)}`));
       }),
-      t.push(
-        "",
-        "\u8ACB\u9EDE\u4E0B\u65B9\u6309\u9215\u67E5\u770B\u7D30\u7BC0\u6216\u522A\u9664\u6392\u7A0B\u3002",
-      ),
-      t.join(`
-`));
+      lines.push("", t("schedule.thisChatListHint", {}, glang())),
+      lines.join("\n"));
 }
 function Ds(e) {
   return [
-    `\u{1F5C2}\uFE0F ${Ml(e)} \u7684\u6392\u7A0B\u8A73\u60C5`,
+    t("schedule.card.standaloneDetailTitle", { label: Ml(e) }, glang()),
     "",
-    `\u{1F194} ${e.id}`,
-    `\u{1F4CD} \u72C0\u614B\uFF1A${Vm(e.status)}`,
-    `\u{1F5D3}\uFE0F \u898F\u5247\uFF1A${br(e)}`,
-    `\u23ED\uFE0F \u4E0B\u6B21\u57F7\u884C\uFF1A${Bt(e.nextRunAt)}`,
+    t("schedule.card.id", { id: e.id }, glang()),
+    t("schedule.card.status", { status: Vm(e.status) }, glang()),
+    t("schedule.card.rule", { rule: br(e) }, glang()),
+    t("schedule.card.nextRun", { nextRun: Bt(e.nextRunAt) }, glang()),
     "",
-    `\u{1F4DD} \u4EFB\u52D9\uFF1A${e.prompt}`,
-    `\u{1F4E6} Payload\uFF1A${Ln(e.eventData)}`,
+    t("schedule.card.task", { prompt: e.prompt }, glang()),
+    t("schedule.card.payload", { payload: Ln(e.eventData) }, glang()),
     "",
-    "\u5982\u679C\u9019\u7B46\u6392\u7A0B\u662F\u4E4B\u524D\u5DF2\u6536\u5DE5\u7684\u5C0F\u9F8D\u8766\u7559\u4E0B\u7684\uFF0C\u4E5F\u53EF\u4EE5\u76F4\u63A5\u5F9E\u9019\u88E1\u522A\u6389\u3002",
-  ].join(`
-`);
+    t("schedule.card.deleteHint", {}, glang()),
+  ].join("\n");
 }
 function _i(e) {
   return e.issueState === "closed";
@@ -16035,7 +13536,7 @@ function tf(e, t) {
 }
 function Ws(e) {
   let t = typeof e == "string" ? e.trim() : String(e ?? "").trim();
-  if (!t) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (!t) throw new Error("Invalid schedule format");
   if (/^\d{1,3}$/.test(t)) return Number.parseInt(t, 10);
   let r = {
     零: 0,
@@ -16054,27 +13555,27 @@ function Ws(e) {
   if (t === "\u5341") return 10;
   if (t.startsWith("\u5341")) {
     let s = r[t.slice(1)];
-    if (s == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (s == null) throw new Error("Invalid schedule format");
     return 10 + s;
   }
   if (t.includes("\u5341")) {
     let [s, o] = t.split("\u5341"),
       i = r[s];
-    if (i == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (i == null) throw new Error("Invalid schedule format");
     if (!o) return i * 10;
     let a = r[o];
-    if (a == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    if (a == null) throw new Error("Invalid schedule format");
     return i * 10 + a;
   }
   let n = r[t];
-  if (n == null) throw new Error("\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (n == null) throw new Error("Invalid schedule format");
   return n;
 }
 function rf(e) {
   let t = Ws(e);
   if (!Number.isInteger(t) || t < 0 || t > 23)
     throw new Error(
-      "\u6642\u9593\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u5C0F\u6642\u8D85\u51FA\u7BC4\u570D",
+      "Invalid time format: hour out of range",
     );
   return t;
 }
@@ -16083,7 +13584,7 @@ function $l(e) {
   let t = Ws(e);
   if (!Number.isInteger(t) || t < 0 || t > 59)
     throw new Error(
-      "\u6642\u9593\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u5206\u9418\u8D85\u51FA\u7BC4\u570D",
+      "Invalid time format: minute out of range",
     );
   return t;
 }
@@ -16102,7 +13603,7 @@ function xT(e, t) {
 function PT(e, t) {
   let r = Ws(e.interval_minutes || 1);
   if (!Number.isInteger(r) || r <= 0 || r > 59)
-    throw new Error("\u6BCF\u5206\u9418\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid per-minute schedule format");
   let n = jn(t),
     s = n.minute,
     o = Cr({ year: n.year, month: n.month, day: n.day, hour: n.hour, minute: s });
@@ -16113,7 +13614,7 @@ function MT(e, t) {
   let r = Ws(e.interval_hours || 1),
     n = $l(e.minute);
   if (!Number.isInteger(r) || r <= 0 || r > 24)
-    throw new Error("\u6BCF\u5C0F\u6642\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid hourly schedule format");
   let s = jn(t),
     o = s.hour,
     i = Cr({ year: s.year, month: s.month, day: s.day, hour: o, minute: n });
@@ -16137,7 +13638,7 @@ function Gl(e, t, r) {
     o = $l(t.minute);
   if (n.size === 0)
     throw new Error(
-      "\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF1A\u7F3A\u5C11\u6709\u6548\u7684\u661F\u671F\u8A2D\u5B9A",
+      "Invalid schedule format: missing valid weekday setting",
     );
   let i = jn(r);
   for (let l = 0; l < 7; l += 1) {
@@ -16151,37 +13652,37 @@ function Gl(e, t, r) {
 }
 function NT(e, t) {
   let r = OT(e);
-  if (r.length === 0) throw new Error("\u6BCF\u9031\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (r.length === 0) throw new Error("Invalid weekly schedule format");
   return Gl(r, e, t);
 }
 function GT(e, t) {
   let r = new Date(e.run_at);
   if (Number.isNaN(r.getTime()))
-    throw new Error("\u55AE\u6B21\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid once schedule format");
   if (r.getTime() <= t.getTime())
-    throw new Error("\u55AE\u6B21\u6392\u7A0B\u6642\u9593\u5FC5\u9808\u665A\u65BC\u73FE\u5728");
+    throw new Error("Once schedule time must be later than now");
   return r;
 }
 function ef(e, t) {
   let r = Ws(e.minutes);
   if (!Number.isInteger(r) || r <= 0 || r > 1440)
-    throw new Error("\u56FA\u5B9A\u9593\u9694\u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+    throw new Error("Invalid fixed-interval schedule format");
   return tf(t, r);
 }
 function Ti(e, t, r, n = !1) {
   let s = Number.parseInt(e, 10);
-  if (!Number.isInteger(s)) throw new Error(`\u7121\u6548\u7684 cron \u6B04\u4F4D\u503C\uFF1A${e}`);
+  if (!Number.isInteger(s)) throw new Error(`Invalid cron field value: ${e}`);
   if (n && s === 7) return 0;
-  if (s < t || s > r) throw new Error(`cron \u6B04\u4F4D\u8D85\u51FA\u7BC4\u570D\uFF1A${e}`);
+  if (s < t || s > r) throw new Error(`cron field out of range: ${e}`);
   return s;
 }
 function js(e, t, r, n = !1) {
   let s = String(e ?? "").trim();
-  if (!s) throw new Error("cron \u6B04\u4F4D\u4E0D\u53EF\u70BA\u7A7A");
+  if (!s) throw new Error("cron field cannot be empty");
   let o = new Set(),
     i = (a, l, c = 1) => {
-      if (c <= 0) throw new Error(`\u7121\u6548\u7684 cron step\uFF1A${e}`);
-      if (a > l) throw new Error(`\u7121\u6548\u7684 cron \u7BC4\u570D\uFF1A${e}`);
+      if (c <= 0) throw new Error(`Invalid cron step: ${e}`);
+      if (a > l) throw new Error(`Invalid cron range: ${e}`);
       for (let d = a; d <= l; d += c) o.add(d);
     };
   for (let a of s.split(",")) {
@@ -16216,7 +13717,7 @@ function FT(e, t, r) {
 function $T(e, t) {
   let r = typeof e.expression == "string" ? e.expression.trim() : "",
     n = r.split(/\s+/);
-  if (n.length !== 5) throw new Error("cron \u6392\u7A0B\u683C\u5F0F\u4E0D\u6B63\u78BA");
+  if (n.length !== 5) throw new Error("Invalid cron schedule format");
   let [s, o, i, a, l] = n,
     c = js(s, 0, 59),
     d = js(o, 0, 23),
@@ -16233,7 +13734,7 @@ function $T(e, t) {
           if (U.getTime() > t.getTime()) return U;
         }
   }
-  throw new Error(`\u7121\u6CD5\u8A08\u7B97 cron \u4E0B\u6B21\u57F7\u884C\u6642\u9593\uFF1A${r}`);
+  throw new Error(`Cannot compute next cron run time: ${r}`);
 }
 function LT(e) {
   if (!e) return {};
@@ -16272,21 +13773,24 @@ function Wn({ ruleType: e, rulePayload: t, now: r = new Date() }) {
     case "once":
       return GT(n, r).toISOString();
     default:
-      throw new Error(`\u4E0D\u652F\u63F4\u7684\u6392\u7A0B\u985E\u578B\uFF1A${e}`);
+      throw new Error(`Unsupported schedule type: ${e}`);
   }
 }
-var Dl =
-    "\u6211\u9019\u6B21\u6C92\u770B\u61C2\u9019\u500B\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u3002",
-  nf =
-    "\u6211\u73FE\u5728\u66AB\u6642\u6C92\u8FA6\u6CD5\u5224\u65B7\u9019\u500B\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\uFF0C\u6216\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u3002",
-  sf =
-    "\u6211\u6709\u9EDE\u4E0D\u78BA\u5B9A\u4F60\u6307\u7684\u662F\u54EA\u4E00\u7A2E\u6392\u7A0B\u6642\u9593\uFF0C\u8ACB\u76F4\u63A5\u7528\u5B8C\u6574\u53E5\u5B50\u518D\u8AAA\u4E00\u6B21\u3002",
-  DT = new Set(["once", "interval", "cron"]),
+function Dl() {
+  return t("schedule.flow.parseUnknownFallback", {}, glang());
+}
+function nf() {
+  return t("schedule.flow.parseNoBinding", {}, glang());
+}
+function sf() {
+  return t("schedule.flow.parseAmbiguousFallback", {}, glang());
+}
+var DT = new Set(["once", "interval", "cron"]),
   of =
     /workers ai|workflow inputs|json|response_format|parser|cron|stack|exception|timeout|service/i,
   Ll = 2,
   UT = 1e3;
-function sn(e = Dl) {
+function sn(e = Dl()) {
   return { status: "unknown", message: e };
 }
 function BT(e) {
@@ -16306,16 +13810,16 @@ function BT(e) {
     '- Use timezone "Asia/Taipei" for resolved results.',
     "- Interpret 24:00 as next-day 00:00.",
     "- If a recurring schedule has multiple times and one cron can express it, combine them into one cron.",
-    '- If the input is ambiguous, return status "ambiguous" with a short Traditional Chinese message and Traditional Chinese candidate rewrites.',
-    '- If the input cannot be represented as one canonical rule, return status "unknown" with a short Traditional Chinese message.',
+    '- If the input is ambiguous, return status "ambiguous" with a short Simplified Chinese message and Simplified Chinese candidate rewrites.',
+    '- If the input cannot be represented as one canonical rule, return status "unknown" with a short Simplified Chinese message.',
     "",
     "Examples:",
     '{"status":"resolved","ruleType":"once","rulePayload":{"run_at":"2026-04-08T10:00:00.000Z"},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"interval","rulePayload":{"minutes":5},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 12 * * *"},"timezone":"Asia/Taipei"}',
     '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 0,9,12,15,18,21 * * *"},"timezone":"Asia/Taipei"}',
-    '{"status":"ambiguous","message":"\u6211\u6709\u9EDE\u4E0D\u78BA\u5B9A\u4F60\u7684\u610F\u601D\uFF0C\u8ACB\u518D\u8AAA\u6E05\u695A\u4E00\u9EDE\u3002","candidates":["\u4ECA\u5929\u665A\u4E0A6\u9EDE\u57F7\u884C\u4E00\u6B21","\u6BCF\u5929\u665A\u4E0A6\u9EDE\u57F7\u884C\u4E00\u6B21"]}',
-    '{"status":"unknown","message":"\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u91CD\u65B0\u8F38\u5165\u3002"}',
+    '{"status":"ambiguous","message":"\u6211\u6709\u70B9\u4E0D\u786E\u5B9A\u4F60\u7684\u610F\u601D\uFF0C\u8BF7\u518D\u8BF4\u6E05\u695A\u4E00\u70B9\u3002","candidates":["\u4ECA\u5929\u665A\u4E0A6\u70B9\u6267\u884C\u4E00\u6B21","\u6BCF\u5929\u665A\u4E0A6\u70B9\u6267\u884C\u4E00\u6B21"]}',
+    '{"status":"unknown","message":"\u8BF7\u6362\u4E00\u79CD\u66F4\u6E05\u695A\u7684\u8BF4\u6CD5\u91CD\u65B0\u8F93\u5165\u3002"}',
     "",
     `Current time: ${e.toISOString()}`,
   ].join(`
@@ -16323,11 +13827,11 @@ function BT(e) {
 }
 function jT(e) {
   let t = typeof e == "string" ? e.trim() : "";
-  return t ? (of.test(t) ? Dl : t) : Dl;
+  return t ? (of.test(t) ? Dl() : t) : Dl();
 }
 function WT(e) {
   let t = typeof e == "string" ? e.trim() : "";
-  return t ? (of.test(t) ? sf : t) : sf;
+  return t ? (of.test(t) ? sf() : t) : sf();
 }
 function qT(e) {
   return Array.isArray(e) ? e.map((t) => String(t).trim()).filter(Boolean) : [];
@@ -16352,7 +13856,7 @@ function KT(e, t) {
   }
   return null;
 }
-function HT(e, t) {
+function HT(e, nowDate) {
   if (e.status !== "resolved")
     return e.status === "ambiguous"
       ? { status: "ambiguous", message: WT(e.message), candidates: qT(e.candidates) }
@@ -16361,15 +13865,15 @@ function HT(e, t) {
   let r = KT(e.ruleType, e.rulePayload);
   if (!r) return sn();
   try {
-    let n = Wn({ ruleType: e.ruleType, rulePayload: r, now: t });
+    let n = Wn({ ruleType: e.ruleType, rulePayload: r, now: nowDate });
     return { status: "resolved", ruleType: e.ruleType, rulePayload: r, timezone: Fl, nextRunAt: n };
   } catch (n) {
     let s = n instanceof Error ? n.message : String(n);
     return /已过|晚于现在/.test(s)
       ? sn(
-          "\u9019\u500B\u6642\u9593\u5DF2\u7D93\u904E\u4E86\uFF0C\u8ACB\u6539\u6210\u672A\u4F86\u7684\u6642\u9593\u3002",
+          t("schedule.flow.timeAlreadyPassed", {}, glang()),
         )
-      : (console.warn("[\u6392\u7A0B] \u9A57\u8B49 AI \u6392\u7A0B\u7D50\u679C\u5931\u6557", {
+      : (console.warn(i18nT("log.schedule.validateAIFailed", {}, glang()), {
           ruleType: e.ruleType,
           rulePayload: r,
           detail: s,
@@ -16400,9 +13904,9 @@ async function Ul(e, t) {
     }
     return (
       console.error(
-        "[\u6392\u7A0B] \u7F3A\u5C11 AI \u7D81\u5B9A\uFF0C\u7121\u6CD5\u89E3\u6790\u81EA\u7136\u8A9E\u8A00\u6392\u7A0B\u6642\u9593",
+        i18nT("log.schedule.missingAIBinding", {}, glang()),
       ),
-      sn(nf)
+      sn(nf())
     );
   }
   let s;
@@ -16424,31 +13928,23 @@ async function Ul(e, t) {
       s = a;
       let l = a instanceof Error ? a.message : String(a);
       (console.error(
-        `[\u6392\u7A0B] AI \u6642\u9593\u89E3\u6790\u5931\u6557 (attempt ${i}/${Ll})`,
+        i18nT("log.schedule.aiParseFailedRetry", { attempt: i, total: Ll }, glang()),
         l,
       ),
         i < Ll && (await zT(UT)));
     }
   let o = s instanceof Error ? s.message : String(s);
   return (
-    console.error("[\u6392\u7A0B] AI \u6642\u9593\u89E3\u6790\u6700\u7D42\u5931\u6557", o),
-    sn(nf)
+    console.error(i18nT("log.schedule.aiParseFinalFailed", {}, glang()), o),
+    sn(nf())
   );
 }
 var qs = 4,
   Ks = 2,
-  QT = new Set(["\u7565\u904E", "skip"]),
-  Bl = [
-    "\u4ECA\u5929\u665A\u4E0A6\u9EDE",
-    "\u660E\u5929\u65E9\u4E0A8\u9EDE",
-    "\u6BCF 5 \u5206\u9418",
-    "\u6BCF\u5C0F\u6642\u6574\u9EDE",
-    "\u6BCF\u5929\u4E2D\u534812\u9EDE",
-    "\u6BCF\u9031\u4E00\u4E0B\u53482\u9EDE",
-    "\u6BCF\u500B\u5DE5\u4F5C\u65E5\u4E0B\u53482\u9EDE",
-    "\u6BCF\u500B\u5047\u65E5\u65E9\u4E0A9\u9EDE",
-    "\u6BCF\u5929 9:00\u300112:00\u300118:00 \u57F7\u884C",
-  ].join("\u3001");
+  QT = new Set(["略過", "略过", "skip"]);
+function Bl() {
+  return t("schedule.flow.timeExamples", {}, glang());
+}
 function jl(e, t) {
   return `(${e}/${t})`;
 }
@@ -16466,20 +13962,20 @@ function VT(e) {
   return e === "edit_payload" ? { step: 1, total: Ks } : { step: 3, total: qs };
 }
 function JT() {
-  let { step: e, total: t } = Wl("create");
-  return qn("\u23F0", e, t, [
-    "\u6536\u5230\uFF01\u4F60\u5E0C\u671B\u5728\u4EC0\u9EBC\u6642\u5019\u57F7\u884C\uFF1F",
+  let { step: e, total } = Wl("create");
+  return qn("⏰", e, total, [
+    t("schedule.flow.timePromptQuestion", {}, glang()),
     "",
-    `\u4F8B\u5982\uFF1A${Bl}`,
+    t("schedule.flow.examplesLine", { examples: Bl() }, glang()),
   ]);
 }
 function YT() {
-  let { step: e, total: t } = VT("create");
-  return qn("\u{1F4E6}", e, t, [
-    "\u8ACB\u8A2D\u5B9A\u6392\u7A0B\u7684 Payload \u8CC7\u6599\uFF1F(\u53EF\u9078)",
+  let { step: e, total } = VT("create");
+  return qn("📦", e, total, [
+    t("schedule.flow.payloadPromptLine1", {}, glang()),
     "",
-    "\u76F4\u63A5\u8F38\u5165 Payload \u5167\u5BB9\uFF0C\u6216\u9EDE\u9078\u300C\u7565\u904E\u300D\u8DF3\u904E\u6B64\u6B65\u9A5F\u3002",
-    "\u82E5\u8F38\u5165\u7684\u662F JSON object\uFF0C\u6392\u7A0B\u89F8\u767C\u6642\u6703\u4FDD\u7559\u539F\u59CB event_data\uFF0C\u4E26\u984D\u5916\u5C55\u958B\u6210 workflow inputs\u3002",
+    t("schedule.flow.payloadPromptLine2", {}, glang()),
+    t("schedule.flow.payloadPromptLine3", {}, glang()),
   ]);
 }
 function XT(e) {
@@ -16490,24 +13986,34 @@ function lf(e) {
   let t = It(e);
   return t === "" || XT(t) ? null : t;
 }
-function ZT(e, t) {
-  let r = t === "\u5EFA\u7ACB" ? jl(qs, qs) : jl(Ks, Ks),
+function ZT(e, action) {
+  let r = action === "create" ? jl(qs, qs) : jl(Ks, Ks),
     n = [
-      ["\u{1F194}", "\u6392\u7A0BID", e.id],
-      ["\u{1F4CB}", "\u6392\u7A0B\u985E\u578B", cs(e)],
-      ["\u{1F5D3}\uFE0F", "\u6392\u7A0B\u6642\u9593", br(e)],
-      ["\u23ED\uFE0F", "\u4E0B\u6B21\u57F7\u884C\u6642\u9593", Bt(e.nextRunAt)],
-      ["\u{1F4DD}", "\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E", e.prompt],
-      ["\u{1F4E6}", "Payload \u8CC7\u6599", Ln(e.eventData)],
+      ["🆔", t("schedule.flow.fieldId", {}, glang()), e.id],
+      ["📋", t("schedule.flow.fieldType", {}, glang()), cs(e)],
+      ["🗓️", t("schedule.flow.fieldTime", {}, glang()), br(e)],
+      ["⏭️", t("schedule.flow.fieldNextRun", {}, glang()), Bt(e.nextRunAt)],
+      ["📝", t("schedule.flow.fieldPrompt", {}, glang()), e.prompt],
+      ["📦", t("schedule.flow.fieldPayload", {}, glang()), Ln(e.eventData)],
     ];
   return [
-    `\u2705 ${r} \u5DF2${t}\u6392\u7A0B`,
+    t(
+      "schedule.flow.configCardTitle",
+      {
+        badge: r,
+        action:
+          action === "create"
+            ? t("schedule.flow.actionCreate", {}, glang())
+            : t("schedule.flow.actionUpdate", {}, glang()),
+      },
+      glang(),
+    ),
     "",
     ...n.flatMap(([s, o, i], a) => [`${s} ${o}`, i, ...(a === n.length - 1 ? [] : [""])]),
   ].join(`
 `);
 }
-async function on(e, t, r) {
+async function on(e, sched, action) {
   let { store: n, octokit: s, config: o } = e.services,
     i = e.chat?.id;
   if (i) {
@@ -16516,28 +14022,24 @@ async function on(e, t, r) {
       await s.rest.issues.createComment({
         owner: o.github.owner,
         repo: o.github.repo,
-        issue_number: t.issueNumber,
-        body: `<!-- telegram-meta: {"source":"schedule-flow","schedule_id":"${t.id}","action":"${r === "\u5EFA\u7ACB" ? "created" : "updated"}"} -->
-\u{1F5D3}\uFE0F \u5DF2${r}\u6392\u7A0B\u8A2D\u5B9A\u7D00\u9304
-
-\u{1F194} ${t.id}
-\u{1F4DD} ${t.prompt}
-\u{1F4E6} ${Ln(t.eventData)}`,
+        issue_number: sched.issueNumber,
+        body: `<!-- telegram-meta: {"source":"schedule-flow","schedule_id":"${sched.id}","action":"${action === "create" ? "created" : "updated"}"} -->
+` + t("schedule.flow.configCommentLog", { action: action === "create" ? t("schedule.flow.actionCreate", {}, glang()) : t("schedule.flow.actionUpdate", {}, glang()), id: sched.id, prompt: sched.prompt, payload: Ln(sched.eventData) }, glang()),
       });
     } catch (a) {
-      console.warn("[\u6392\u7A0B] \u5EFA\u7ACB issue comment \u5931\u6557", a);
+      console.warn(i18nT("log.schedule.createCommentFailed", {}, glang()), a);
     }
-    (await e.reply(ZT(t, r)), await Es(e, t.issueNumber, "schedule_configuration"));
+    (await e.reply(ZT(sched, action)), await Es(e, sched.issueNumber, "schedule_configuration"));
   }
 }
-async function uf(e, t, r, n, s) {
+async function uf(e, flow, r, n, s) {
   let { store: o, d1: i, config: a } = e.services,
     l = e.chat?.id;
   if (!l) return;
   if (n.status === "resolved") {
     if (s === "create") {
       (await Hr(o, l, {
-        ...t,
+        ...flow,
         step: "awaiting_payload",
         ruleType: n.ruleType ?? "unknown",
         rulePayload: n.rulePayload ?? {},
@@ -16547,18 +14049,16 @@ async function uf(e, t, r, n, s) {
         await e.reply(YT(), { reply_markup: Bo() }));
       return;
     }
-    if (t.scheduleId) {
-      let m = await gt(i, t.scheduleId);
+    if (flow.scheduleId) {
+      let m = await gt(i, flow.scheduleId);
       if (!m) {
         (await Ye(o, l),
-          await e.reply(
-            "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-          ));
+          await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
         return;
       }
       let w = await jt(
         i,
-        t.scheduleId,
+        flow.scheduleId,
         {
           ruleType: n.ruleType ?? "unknown",
           rulePayload: n.rulePayload ?? {},
@@ -16570,18 +14070,16 @@ async function uf(e, t, r, n, s) {
       );
       if (!w) {
         (await Ye(o, l),
-          await e.reply(
-            "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-          ));
+          await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
         return;
       }
-      await on(e, w, "\u66F4\u65B0");
+      await on(e, w, "update");
     }
     return;
   }
   if (n.status === "ambiguous") {
     let m = {
-      ...t,
+      ...flow,
       step: s === "edit_time" ? "awaiting_edit_time" : "awaiting_time",
       clarificationFor: s,
       clarificationContext: {
@@ -16594,14 +14092,13 @@ async function uf(e, t, r, n, s) {
     let { step: w, total: y } = Wl(s),
       _ =
         n.candidates && n.candidates.length > 0
-          ? `\u4F8B\u5982\uFF1A${n.candidates.join("\u3001")}`
-          : `\u4F8B\u5982\uFF1A${Bl}`;
+          ? t("schedule.flow.examplesLine", { examples: n.candidates.join("、") }, glang())
+          : t("schedule.flow.examplesLine", { examples: Bl() }, glang());
     await e.reply(
-      qn("\u2753", w, y, [
-        n.message ||
-          "\u8ACB\u518D\u8AAA\u660E\u4E00\u6B21\u4F60\u8981\u7684\u6392\u7A0B\u6642\u9593\u3002",
+      qn("❓", w, y, [
+        n.message || t("schedule.flow.ambiguousClarify", {}, glang()),
         "",
-        `\u8ACB\u76F4\u63A5\u56DE\u8986\u5B8C\u6574\u6642\u9593\u6558\u8FF0\uFF0C${_}`,
+        t("schedule.flow.ambiguousReply", { examples: _ }, glang()),
       ]),
       { reply_markup: tr() },
     );
@@ -16609,23 +14106,23 @@ async function uf(e, t, r, n, s) {
   }
   let { step: c, total: d } = Wl(s);
   await e.reply(
-    qn("\u26A0\uFE0F", c, d, [
-      n.message || "\u6211\u9019\u6B21\u6C92\u770B\u61C2\u9019\u500B\u6392\u7A0B\u6642\u9593\u3002",
+    qn("⚠️", c, d, [
+      n.message || t("schedule.flow.failedUnderstand", {}, glang()),
       "",
-      `\u8ACB\u63DB\u4E00\u7A2E\u66F4\u6E05\u695A\u7684\u8AAA\u6CD5\u91CD\u65B0\u8F38\u5165\uFF0C\u4F8B\u5982\uFF1A${Bl}`,
+      t("schedule.flow.failedReply", { examples: Bl() }, glang()),
     ]),
     { reply_markup: tr() },
   );
 }
 async function ql(e) {
-  let { store: t, d1: r, config: n } = e.services,
+  let { store: st, d1: r, config: n } = e.services,
     s = e.chat?.id;
   if (!s) return !1;
   let o = (e.message?.text ?? "").trim(),
-    i = await sr(t, s);
+    i = await sr(st, s);
   if (!i) return !1;
   if (
-    (console.log("[\u6392\u7A0B flow] handling input", {
+    (console.log(i18nT("log.scheduleFlow.handlingInput", {}, glang()), {
       chatId: s,
       step: i.step,
       text: o.substring(0, 50),
@@ -16637,8 +14134,8 @@ async function ql(e) {
       let { step: l, total: c } = af("create");
       return (
         await e.reply(
-          qn("\u26A0\uFE0F", l, c, [
-            "\u6392\u7A0B\u4EFB\u52D9\u4E0D\u80FD\u7559\u767D\uFF0C\u8ACB\u76F4\u63A5\u8F38\u5165\u60F3\u8B93\u5C0F\u9F8D\u8766\u57F7\u884C\u7684\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09\u3002",
+          qn("⚠️", l, c, [
+            t("schedule.prompt_cannot_be_empty", {}, glang()),
           ]),
           { reply_markup: tr() },
         ),
@@ -16646,7 +14143,7 @@ async function ql(e) {
       );
     }
     return (
-      await Hr(t, s, { ...i, step: "awaiting_time", prompt: a }),
+      await Hr(st, s, { ...i, step: "awaiting_time", prompt: a }),
       await e.reply(JT(), { reply_markup: tr() }),
       !0
     );
@@ -16661,10 +14158,8 @@ async function ql(e) {
   if (i.step === "awaiting_payload") {
     if (!i.prompt || !i.ruleType || !i.rulePayload || !i.timezone || !i.nextRunAt)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931\uFF0C\u8ACB\u91CD\u65B0\u8A2D\u5B9A\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.stateLost", {}, glang())),
         !0
       );
     let a = await Xo(r, {
@@ -16681,11 +14176,9 @@ async function ql(e) {
       shouldNotify: !0,
     });
     return a
-      ? (await on(e, a, "\u5EFA\u7ACB"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ),
+      ? (await on(e, a, "create"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.createFailed", {}, glang())),
         !0);
   }
   if (i.step === "awaiting_edit_prompt") {
@@ -16694,8 +14187,8 @@ async function ql(e) {
       let { step: c, total: d } = af("edit_prompt");
       return (
         await e.reply(
-          qn("\u26A0\uFE0F", c, d, [
-            "\u6392\u7A0B\u4EFB\u52D9\u4E0D\u80FD\u7559\u767D\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165\u65B0\u7684\u4EFB\u52D9\u5167\u5BB9\uFF08\u7D66\u5C0F\u9F8D\u8766\u7684\u63D0\u793A\u8A5E\uFF09\u3002",
+          qn("⚠️", c, d, [
+            t("schedule.prompt_cannot_be_empty", {}, glang()),
           ]),
           { reply_markup: tr() },
         ),
@@ -16704,19 +14197,15 @@ async function ql(e) {
     }
     if (!i.scheduleId)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0
       );
     let l = await jt(r, i.scheduleId, { prompt: a }, { now: new Date() });
     return l
-      ? (await on(e, l, "\u66F4\u65B0"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+      ? (await on(e, l, "update"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0);
   }
   if (i.step === "awaiting_edit_time") {
@@ -16729,37 +14218,31 @@ async function ql(e) {
   if (i.step === "awaiting_edit_payload") {
     if (!i.scheduleId)
       return (
-        await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+        await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0
       );
     let a = await jt(r, i.scheduleId, { eventData: lf(o) }, { now: new Date() });
     return a
-      ? (await on(e, a, "\u66F4\u65B0"), !0)
-      : (await Ye(t, s),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ),
+      ? (await on(e, a, "update"), !0)
+      : (await Ye(st, s),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())),
         !0);
   }
-  return (console.warn("[\u6392\u7A0B flow] unknown step", { step: i.step }), !1);
+  return (console.warn(i18nT("log.scheduleFlow.unknownStep", {}, glang()), { step: i.step }), !1);
 }
 var Kl = new se();
 Kl.command("schedules", async (e) => {
-  let { octokit: t, d1: r, config: n } = e.services,
+  let { octokit: ok, d1: r, config: n } = e.services,
     { owner: s, repo: o, repoFullName: i } = n.github,
     a = e.chat?.id;
   if (a)
     try {
-      let l = await Un(r, t, s, o, i, a);
+      let l = await Un(r, ok, s, o, i, a);
       await e.reply(Dn(l), { reply_markup: Bn(l) });
     } catch (l) {
-      (console.error("[/schedules] \u57F7\u884C\u5931\u6557", l),
-        await e.reply(
-          "\u274C \u53D6\u5F97\u6392\u7A0B\u5217\u8868\u6642\u767C\u751F\u932F\u8AA4\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ));
+      (console.error(i18nT("log.command.executionFailed", { command: "schedules" }, glang()), l),
+        await e.reply(t("schedule.flow.listFetchFailed", {}, glang())));
     }
 });
 Ie();
@@ -16774,12 +14257,10 @@ xs();
 Ps();
 ft();
 async function V(e) {
-  let t = e.callbackQuery?.message?.chat.id;
+  let cid = e.callbackQuery?.message?.chat.id;
   return (
-    t ||
-    (await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u6309\u9215\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0\u64CD\u4F5C",
-    ),
+    cid ||
+    (await e.answerCallbackQuery(t("core.buttonExpired", {}, glang())),
     null)
   );
 }
@@ -16806,8 +14287,8 @@ async function Ht(e, t, r) {
     .filter((s) => !s.pull_request)
     .map((s) => ({ number: s.number, title: s.title, body: s.body }));
 }
-function Ei(e, t) {
-  return t ? `\u5C0F\u9F8D\u8766 #${e}\u300C${t}\u300D` : `\u5C0F\u9F8D\u8766 #${e}`;
+function Ei(e, title) {
+  return title ? t("core.lobsterLabelWithTitle", { number: e, title }, glang()) : t("core.lobsterLabel", { number: e }, glang());
 }
 function ur(e) {
   return e.callbackQuery?.message?.message_id;
@@ -16823,19 +14304,19 @@ async function Hs(e, t, r) {
 ms();
 var zt = new se();
 zt.callbackQuery(/^switch_issue:/, async (e) => {
-  let t = await V(e);
+  let guard = await V(e);
   if (
-    !t ||
+    !guard ||
     !(await Hs(
       e,
       "list",
-      "\u26A0\uFE0F \u5217\u8868\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /list\u3002",
+      t("core.listMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
@@ -16843,14 +14324,14 @@ zt.callbackQuery(/^switch_issue:/, async (e) => {
     l = (await Ht(s, i, a)).find((c) => c.number === r);
   if (!l) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u76EE\u524D\u4E0D\u662F\u958B\u555F\u72C0\u614B\uFF0C\u8ACB\u5148 /list \u91CD\u65B0\u78BA\u8A8D\u3002",
+      t("core.lobsterNotOpen", {}, glang()),
     );
     return;
   }
-  (await Dt(n, t),
-    await rr(n, r, t),
+  (await Dt(n, guard),
+    await rr(n, r, guard),
     await e.answerCallbackQuery(),
-    await e.reply(`\u{1F99E} \u5DF2\u5207\u63DB\u5230\u300C${l.title}\u300D#${r}`),
+    await e.reply(t("core.switchedToLobster", { title: l.title, number: r }, glang())),
     await Es(e, r, "switch_issue"));
 });
 zt.callbackQuery(/^close_issue_prompt:/, async (e) => {
@@ -16859,44 +14340,37 @@ zt.callbackQuery(/^close_issue_prompt:/, async (e) => {
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u7684\u7DE8\u865F\u602A\u602A\u7684",
-    );
+    await e.answerCallbackQuery(t("core.invalidLobsterNumber", {}, glang()));
     return;
   }
   let { octokit: n, config: s } = e.services,
     o = await Ht(n, s.github.owner, s.github.repo);
   if (o.length <= 1) {
-    (await e.answerCallbackQuery(
-      "\u{1F99E} \u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u8981\u5148\u7559\u8457\u5594",
-    ),
+    (await e.answerCallbackQuery(t("core.lastLobsterMustKeep", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u76EE\u524D\u53EA\u5269\u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u4E86\uFF0C\u6211\u5148\u5E6B\u4F60\u7559\u8457\u7260\uFF0C\u907F\u514D\u6574\u6C60\u90FD\u6536\u5DE5\u5566\u3002",
+        t("core.closeOnlyOneLobsterLeftMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
   }
   let i = o.find((a) => a.number === r);
   if (!i) {
-    await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u53EF\u80FD\u5DF2\u7D93\u6536\u5DE5\u4E86\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /close",
-    );
+    await e.answerCallbackQuery(t("core.lobsterAlreadyClosed", {}, glang()));
     return;
   }
-  (await e.answerCallbackQuery("\u{1F97A} \u6211\u518D\u5E6B\u4F60\u78BA\u8A8D\u4E00\u6B21"),
+  (await e.answerCallbackQuery(t("core.closeConfirmAnswer", {}, glang())),
     await e.editMessageText(
       [
-        `\u{1F97A} \u4F60\u771F\u7684\u8981\u95DC\u9589${Ei(i.number, i.title)}\u55CE\uFF1F`,
+        t("core.closeConfirmQuestion", { target: Ei(i.number, i.title) }, glang()),
         "",
-        "\u7260\u9019\u4E00\u8DEF\u4E5F\u5F88\u52AA\u529B\uFF0C\u5982\u679C\u53EA\u662F\u60F3\u5148\u653E\u8457\uFF0C\u6211\u5011\u4E5F\u53EF\u4EE5\u665A\u9EDE\u518D\u56DE\u4F86\u7167\u9867\u7260\u3002",
-      ].join(`
-`),
+        t("core.closeConfirmDescription", {}, glang()),
+      ].join("\n"),
       { reply_markup: Bd(i.number) },
     ));
 });
@@ -16906,56 +14380,50 @@ zt.callbackQuery(/^close_issue_cancel:/, async (e) => {
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
-  (await e.answerCallbackQuery("\u{1FAF6} \u597D\uFF0C\u6211\u5148\u8B93\u7260\u7E7C\u7E8C\u6E38"),
+  (await e.answerCallbackQuery(t("core.closeCancelAnswer", {}, glang())),
     await e.editMessageText(
       r
-        ? `\u{1F99E} \u6536\u5230\uFF0C\u5148\u4E0D\u95DC\u5C0F\u9F8D\u8766 #${r}\u3002
-
-\u8B93\u7260\u518D\u6E38\u4E00\u4E0B\uFF0C\u6709\u9700\u8981\u518D\u53EB\u6211\u4F86\u5E6B\u7260\u6536\u5DE5\u3002`
-        : "\u{1F99E} \u6536\u5230\uFF0C\u9019\u96BB\u5C0F\u9F8D\u8766\u5148\u4E0D\u95DC\uFF0C\u8B93\u7260\u518D\u6E38\u4E00\u4E0B\u3002",
+        ? t("core.closeCancelMessage", { number: r }, glang())
+        : t("core.closeCancelMessageGeneric", {}, glang()),
       { reply_markup: new F() },
     ));
 });
 zt.callbackQuery(/^close_issue_confirm:/, async (e) => {
-  let t = await V(e);
+  let guard = await V(e);
   if (
-    !t ||
+    !guard ||
     !(await Hs(
       e,
       "close",
-      "\u26A0\uFE0F \u95DC\u9589\u9078\u55AE\u5DF2\u5931\u6548\uFF0C\u8ACB\u91CD\u65B0\u57F7\u884C /close\u3002",
+      t("core.closeMenuExpired", {}, glang()),
     ))
   )
     return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, d1: o, config: i } = e.services,
     { owner: a, repo: l, repoFullName: c } = i.github,
     d = await Ht(s, a, l);
   if (!d.find((K) => K.number === r)) {
-    (await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u9019\u96BB\u5C0F\u9F8D\u8766\u53EF\u80FD\u5DF2\u7D93\u6536\u5DE5\u4E86\uFF0C\u8ACB\u91CD\u65B0\u4F7F\u7528 /close",
-    ),
+    (await e.answerCallbackQuery(t("core.lobsterAlreadyClosed", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u6211\u525B\u525B\u770B\u4E86\u4E00\u4E0B\uFF0C\u9019\u96BB\u5C0F\u9F8D\u8766\u5DF2\u7D93\u4E0D\u662F\u958B\u555F\u72C0\u614B\u4E86\uFF0C\u91CD\u65B0\u7528 /close \u770B\u770B\u6700\u65B0\u6E05\u55AE\u5427\u3002",
+        t("core.closeAlreadyClosedMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
   }
   if (d.length <= 1) {
-    (await e.answerCallbackQuery(
-      "\u{1F99E} \u6700\u5F8C\u4E00\u96BB\u5C0F\u9F8D\u8766\u8981\u5148\u7559\u8457\u5594",
-    ),
+    (await e.answerCallbackQuery(t("core.lastLobsterMustKeep", {}, glang())),
       await e.editMessageText(
-        "\u{1F99E} \u9019\u662F\u6700\u5F8C\u4E00\u96BB\u9084\u958B\u8457\u7684\u5C0F\u9F8D\u8766\uFF0C\u6211\u5148\u4E0D\u5E6B\u4F60\u95DC\uFF0C\u7559\u4E00\u96BB\u503C\u73ED\u6BD4\u8F03\u5B89\u5FC3\u3002",
+        t("core.closeOnlyOneLobsterLeftMessage", {}, glang()),
         { reply_markup: new F() },
       ));
     return;
@@ -16967,24 +14435,23 @@ zt.callbackQuery(/^close_issue_confirm:/, async (e) => {
   } catch {
     _ = null;
   }
-  let I = await ym(s, n, a, l, r, t);
-  await e.answerCallbackQuery("\u{1FAF6} \u5C0F\u9F8D\u8766\u5B89\u5FC3\u6536\u5DE5\u4E86");
+  let I = await ym(s, n, a, l, r, guard);
+  await e.answerCallbackQuery(t("core.closeAnswer", {}, glang()));
   let P =
       I.changed && I.nextActiveIssueNumber
-        ? `\u6211\u5148\u5E6B\u4F60\u628A\u76EE\u524D\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766 \u2705 \u5DF2\u5207\u63DB\u5230\u9F8D\u8766 #${I.nextActiveIssueNumber}\uFF0C\u6211\u5011\u7E7C\u7E8C\u7167\u9867\u4E0B\u4E00\u96BB\u3002`
+        ? t("core.closeNextActiveIssueSwitched", { number: I.nextActiveIssueNumber }, glang())
         : I.nextActiveIssueNumber
-          ? `\u76EE\u524D\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766\u9084\u662F\u9F8D\u8766 #${I.nextActiveIssueNumber}\uFF0C\u6211\u5011\u7E7C\u7E8C\u7167\u9867\u7260\u3002`
-          : "\u76EE\u524D\u6C92\u6709\u6D3B\u8E8D\u7684\u5C0F\u9F8D\u8766\u4E86\uFF0C\u5927\u5BB6\u90FD\u53EF\u4EE5\u5148\u5598\u53E3\u6C23\u3002",
+          ? t("core.closeNextActiveIssueSame", { number: I.nextActiveIssueNumber }, glang())
+          : t("core.closeNoMoreActiveIssues", {}, glang()),
     S =
       _ != null && _ > 0
-        ? `\u6211\u4E5F\u9806\u624B\u6E05\u6389\u4E86 ${_} \u7B46\u6392\u7A0B\uFF0C\u907F\u514D\u9019\u96BB\u5DF2\u6536\u5DE5\u7684\u5C0F\u9F8D\u8766\u7E7C\u7E8C\u88AB\u53EB\u8D77\u4F86\u4E0A\u73ED\u3002`
-        : "\u9019\u96BB\u5C0F\u9F8D\u8766\u6C92\u6709\u7559\u4E0B\u6392\u7A0B\uFF0C\u6240\u4EE5\u4E0D\u7528\u53E6\u5916\u6E05\u7406\u3002",
-    U = [`\u{1FAF6} ${Ei(y.number, y.title)}\u5DF2\u7D93\u5B89\u5FC3\u6536\u5DE5\u4E86\u3002`];
+        ? t("core.closeClearedSchedules", { count: _ }, glang())
+        : t("core.closeNoSchedulesToClear", {}, glang()),
+    U = [t("core.closeTargetSuccess", { target: Ei(y.number, y.title) }, glang())];
   (_ !== null && U.push("", S),
     U.push("", P),
     await e.editMessageText(
-      U.join(`
-`),
+      U.join("\n"),
       { reply_markup: new F() },
     ));
 });
@@ -16992,7 +14459,7 @@ zt.callbackQuery(/^current_template_reset:/, async (e) => {
   if (!(await V(e))) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { octokit: n, config: s } = e.services,
@@ -17005,18 +14472,17 @@ zt.callbackQuery(/^current_template_reset:/, async (e) => {
   try {
     l = await tn(n, o, i);
   } catch (c) {
-    console.warn("[template_reset] \u8B80\u53D6\u7BC4\u672C\u6E05\u55AE\u5931\u6557", {
+    console.warn(i18nT("log.templateReset.readListFailed", {}, glang()), {
       error: c instanceof Error ? c.message : String(c),
     });
   }
-  (await e.answerCallbackQuery("\u{1F504} \u6E96\u5099\u91CD\u7F6E\u7BC4\u672C"),
+  (await e.answerCallbackQuery(t("core.resetTemplateAnswer", {}, glang())),
     await e.reply(
       [
-        `\u{1F504} \u9078\u64C7\u8981\u7528\u4F86\u91CD\u7F6E ${Ei(r, a)} \u7684\u7BC4\u672C\uFF1A`,
+        t("core.resetTemplateSelect", { target: Ei(r, a) }, glang()),
         "",
-        "\u91CD\u7F6E\u5F8C\u6703\u7528\u9078\u64C7\u7684\u7BC4\u672C\u8986\u84CB\u6389\u76EE\u524D\u7684\u7BC4\u672C\u3002",
-      ].join(`
-`),
+        t("core.resetTemplateWarning", {}, glang()),
+      ].join("\n"),
       { reply_markup: Kd(r, l) },
     ));
 });
@@ -17026,7 +14492,7 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
     n = parseInt(r[1] ?? "", 10),
     s = r[2] ?? "";
   if (!n || n <= 0 || !s) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684\u53C3\u6578");
+    await e.answerCallbackQuery(t("core.invalidParams", {}, glang()));
     return;
   }
   let { octokit: o, d1: i, config: a } = e.services,
@@ -17040,41 +14506,41 @@ zt.callbackQuery(/^template_reset_select:/, async (e) => {
       c,
       `issue-${n}`,
       w.map((_) => ({ path: _.path, content: _.content })),
-      `chore: \u91CD\u8A2D issue #${n} \u7BC4\u672C\uFF08\u7BC4\u672C\uFF1A${s}\uFF09`,
+      `chore: reset issue #${n} template (template: ${s})`,
     ),
       await Sr(o, l, c, n, s));
     let y = await Qr(i, d, n);
     (await Vr(i, { repo: d, issueNumber: n, template: s }),
-      await e.answerCallbackQuery("\u2705 \u7BC4\u672C\u91CD\u7F6E\u6210\u529F"),
+      await e.answerCallbackQuery(t("core.resetTemplateSuccessAnswer", {}, glang())),
       await e.editMessageText(
-        `\u2705 \u5DF2\u7528\u300C${s}\u300D\u7BC4\u672C\u91CD\u7F6E\u5C0F\u9F8D\u8766 #${n}\u3002`,
+        t("core.resetTemplateSuccessMessage", { number: n, template: s }, glang()),
         { reply_markup: new F() },
       ),
       await Es(e, n, "template_reset_select"));
   } catch (w) {
-    (console.error("[template_reset] \u91CD\u7F6E\u5931\u6557", w),
+    (console.error(i18nT("log.templateReset.resetFailed", {}, glang()), w),
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u91CD\u7F6E\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66",
+        t("core.resetTemplateFailedAnswer", {}, glang()),
       ));
   }
 });
 zt.callbackQuery(/^template_reset_cancel:/, async (e) => {
-  (await e.answerCallbackQuery("\u5DF2\u53D6\u6D88\u91CD\u7F6E\u7BC4\u672C"),
-    await e.editMessageText("\u5DF2\u53D6\u6D88\u91CD\u7F6E\u7BC4\u672C\u3002", {
+  (await e.answerCallbackQuery(t("core.resetTemplateCancelledAnswer", {}, glang())),
+    await e.editMessageText(t("core.resetTemplateCancelledMessage", {}, glang()), {
       reply_markup: new F(),
     }));
 });
 zt.callbackQuery(/^current_edit:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let guard = await V(e);
+  if (!guard) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(t("core.invalidIssueNumber", {}, glang()));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
     { owner: i, repo: a } = o.github;
-  (await rr(n, r, t), await e.answerCallbackQuery("\u270F\uFE0F \u9032\u5165\u7DE8\u8F2F"));
+  (await rr(n, r, guard), await e.answerCallbackQuery(t("core.enterEditAnswer", {}, glang())));
   let { initEditFlow: l } = await Promise.resolve().then(() => (Fs(), Am));
   await l(e);
 });
@@ -17087,7 +14553,7 @@ ti();
 // ║ [MODULE Hl] Telegram install/setup flow  —  BUSINESS
 // ║ Installer flow UI: awaiting_env, confirm_install, Secret handling, template modelVar validation, MarkdownV2
 // ╚══════════════════════════════════════════════════════════════════════════════
-var Hl = Ou(df(), 1),
+var Hl = naclShim,
   mf = new Uint32Array([
     4089235720, 1779033703, 2227873595, 3144134277, 4271175723, 1013904242, 1595750129, 2773480762,
     2917565137, 1359893119, 725511199, 2600822924, 4215389547, 528734635, 327033209, 1541459225,
@@ -17470,7 +14936,7 @@ wt.callbackQuery(/^skills_update_from_list:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17486,16 +14952,14 @@ wt.callbackQuery(/^skills_remove_from_list:/, async (e) =>
       s = await at(n, t);
     if (!s) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
     (await ht(n, t, { ...s, step: "remove_confirm_from_list", skillName: r }),
       await e.answerCallbackQuery(),
       await e.editMessageText(
-        `\u{1F5D1} \u78BA\u5B9A\u8981\u5F9E ${Vt(s)} \u79FB\u9664\u6280\u80FD\u300C*${O(r)}*\u300D\u55CE\uFF1F
-
-\u79FB\u9664\u5F8C\u8A72\u6280\u80FD\u7684\u6240\u6709\u6A94\u6848\u5C07\u88AB\u522A\u9664\uFF0C\u5982\u9700\u8981\u53EF\u91CD\u65B0\u5B89\u88DD\u3002`,
+        e.t("skills.remove_confirm", { target: Vt(s), name: O(r) }),
         { parse_mode: "MarkdownV2", reply_markup: Xd(r) },
       ));
   }),
@@ -17510,7 +14974,7 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
       l = await at(n, t);
     if (!l) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17530,7 +14994,7 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
       repo: o.github.repoFullName,
       workflowName: "remove-skill",
       workflowPath: ".github/workflows/remove-skill.yml",
-      title: `\u6280\u80FD\u79FB\u9664: ${r}`,
+      title: `Skill remove: ${r}`,
       channel: "telegram",
       chatId: t,
       messageId: c,
@@ -17540,9 +15004,9 @@ wt.callbackQuery(/^skills_remove_confirm_from_list:/, async (e) =>
     }),
       await Bp(s, i, a, { skillName: r, issueNumber: l.issueNumber, requestId: d }),
       await hi(n, t),
-      await e.answerCallbackQuery("\u23F3 \u79FB\u9664\u4E2D..."),
+      await e.answerCallbackQuery(e.t("skills.removing")),
       await e.editMessageText(
-        `\u23F3 \u6280\u80FD *${O(r)}* \u6B63\u5728\u5F9E ${Vt(l)} \u79FB\u9664\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("skills.removing_progress", { name: O(r), target: Vt(l) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -17556,7 +15020,7 @@ wt.callbackQuery(/^skills_remove_back:/, async (e) =>
       o = await at(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17570,9 +15034,7 @@ wt.callbackQuery(/^skills_remove_back:/, async (e) =>
 ${O(i.description)}`
         : "";
     await e.editMessageText(
-      `\u{1F4E6} *${O(a)}* \u2705 \\(\u5DF2\u5B89\u88DD\\)${l}
-
-\u6B64\u6280\u80FD\u5DF2\u5B89\u88DD\u65BC ${Vt(o)}\uFF0C\u8ACB\u9078\u64C7\u64CD\u4F5C\uFF1A`,
+      e.t("skills.installed_preview", { skillName: O(a), description: l, target: Vt(o) }),
       { parse_mode: "MarkdownV2", reply_markup: Wa(r) },
     );
   }),
@@ -17585,7 +15047,7 @@ wt.callbackQuery(/^skills_existing_secret:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n || n.step !== "confirm_existing_secret") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17607,7 +15069,7 @@ wt.callbackQuery(/^skills_existing_secret:/, async (e) =>
       await Tf(e, t, { ...n, requiredEnvs: [], collectedEnvs: {} });
       return;
     }
-    throw new Error(`\u672A\u77E5\u7684 Secret \u8655\u7406\u52D5\u4F5C\uFF1A${r}`);
+    throw new Error(`Unknown secret action: ${r}`);
   }),
 );
 wt.callbackQuery(/^skills_overwrite:/, async (e) =>
@@ -17618,7 +15080,7 @@ wt.callbackQuery(/^skills_overwrite:/, async (e) =>
       n = await at(e.services.store, t);
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17635,7 +15097,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
       l = await at(n, t);
     if (!l) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17643,7 +15105,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
     for (let [w, y] of Object.entries(c)) {
       let _ = w.trim().toUpperCase(),
         I = y.trim();
-      if (!_ || !I) throw new Error(`\u7F3A\u5C11\u6709\u6548\u7684 Secret \u503C\uFF1A${w}`);
+      if (!_ || !I) throw new Error(`Missing valid secret value: ${w}`);
       await vi(s, i, a, _, I);
     }
     let d = ur(e);
@@ -17662,7 +15124,7 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
       repo: o.github.repoFullName,
       workflowName: "skills",
       workflowPath: ".github/workflows/skills.yml",
-      title: `\u6280\u80FD\u5B89\u88DD: ${r}`,
+      title: `Skill install: ${r}`,
       channel: "telegram",
       chatId: t,
       messageId: d,
@@ -17672,9 +15134,9 @@ wt.callbackQuery(/^skills_confirm:/, async (e) =>
     }),
       await Up(s, i, a, { skillName: r, issueNumber: l.issueNumber, requestId: m }),
       await hi(n, t),
-      await e.answerCallbackQuery("\u23F3 \u5B89\u88DD\u4E2D..."),
+      await e.answerCallbackQuery(e.t("skills.installing")),
       await e.editMessageText(
-        `\u23F3 \u6280\u80FD *${O(r)}* \u6B63\u5728\u5B89\u88DD\u5230 ${Vt(l)}\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("skills.installing_progress", { name: O(r), target: Vt(l) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -17684,8 +15146,8 @@ wt.callbackQuery(/^skills_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await hi(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u6280\u80FD\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("skills.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -17699,7 +15161,7 @@ wt.callbackQuery(/^skills_page:/, async (e) =>
       o = await at(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /skills",
+        e.t("skills.process_expired"),
       );
       return;
     }
@@ -17707,7 +15169,7 @@ wt.callbackQuery(/^skills_page:/, async (e) =>
     await e.answerCallbackQuery();
     let a = Array.isArray(o.installedSkills) ? new Set(o.installedSkills) : void 0;
     await e.editMessageText(
-      `\u{1F6E0} \u9078\u64C7\u8981\u5B89\u88DD\u7684\u6280\u80FD\u5230 ${Vt(o)}`,
+      e.t("skills.select_install", { target: Vt(o) }),
       { parse_mode: "MarkdownV2", reply_markup: as(i, r, a) },
     );
   }),
@@ -17791,11 +15253,10 @@ async function _t(e, t) {
 async function Qs(e, t, r) {
   await oe(e.services.store, t, { ...r, step: "confirm_install" });
   let n = r.selectedModel
-    ? `
-\u6A21\u578B\uFF1A\`${O(r.selectedModel)}\``
+    ? e.t("templates.model_line", { model: O(r.selectedModel) })
     : "";
   await e.editMessageText(
-    `\u78BA\u8A8D\u5B89\u88DD\u7BC4\u672C *${O(r.templateName)}* \u5230\u9F8D\u8766\u5821\uFF1F${n}`,
+    e.t("templates.confirm_install", { name: O(r.templateName), modelLine: n }),
     { parse_mode: "MarkdownV2", reply_markup: qo(r.templateName) },
   );
 }
@@ -17821,35 +15282,24 @@ async function Yl(e, t, r) {
       pendingEnvs: i.requiredEnvs,
     }),
       await e.editMessageText(
-        `\u2705 \u7BC4\u672C *${O(r.templateName)}* \u9700\u8981\u7684 Secrets \u7686\u5DF2\u8A2D\u5B9A\uFF1A
-
-${c.join(`
-`)}
-
-\u8981\u66F4\u63DB\u55CE\uFF1F`,
+        e.t("templates.secrets_all_set", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: np() },
       ));
   } else if (l) {
     let c = i.missingEnvs.map((d) => `\u{1F539} \`${O(d)}\``);
     (await oe(n, t, { ...(await be(n, t)), ...r, step: "env_warning", pendingEnvs: i.missingEnvs }),
       await e.editMessageText(
-        `\u26A0\uFE0F \u7BC4\u672C *${O(r.templateName)}* \u9700\u8981\u4EE5\u4E0B Secrets\uFF1A
-
-${c.join(`
-`)}`,
+        e.t("templates.secrets_missing", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: rp() },
       ));
   } else {
     let c = [
-      ...i.existingEnvs.map((d) => `\u2705 \`${O(d)}\`\uFF08\u5DF2\u8A2D\u5B9A\uFF09`),
-      ...i.missingEnvs.map((d) => `\u{1F539} \`${O(d)}\`\uFF08\u7F3A\u5C11\uFF09`),
+      ...i.existingEnvs.map((d) => e.t("templates.env_set", { env: O(d) })),
+      ...i.missingEnvs.map((d) => e.t("templates.env_missing", { env: O(d) })),
     ];
     (await oe(n, t, { ...(await be(n, t)), ...r, step: "env_warning", pendingEnvs: i.missingEnvs }),
       await e.editMessageText(
-        `\u26A0\uFE0F \u7BC4\u672C *${O(r.templateName)}* \u7684 Secrets \u72C0\u614B\uFF1A
-
-${c.join(`
-`)}`,
+        e.t("templates.secrets_status", { name: O(r.templateName), list: c.join("\n") }),
         { parse_mode: "MarkdownV2", reply_markup: sp() },
       ));
   }
@@ -17863,14 +15313,14 @@ dt.callbackQuery(/^templates_pick:/, async (e) =>
       o = await be(n, t);
     if (!o) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     let i = await On(s.github),
       a = r != null ? (i[r]?.name ?? "") : "";
     if (!a) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u8A72\u7BC4\u672C");
+      await e.answerCallbackQuery(e.t("templates.not_found"));
       return;
     }
     (await oe(n, t, { ...o, step: "preview", templateName: a }), await e.answerCallbackQuery());
@@ -17882,9 +15332,7 @@ dt.callbackQuery(/^templates_pick:/, async (e) =>
 ${or(l.description)}`
         : "";
     await e.editMessageText(
-      `\u{1F4E6} *${O(c)}*${d}
-
-\u662F\u5426\u8981\u5B89\u88DD\u6B64\u7BC4\u672C\u5230\u9F8D\u8766\u5821\uFF1F`,
+      e.t("templates.install_prompt", { name: O(c), desc: d }),
       { parse_mode: "MarkdownV2", reply_markup: Zd(a) },
     );
   }),
@@ -17898,14 +15346,14 @@ dt.callbackQuery(/^templates_preview_confirm:/, async (e) =>
       i = typeof o?.templateName == "string" ? o.templateName.trim() : "";
     if (!o || !i) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     if ((await e.answerCallbackQuery(), await Nn(n, s.github.owner, s.github.repo, i))) {
       (await oe(r, t, { ...o, step: "confirm_overwrite", templateName: i }),
         await e.editMessageText(
-          `\u26A0\uFE0F \u7BC4\u672C *${O(i)}* \u5DF2\u5B58\u5728\u65BC\u9F8D\u8766\u5821\uFF0C\u662F\u5426\u8986\u84CB\uFF1F`,
+          e.t("templates.confirm_overwrite", { name: O(i) }),
           { parse_mode: "MarkdownV2", reply_markup: ep(i) },
         ));
       return;
@@ -17913,10 +15361,10 @@ dt.callbackQuery(/^templates_preview_confirm:/, async (e) =>
     let a = await rn(s.github, i);
     if (a?.needModel) {
       if (!a.modelVar || !a.models?.length)
-        throw new Error(`\u7BC4\u672C ${i} \u7F3A\u5C11 modelVar \u6216 models \u8A2D\u5B9A`);
+        throw new Error(`Template ${i} missing modelVar or models setting`);
       (await oe(r, t, { ...o, templateName: i, step: "select_model", modelVar: a.modelVar }),
         await e.editMessageText(
-          `\u{1F916} \u7BC4\u672C *${O(i)}* \u9700\u8981\u5148\u9078\u64C7\u6A21\u578B`,
+          e.t("templates.select_model_prompt", { name: O(i) }),
           { parse_mode: "MarkdownV2", reply_markup: Da(a.models) },
         ));
       return;
@@ -17936,7 +15384,7 @@ dt.callbackQuery(/^templates_preview_back:/, async (e) =>
       s = await be(r, t);
     if (!s) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -17951,7 +15399,7 @@ dt.callbackQuery(/^templates_preview_back:/, async (e) =>
       ),
       l = new Set(a.filter((c) => c.installed).map((c) => c.name));
     await e.editMessageText(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      e.t("templates.selectInstallTo"),
       { reply_markup: us(o, 0, l) },
     );
   }),
@@ -17964,7 +15412,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
       n = typeof r?.templateName == "string" ? r.templateName.trim() : "";
     if (!n) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -17972,7 +15420,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
     let s = await rn(e.services.config.github, n);
     if (s?.needModel) {
       if (!s.modelVar || !s.models?.length)
-        throw new Error(`\u7BC4\u672C ${n} \u7F3A\u5C11 modelVar \u6216 models \u8A2D\u5B9A`);
+        throw new Error(`Template ${n} missing modelVar or models setting`);
       (await oe(e.services.store, t, {
         ...r,
         templateName: n,
@@ -17980,7 +15428,7 @@ dt.callbackQuery(/^templates_overwrite:/, async (e) =>
         modelVar: s.modelVar,
       }),
         await e.editMessageText(
-          `\u{1F916} \u7BC4\u672C *${O(n)}* \u9700\u8981\u5148\u9078\u64C7\u6A21\u578B`,
+          e.t("templates.select_model_prompt", { name: O(n) }),
           { parse_mode: "MarkdownV2", reply_markup: Da(s.models) },
         ));
       return;
@@ -17994,7 +15442,7 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
     if (!t) return;
     let r = kf(e.callbackQuery.data);
     if (r == null) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6A21\u578B\u8CC7\u6599\u683C\u5F0F\u932F\u8AA4");
+      await e.answerCallbackQuery(e.t("templates.model_format_error"));
       return;
     }
     let { store: n, octokit: s, config: o } = e.services,
@@ -18002,7 +15450,7 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
       a = typeof i?.templateName == "string" ? i.templateName.trim() : "";
     if (!i || i.step !== "select_model" || !a) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -18010,12 +15458,12 @@ dt.callbackQuery(/^templates_model_pick:/, async (e) =>
       c = l?.modelVar || (typeof i.modelVar == "string" ? i.modelVar : ""),
       d = l?.models?.[r],
       m = typeof d?.value == "string" ? d.value.trim() : "";
-    if (!c) throw new Error(`\u7BC4\u672C ${a} \u7F3A\u5C11 modelVar \u8A2D\u5B9A`);
+    if (!c) throw new Error(`Template ${a} missing modelVar setting`);
     if (!m) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u8A72\u6A21\u578B\u9078\u9805");
+      await e.answerCallbackQuery(e.t("templates.model_not_found"));
       return;
     }
-    (await e.answerCallbackQuery("\u23F3 \u5132\u5B58\u6A21\u578B\u4E2D..."),
+    (await e.answerCallbackQuery(e.t("templates.saving_model")),
       await Ci(s, o.github.owner, o.github.repo, c, m));
     let w = { templateName: a, selectedModel: m, modelVar: c };
     (await oe(n, t, { ...i, ...w }), await Yl(e, t, w));
@@ -18030,11 +15478,11 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       i = typeof o?.templateName == "string" ? o.templateName.trim() : "";
     if (!o || !i) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
-    await e.answerCallbackQuery("\u23F3 \u5B89\u88DD\u4E2D...");
+    await e.answerCallbackQuery(e.t("templates.installing"));
     let a = crypto.randomUUID(),
       l = ur(e);
     (await Gt(e.services.d1, {
@@ -18042,7 +15490,7 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       repo: s.github.repoFullName,
       workflowName: "templates",
       workflowPath: ".github/workflows/templates.yml",
-      title: `\u7BC4\u672C\u5B89\u88DD: ${i}`,
+      title: `Template install: ${i}`,
       channel: "telegram",
       chatId: t,
       messageId: l,
@@ -18053,7 +15501,7 @@ dt.callbackQuery(/^templates_confirm:/, async (e) =>
       await Dm(n, s.github.owner, s.github.repo, { templateName: i, requestId: a }),
       await Ir(r, t),
       await e.editMessageText(
-        `\u23F3 \u7BC4\u672C *${O(i)}* \u6B63\u5728\u5B89\u88DD\u5230\u9F8D\u8766\u5821\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60`,
+        e.t("templates.installing_progress", { name: O(i) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -18063,8 +15511,8 @@ dt.callbackQuery(/^templates_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u7BC4\u672C\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("templates.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -18077,7 +15525,7 @@ dt.callbackQuery(/^templates_env_setup:/, async (e) =>
       n = await be(r, t);
     if (!n || n.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -18095,9 +15543,7 @@ dt.callbackQuery(/^templates_env_setup:/, async (e) =>
         promptMessageId: ur(e),
       }),
       await e.editMessageText(
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(s[0])}* \u7684\u503C
-
-\uFF081/${s.length}\uFF09`,
+        e.t("templates.enter_env_value", { envName: O(s[0]), total: s.length }),
         { parse_mode: "MarkdownV2", reply_markup: hr() },
       ));
   }),
@@ -18109,12 +15555,12 @@ dt.callbackQuery(/^templates_env_skip:/, async (e) =>
     let r = await be(e.services.store, t);
     if (!r) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
     (await e.answerCallbackQuery(
-      "\u23ED\uFE0F \u5DF2\u7565\u904E\u74B0\u5883\u8B8A\u6578\u8A2D\u5B9A",
+      e.t("templates.env_skipped"),
     ),
       await Qs(e, t, r));
   }),
@@ -18127,7 +15573,7 @@ dt.callbackQuery(/^templates_env_resetall:/, async (e) =>
       o = await be(r, t);
     if (!o || o.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -18152,9 +15598,7 @@ dt.callbackQuery(/^templates_env_resetall:/, async (e) =>
         promptMessageId: ur(e),
       }),
       await e.editMessageText(
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(a[0])}* \u7684\u503C
-
-\uFF081/${a.length}\uFF09`,
+        e.t("templates.enter_env_value", { envName: O(a[0]), total: a.length }),
         { parse_mode: "MarkdownV2", reply_markup: hr() },
       ));
   }),
@@ -18166,11 +15610,11 @@ dt.callbackQuery(/^templates_env_keepall:/, async (e) =>
     let r = await be(e.services.store, t);
     if (!r || r.step !== "env_warning") {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u6CBF\u7528\u73FE\u6709\u8A2D\u5B9A"),
+    (await e.answerCallbackQuery(e.t("templates.env_keepall")),
       await Qs(e, t, r));
   }),
 );
@@ -18179,8 +15623,8 @@ dt.callbackQuery(/^templates_env_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88\u7BC4\u672C\u5B89\u88DD", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("templates.install_cancelled"), {
         reply_markup: new F(),
       }));
   }),
@@ -18193,7 +15637,7 @@ dt.callbackQuery(/^templates_page:/, async (e) =>
       { store: n, config: s } = e.services;
     if (!(await be(n, t))) {
       await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F\uFF0C\u8ACB\u91CD\u65B0 /templates",
+        e.t("templates.process_expired"),
       );
       return;
     }
@@ -18208,7 +15652,7 @@ dt.callbackQuery(/^templates_page:/, async (e) =>
       ),
       c = new Set(l.filter((d) => d.installed).map((d) => d.name));
     await e.editMessageText(
-      "\u{1F4DA} \u9078\u64C7\u8981\u5B89\u88DD\u5230\u9F8D\u8766\u5821\u7684\u7BC4\u672C",
+      e.t("templates.selectInstallTo"),
       { reply_markup: us(i, r, c) },
     );
   }),
@@ -18272,7 +15716,7 @@ Jt.callbackQuery(/^linebot_setup_continue:/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n || n.step !== xe.POST_INSTALL_PROMPT) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     await e.answerCallbackQuery();
@@ -18280,7 +15724,7 @@ Jt.callbackQuery(/^linebot_setup_continue:/, async (e) =>
       e,
       t,
       n,
-      "\u{1F4DD} \u8ACB\u8F38\u5165 *LINE Bot ID*\uFF08\u5FC5\u586B\uFF09",
+      e.t("line.ask_bot_id"),
       { parse_mode: "MarkdownV2", reply_markup: wr() },
     );
     await oe(r, t, { ...n, step: xe.AWAITING_LINE_BOT_ID, promptMessageId: s });
@@ -18291,9 +15735,9 @@ Jt.callbackQuery(/^linebot_setup_skip:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E"),
+      await e.answerCallbackQuery(e.t("line.skipped_alert")),
       await e.editMessageText(
-        "\u2705 \u7BC4\u672C *line\\-bot* \u5DF2\u5B89\u88DD\u5B8C\u6210\uFF01\n\n\u4E4B\u5F8C\u53EF\u4EE5\u624B\u52D5\u89F8\u767C `install\\-line\\-bot` workflow \u4F86\u90E8\u7F72\u3002",
+        e.t("line.skipped_install_message"),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -18305,7 +15749,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     if ((await e.answerCallbackQuery(), n.step === xe.AWAITING_LINE_REPLY_MSG)) {
@@ -18317,7 +15761,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
         e,
         t,
         n,
-        "\u{1F4DD} \u8ACB\u8F38\u5165 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+        e.t("line.ask_issue_number"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       await oe(r, t, { ...n, step: xe.AWAITING_LINE_ISSUE_NUMBER, promptMessageId: s });
@@ -18332,7 +15776,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
         e,
         t,
         n,
-        "\u{1F552} \u8ACB\u8F38\u5165\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5C31\u7528\u9810\u8A2D\uFF09",
+        e.t("line.ask_utc_offset"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       await oe(r, t, { ...n, step: xe.AWAITING_LINE_UTC_OFFSET, promptMessageId: s });
@@ -18342,7 +15786,7 @@ Jt.callbackQuery(/^linebot_input_skip:/, async (e) =>
       await cr(e, t, n);
       return;
     }
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(e.t("line.process_expired"));
   }),
 );
 Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
@@ -18352,16 +15796,16 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
     let { store: r, octokit: n, config: s, d1: o } = e.services,
       i = await be(r, t);
     if (!i || i.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     let a = String(i.lineBotId ?? ""),
       l = String(i.lineChannelId ?? "");
     if (!a || !l) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u7F3A\u5C11\u5FC5\u586B\u6B04\u4F4D");
+      await e.answerCallbackQuery(e.t("line.missing_required"));
       return;
     }
-    await e.answerCallbackQuery("\u23F3 \u90E8\u7F72\u4E2D...");
+    await e.answerCallbackQuery(e.t("line.deploying_alert"));
     let c = String(i.lineReplyMsg ?? ""),
       d = String(i.lineIssueNumber ?? ""),
       m = Ef(i),
@@ -18372,7 +15816,7 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
       repo: s.github.repoFullName,
       workflowName: "install-line-bot",
       workflowPath: uk,
-      title: `LINE Bot \u90E8\u7F72: ${a}`,
+      title: `LINE Bot Deployment: ${a}`,
       channel: "telegram",
       chatId: t,
       messageId: y,
@@ -18406,9 +15850,7 @@ Jt.callbackQuery(/^linebot_deploy_confirm:/, async (e) =>
     }
     (await Ir(r, t),
       await e.editMessageText(
-        `\u23F3 LINE Bot Worker \u6B63\u5728\u90E8\u7F72\u4E2D\uFF0C\u5B8C\u6210\u5F8C\u6703\u901A\u77E5\u4F60
-
-\u{1F916} Bot ID: \`${O(a)}\``,
+        e.t("line.deploying_message", { id: O(a) }),
         { parse_mode: "MarkdownV2", reply_markup: new F() },
       ));
   }),
@@ -18418,8 +15860,8 @@ Jt.callbackQuery(/^linebot_deploy_cancel:/, async (e) =>
     let t = await V(e);
     t &&
       (await Ir(e.services.store, t),
-      await e.answerCallbackQuery("\u5DF2\u53D6\u6D88"),
-      await e.editMessageText("\u274C \u5DF2\u53D6\u6D88 LINE Bot \u90E8\u7F72", {
+      await e.answerCallbackQuery(e.t("core.cancelled")),
+      await e.editMessageText(e.t("line.deploy_cancelled_message"), {
         reply_markup: new F(),
       }));
   }),
@@ -18430,11 +15872,11 @@ Jt.callbackQuery(/^linebot_edit_params:/, async (e) =>
     if (!t) return;
     let r = await be(e.services.store, t);
     if (!r || r.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     await e.answerCallbackQuery();
-    let n = await et(e, t, r, "\u270F\uFE0F \u9078\u64C7\u8981\u4FEE\u6539\u7684\u6B04\u4F4D", {
+    let n = await et(e, t, r, e.t("line.edit_select_field"), {
       reply_markup: ap(),
     });
     await oe(e.services.store, t, { ...r, promptMessageId: n });
@@ -18447,7 +15889,7 @@ Jt.callbackQuery(/^linebot_edit:(.+)$/, async (e) =>
     let { store: r } = e.services,
       n = await be(r, t);
     if (!n || n.step !== xe.POST_INSTALL_CONFIRM) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     let s = e.match?.[1];
@@ -18456,31 +15898,31 @@ Jt.callbackQuery(/^linebot_edit:(.+)$/, async (e) =>
     let i = {
       bot_id: {
         step: xe.AWAITING_LINE_BOT_ID,
-        prompt: "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *LINE Bot ID*\uFF08\u5FC5\u586B\uFF09",
+        prompt: e.t("line.edit_ask_bot_id"),
         required: !0,
       },
       channel_id: {
         step: xe.AWAITING_LINE_CHANNEL_ID,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *LINE Bot Channel ID*\uFF08\u5FC5\u586B\uFF09",
+          e.t("line.edit_ask_channel_id"),
         required: !0,
       },
       reply_msg: {
         step: xe.AWAITING_LINE_REPLY_MSG,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684\u9810\u8A2D\u56DE\u61C9\u8A0A\u606F\uFF08\u9078\u586B\uFF0C\u6309\u8DF3\u904E\u53EF\u7565\u904E\uFF09",
+          e.t("line.edit_ask_reply_msg"),
         required: !1,
       },
       issue_number: {
         step: xe.AWAITING_LINE_ISSUE_NUMBER,
         prompt:
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u65B0\u7684 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+          e.t("line.edit_ask_issue_number"),
         required: !1,
       },
       utc_offset: {
         step: xe.AWAITING_LINE_UTC_OFFSET,
         prompt:
-          "\u{1F552} \u8ACB\u8F38\u5165\u65B0\u7684\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5247\u4FDD\u7559\u76EE\u524D\u8A2D\u5B9A\uFF09",
+          e.t("line.edit_ask_utc_offset"),
         required: !1,
       },
     }[s];
@@ -18496,7 +15938,7 @@ Jt.callbackQuery(/^linebot_edit_back:/, async (e) =>
     if (!t) return;
     let r = await be(e.services.store, t);
     if (!r) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u6D41\u7A0B\u5DF2\u904E\u671F");
+      await e.answerCallbackQuery(e.t("line.process_expired"));
       return;
     }
     (await e.answerCallbackQuery(), await cr(e, t, r));
@@ -18509,13 +15951,13 @@ async function cr(e, t, r) {
     i = String(r.lineIssueNumber ?? ""),
     a = Ef(r),
     l = [
-      "\u78BA\u8A8D\u90E8\u7F72 LINE Bot\uFF1F",
+      e.t("line.confirm_deploy_title"),
       "",
       `\\- LINE Bot ID: \`${O(n)}\``,
       `\\- Channel ID: \`${O(s)}\``,
-      `\\- \u9810\u8A2D\u56DE\u61C9\uFF1A${o ? O(o) : "\uFF08\u7121\uFF09"}`,
-      `\\- \u5C0F\u9F8D\u8766\uFF1A${i ? `\\#${O(i)}` : "\u81EA\u52D5\u5EFA\u7ACB"}`,
-      `\\- \u6642\u5340: \`${O(a)}\``,
+      e.t("line.confirm_reply_msg", { value: o ? O(o) : e.t("line.none_label") }),
+      e.t("line.confirm_lobster", { value: i ? `\\#${O(i)}` : e.t("line.auto_create_label") }),
+      e.t("line.confirm_timezone", { value: O(a) }),
     ],
     c = await et(
       e,
@@ -18562,7 +16004,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot ID \u70BA\u5FC5\u586B\u6B04\u4F4D\uFF0C\u8ACB\u8F38\u5165",
+          e.t("line.error_bot_id_required"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -18572,7 +16014,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot ID \u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u61C9\u70BA `@` \u958B\u982D\uFF08\u4F8B\u5982 `@mybot`\uFF09\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165",
+          e.t("line.error_bot_id_format"),
           { parse_mode: "MarkdownV2", reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -18586,7 +16028,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165 *LINE Bot Channel ID*\uFF08\u5FC5\u586B\uFF0C\u7D14\u6578\u5B57\uFF09",
+          e.t("line.ask_channel_id"),
           { parse_mode: "MarkdownV2", reply_markup: wr() },
         );
         await oe(r, t, {
@@ -18604,7 +16046,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F LINE Bot Channel ID \u70BA\u5FC5\u586B\u6B04\u4F4D\uFF0C\u8ACB\u8F38\u5165",
+          e.t("line.error_channel_id_required"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -18614,7 +16056,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u26A0\uFE0F Channel ID \u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u61C9\u70BA\u7D14\u6578\u5B57\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165",
+          e.t("line.error_channel_id_format"),
           { reply_markup: wr() },
         );
         return (await oe(r, t, { ...o, promptMessageId: a }), !0);
@@ -18628,7 +16070,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165\u9810\u8A2D\u56DE\u61C9\u8A0A\u606F\uFF08\u9078\u586B\uFF0C\u6309\u8DF3\u904E\u53EF\u7565\u904E\uFF09",
+          e.t("line.ask_reply_msg"),
           { reply_markup: Lt() },
         );
         await oe(r, t, {
@@ -18655,7 +16097,7 @@ async function Sf(e) {
           e,
           t,
           o,
-          "\u{1F4DD} \u8ACB\u8F38\u5165 *\u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09*\uFF08\u8DF3\u904E\u5247\u81EA\u52D5\u5EFA\u7ACB\uFF09",
+          e.t("line.ask_issue_number"),
           { parse_mode: "MarkdownV2", reply_markup: Lt() },
         );
         await oe(r, t, {
@@ -18676,7 +16118,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            "\u26A0\uFE0F \u5C0F\u9F8D\u8766\u7DE8\u865F\uFF08Issue Number\uFF09\u5FC5\u9808\u662F\u6B63\u6574\u6578\uFF0C\u8ACB\u91CD\u65B0\u8F38\u5165\u6216\u6309\u8DF3\u904E",
+            e.t("line.error_issue_number_format"),
             { reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: d }), !0);
@@ -18688,7 +16130,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            `\u26A0\uFE0F \u627E\u4E0D\u5230\u5C0F\u9F8D\u8766 #${c}\uFF0C\u8ACB\u78BA\u8A8D\u5F8C\u91CD\u65B0\u8F38\u5165\u6216\u6309\u8DF3\u904E`,
+            e.t("line.error_lobster_not_found", { number: c }),
             { reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: d }), !0);
@@ -18703,7 +16145,7 @@ async function Sf(e) {
         e,
         t,
         a,
-        "\u{1F552} \u8ACB\u8F38\u5165\u6642\u5340\uFF08\u4F8B\u5982 `+08:00`\uFF0C\u8DF3\u904E\u5C31\u7528\u9810\u8A2D\uFF09",
+        e.t("line.ask_utc_offset"),
         { parse_mode: "MarkdownV2", reply_markup: Lt() },
       );
       return (await oe(r, t, { ...a, step: xe.AWAITING_LINE_UTC_OFFSET, promptMessageId: l }), !0);
@@ -18715,7 +16157,7 @@ async function Sf(e) {
             e,
             t,
             o,
-            "\u26A0\uFE0F \u6642\u5340\u683C\u5F0F\u4E0D\u6B63\u78BA\uFF0C\u8ACB\u8F38\u5165\u50CF `+08:00` \u6216 `-05:00`",
+            e.t("line.error_timezone_format"),
             { parse_mode: "MarkdownV2", reply_markup: Lt() },
           );
           return (await oe(r, t, { ...o, promptMessageId: l }), !0);
@@ -18742,7 +16184,7 @@ Tt.callbackQuery(/^set_schedule:/, async (e) => {
   if (!t) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(e.t("core.invalidIssueNumber"));
     return;
   }
   let { store: n, octokit: s, config: o } = e.services,
@@ -18750,7 +16192,7 @@ Tt.callbackQuery(/^set_schedule:/, async (e) => {
     c = (await Ht(s, i, a)).find((d) => d.number === r);
   if (!c) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u627E\u4E0D\u5230\u6B64 Issue \u6216\u5DF2\u95DC\u9589",
+      e.t("schedule.issueNotFoundOrClosed"),
     );
     return;
   }
@@ -18763,7 +16205,7 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
   if (!(await V(e))) return;
   let r = Kt(e.callbackQuery.data);
   if (!r) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u7121\u6548\u7684 Issue \u7DE8\u865F");
+    await e.answerCallbackQuery(e.t("core.invalidIssueNumber"));
     return;
   }
   let { d1: n, octokit: s, config: o } = e.services,
@@ -18771,7 +16213,7 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
     d = (await Ht(s, i, a)).find((w) => w.number === r);
   if (!d) {
     await e.answerCallbackQuery(
-      "\u26A0\uFE0F \u627E\u4E0D\u5230\u6B64 Issue \u6216\u5DF2\u95DC\u9589",
+      e.t("schedule.issueNotFoundOrClosed"),
     );
     return;
   }
@@ -18788,23 +16230,23 @@ Tt.callbackQuery(/^manage_schedule:/, async (e) => {
     }));
 });
 Tt.callbackQuery(/^schedule_open:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = We(e.callbackQuery.data),
-    a = await gt(t, i);
+    a = await gt(db, i);
   if (!a) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let c = (await Ht(r, s, o)).find((d) => d.number === a.issueNumber);
   (await e.answerCallbackQuery(),
-    await e.reply(Nl(c?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", a.issueNumber, a), {
+    await e.reply(Nl(c?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), a.issueNumber, a), {
       reply_markup: jo(a.id, a.issueNumber, a.status !== "paused"),
     }));
 });
 Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payload):/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { store: r, d1: n, octokit: s, config: o } = e.services,
     { owner: i, repo: a } = o.github,
     l = e.callbackQuery.data,
@@ -18813,22 +16255,22 @@ Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payloa
     { scheduleId: m, source: w } = yi(We(l)),
     y = await gt(n, m);
   if (!y) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (w === "chat") {
     let _ = await Us(s, i, a, y);
     if (_i(_)) {
       (await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u9019\u7B46\u6392\u7A0B\u7684\u5C0F\u9F8D\u8766\u5DF2\u6536\u5DE5\uFF0C\u53EA\u80FD\u522A\u9664",
+        t("schedule.flow.lobsterClosedDeleteOnly", {}, glang()),
       ),
         await e.reply(Ds(_), { reply_markup: Bs(_) }));
       return;
     }
   }
-  (await Dt(r, t),
-    await Ye(r, t),
-    await Hr(r, t, {
+  (await Dt(r, cid),
+    await Ye(r, cid),
+    await Hr(r, cid, {
       step: c ? "awaiting_edit_prompt" : d ? "awaiting_edit_payload" : "awaiting_edit_time",
       scheduleId: y.id,
       issueNumber: y.issueNumber,
@@ -18840,37 +16282,35 @@ Tt.callbackQuery(/^(schedule_edit_prompt|schedule_edit_time|schedule_edit_payloa
     }));
 });
 Tt.callbackQuery(/^schedule_flow_cancel:/, async (e) => {
-  let t = await V(e);
-  t &&
-    (await Ye(e.services.store, t),
-    await e.answerCallbackQuery("\u274C \u5DF2\u53D6\u6D88\u6392\u7A0B\u8A2D\u5B9A"),
-    await e.reply("\u53D6\u6D88\u8A2D\u5B9A\u6392\u7A0B\uFF01"));
+  let cid = await V(e);
+  cid &&
+    (await Ye(e.services.store, cid),
+    await e.answerCallbackQuery(t("schedule.flow.cancelSetupToast", {}, glang())),
+    await e.reply(t("schedule.flow.cancelSetupMessage", {}, glang())));
 });
 Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { store: r, d1: n, config: s } = e.services,
-    o = await sr(r, t);
+    o = await sr(r, cid);
   if (!o) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u5DF2\u904E\u671F");
+    await e.answerCallbackQuery(t("schedule.flow.setupExpired", {}, glang()));
     return;
   }
   if (o.step === "awaiting_payload") {
     if (!o.prompt || !o.ruleType || !o.rulePayload || !o.timezone || !o.nextRunAt) {
-      (await Ye(r, t),
+      (await Ye(r, cid),
         await e.answerCallbackQuery(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931",
+          t("schedule.flow.stateLostShort", {}, glang()),
         ),
-        await e.reply(
-          "\u26A0\uFE0F \u6392\u7A0B\u8A2D\u5B9A\u72C0\u614B\u907A\u5931\uFF0C\u8ACB\u91CD\u65B0\u8A2D\u5B9A\u6392\u7A0B\u3002",
-        ));
+        await e.reply(t("schedule.flow.stateLost", {}, glang())));
       return;
     }
     let i = await Xo(n, {
       id: fs(),
       repo: s.github.repoFullName,
       issueNumber: o.issueNumber,
-      chatId: t,
+      chatId: cid,
       prompt: o.prompt,
       eventData: null,
       ruleType: o.ruleType,
@@ -18880,73 +16320,67 @@ Tt.callbackQuery(/^schedule_payload_skip:/, async (e) => {
       shouldNotify: !0,
     });
     if (!i) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557"),
-        await e.reply(
-          "\u274C \u5EFA\u7ACB\u6392\u7A0B\u5931\u6557\uFF0C\u8ACB\u7A0D\u5F8C\u518D\u8A66\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.createFailedShort", {}, glang())),
+        await e.reply(t("schedule.flow.createFailed", {}, glang())));
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
-      await on(e, i, "\u5EFA\u7ACB"));
+    (await e.answerCallbackQuery(t("schedule.flow.payloadSkipped", {}, glang())),
+      await on(e, i, "create"));
     return;
   }
   if (o.step === "awaiting_edit_payload") {
     if (!o.scheduleId) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B"),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang())),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
       return;
     }
     let i = await jt(n, o.scheduleId, { eventData: null }, { now: new Date() });
     if (!i) {
-      (await Ye(r, t),
-        await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B"),
-        await e.reply(
-          "\u26A0\uFE0F \u627E\u4E0D\u5230\u6307\u5B9A\u6392\u7A0B\uFF0C\u8ACB\u91CD\u65B0\u958B\u555F\u7BA1\u7406\u6392\u7A0B\u3002",
-        ));
+      (await Ye(r, cid),
+        await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang())),
+        await e.reply(t("schedule.flow.scheduleNotFound", {}, glang())));
       return;
     }
-    (await e.answerCallbackQuery("\u23ED\uFE0F \u5DF2\u7565\u904E Payload"),
-      await on(e, i, "\u66F4\u65B0"));
+    (await e.answerCallbackQuery(t("schedule.flow.payloadSkipped", {}, glang())),
+      await on(e, i, "update"));
     return;
   }
   await e.answerCallbackQuery(
-    "\u26A0\uFE0F \u76EE\u524D\u4E0D\u5728 Payload \u8A2D\u5B9A\u6B65\u9A5F",
+    t("schedule.flow.notInPayloadStep", {}, glang()),
   );
 });
 Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     { scheduleId: i, source: a } = yi(We(e.callbackQuery.data));
   if (a === "chat") {
-    let y = await gt(t, i);
+    let y = await gt(db, i);
     if (!y) {
-      await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+      await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
       return;
     }
     let _ = await Us(r, s, o, y);
     if (_i(_)) {
       (await e.answerCallbackQuery(
-        "\u26A0\uFE0F \u9019\u7B46\u6392\u7A0B\u7684\u5C0F\u9F8D\u8766\u5DF2\u6536\u5DE5\uFF0C\u53EA\u80FD\u522A\u9664",
+        t("schedule.flow.lobsterClosedDeleteOnly", {}, glang()),
       ),
         await e.reply(Ds(_), { reply_markup: Bs(_) }));
       return;
     }
   }
-  let l = await gt(t, i);
+  let l = await gt(db, i);
   if (!l) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let c = new Date(),
     d =
       l.status === "active"
-        ? await jt(t, l.id, { status: "paused" }, { now: c })
+        ? await jt(db, l.id, { status: "paused" }, { now: c })
         : await jt(
-            t,
+            db,
             l.id,
             {
               status: "active",
@@ -18956,14 +16390,14 @@ Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
             { now: c },
           );
   if (!d) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (
     (await e.answerCallbackQuery(
       d.status === "paused"
-        ? "\u23F8\uFE0F \u5DF2\u505C\u7528\u6392\u7A0B"
-        : "\u25B6\uFE0F \u5DF2\u555F\u7528\u6392\u7A0B",
+        ? t("schedule.flow.pausedToast", {}, glang())
+        : t("schedule.flow.activatedToast", {}, glang()),
     ),
     a === "chat")
   ) {
@@ -18972,33 +16406,33 @@ Tt.callbackQuery(/^schedule_toggle:/, async (e) => {
     return;
   }
   let w = (await Ht(r, s, o)).find((y) => y.number === d.issueNumber);
-  await e.reply(Nl(w?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", d.issueNumber, d), {
+  await e.reply(Nl(w?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), d.issueNumber, d), {
     reply_markup: jo(d.id, d.issueNumber, d.status !== "paused"),
   });
 });
 Tt.callbackQuery(/^schedule_delete:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { d1: r, octokit: n, config: s } = e.services,
     { owner: o, repo: i, repoFullName: a } = s.github,
     { scheduleId: l, source: c } = yi(We(e.callbackQuery.data)),
     d = await gt(r, l);
   if (!d) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   if (
     (await Xa(r, l),
-    await e.answerCallbackQuery("\u{1F5D1}\uFE0F \u5DF2\u522A\u9664\u6392\u7A0B"),
+    await e.answerCallbackQuery(t("schedule.flow.deletedToast", {}, glang())),
     c === "chat")
   ) {
-    let _ = await Un(r, n, o, i, a, t);
+    let _ = await Un(r, n, o, i, a, cid);
     await e.reply(Dn(_), { reply_markup: Bn(_) });
     return;
   }
   let w = (await Ht(n, o, i)).find((_) => _.number === d.issueNumber),
     y = await gs(r, a, d.issueNumber);
-  await e.reply(Ol(w?.title || "\u6392\u7A0B\u5C0F\u9F8D\u8766", d.issueNumber, y), {
+  await e.reply(Ol(w?.title || t("schedule.flow.fallbackIssueTitle", {}, glang()), d.issueNumber, y), {
     reply_markup:
       y.length > 0
         ? ja(
@@ -19017,30 +16451,30 @@ Tt.callbackQuery(/^schedule_chat_list:/, async (e) => {
   (await e.answerCallbackQuery(), await e.reply(Dn(l), { reply_markup: Bn(l) }));
 });
 Tt.callbackQuery(/^schedule_chat_open:/, async (e) => {
-  let { d1: t, octokit: r, config: n } = e.services,
+  let { d1: db, octokit: r, config: n } = e.services,
     { owner: s, repo: o } = n.github,
     i = We(e.callbackQuery.data),
-    a = await gt(t, i);
+    a = await gt(db, i);
   if (!a) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   let l = await Us(r, s, o, a);
   (await e.answerCallbackQuery(), await e.reply(Ds(l), { reply_markup: Bs(l) }));
 });
 Tt.callbackQuery(/^schedule_chat_delete:/, async (e) => {
-  let t = await V(e);
-  if (!t) return;
+  let cid = await V(e);
+  if (!cid) return;
   let { d1: r, octokit: n, config: s } = e.services,
     { owner: o, repo: i, repoFullName: a } = s.github,
     l = We(e.callbackQuery.data);
   if (!(await gt(r, l))) {
-    await e.answerCallbackQuery("\u26A0\uFE0F \u627E\u4E0D\u5230\u9019\u7B46\u6392\u7A0B");
+    await e.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, glang()));
     return;
   }
   await Xa(r, l);
-  let d = await Un(r, n, o, i, a, t);
-  (await e.answerCallbackQuery("\u{1F5D1}\uFE0F \u5DF2\u522A\u9664\u6392\u7A0B"),
+  let d = await Un(r, n, o, i, a, cid);
+  (await e.answerCallbackQuery(t("schedule.flow.deletedToast", {}, glang())),
     await e.reply(Dn(d), { reply_markup: Bn(d) }));
 });
 Ie();
@@ -19085,28 +16519,24 @@ Ri.callbackQuery("command_menu_skills", async (e) => {
   (await e.answerCallbackQuery(t("kb.skillsManage", {}, glang())), await Il(e));
 });
 var hk = {
-  command_menu_list: { command: "/list", label: "\u{1F4CB} Issue \u5217\u8868" },
-  command_menu_current: {
-    command: "/current",
-    label: "\u{1F99E} \u76EE\u524D\u7684\u5C0F\u9F8D\u8766",
-  },
-  command_menu_new: { command: "/new", label: "\u2795 \u65B0\u589E\u5C0F\u9F8D\u8766" },
-  command_menu_close: { command: "/close", label: "\u{1F512} \u95DC\u9589\u5C0F\u9F8D\u8766" },
-  command_menu_schedules: { command: "/schedules", label: "\u23F0 \u6392\u7A0B\u7BA1\u7406" },
-  command_menu_help: { command: "/help", label: "\u2753 \u5E6B\u52A9" },
-  command_menu_workflow: { command: "/workflow", label: "\u2699\uFE0F \u5DE5\u4F5C\u6D41\u7A0B" },
+  command_menu_list: { command: "/list", labelKey: "menu.list" },
+  command_menu_current: { command: "/current", labelKey: "menu.current" },
+  command_menu_new: { command: "/new", labelKey: "menu.new" },
+  command_menu_close: { command: "/close", labelKey: "menu.close" },
+  command_menu_schedules: { command: "/schedules", labelKey: "menu.schedules" },
+  command_menu_help: { command: "/help", labelKey: "menu.help" },
+  command_menu_workflow: { command: "/workflow", labelKey: "menu.workflow" },
 };
-for (let [e, { command: t, label: r }] of Object.entries(hk))
+for (let [e, { command: t, labelKey: r }] of Object.entries(hk))
   Ri.callbackQuery(e, async (n) => {
-    (await n.answerCallbackQuery(`${r}`),
-      await n.reply(`\u8ACB\u4F7F\u7528 ${t} \u6307\u4EE4\u3002`));
+    (await n.answerCallbackQuery(n.t(r)),
+      await n.reply(n.t("menu.useCommand", { command: t })));
   });
 Ie();
-var wk = "telegram-meta",
-  bk = "\uFF08\u5EFA\u7ACB\u6642\u672A\u63D0\u4F9B\u5167\u5BB9\uFF09";
+var wk = "telegram-meta";
 function yk(e) {
   let t = e.from;
-  if (!t) return "\u672A\u77E5\u767C\u9001\u8005";
+  if (!t) return i18nT("core.unknownSender", {}, glang());
   let r = [t.first_name, t.last_name].filter(Boolean),
     n = r.length > 0 ? r.join(" ") : (t.username ?? `user-${t.id}`);
   return t.username ? `${n} (@${t.username})` : n;
@@ -19132,10 +16562,10 @@ function Xl(e) {
   return `<!-- ${wk}: ${JSON.stringify(t)} -->`;
 }
 function kk(e) {
-  return `**\u4F86\u81EA\uFF1A** ${yk(e)} \xB7 ${_k(e)}`;
+  return t("core.messageFromSource", { sender: yk(e), chat: _k(e) }, glang());
 }
 function Ek(e) {
-  return (typeof e?.content == "string" ? e.content.trim() : "") || bk;
+  return (typeof e?.content == "string" ? e.content.trim() : "") || i18nT("core.noContentProvided", {}, glang());
 }
 function Vs(e, t) {
   return [Xl(e), "", kk(e), "", "---", "", Ek(t)].join(`
@@ -19149,19 +16579,18 @@ di();
 ar();
 function vf(e) {
   return [
-    `\u{1F99E}\u300C${typeof e == "string" && e.trim() !== "" ? e.trim() : "\u5C0F\u9F8D\u8766"}\u300D\u73FE\u5728\u6B63\u5728\u4F11\u606F\u4E2D\uFF0C\u5148\u5225\u64D4\u5FC3\u3002`,
+    t("core.restingMessage1", { name: typeof e == "string" && e.trim() !== "" ? e.trim() : t("core.unnamedLobster", {}, glang()) }, glang()),
     "",
-    "\u4F60\u7684\u8A0A\u606F\u6211\u5DF2\u7D93\u5148\u5E6B\u4F60\u4FDD\u7559\u4E0B\u4F86\u4E86\uFF0C\u4E0D\u6703\u6F0F\u6389\u3002",
-    "\u5982\u679C\u4F60\u60F3\u99AC\u4E0A\u53EB\u9192\u7260\uFF0C\u8ACB\u4F7F\u7528 /enable \u555F\u52D5\u3002",
-  ].join(`
-`);
+    t("core.restingMessage2", {}, glang()),
+    "",
+    t("core.restingMessage3", {}, glang()),
+  ].join("\n");
 }
 function Sk(e) {
   return [
-    "\u76EE\u524D\u5C0F\u9F8D\u8766\u5C1A\u672A\u8A2D\u5B9A\u4EFB\u52D9\uFF0C\u4F46\u6211\u4F9D\u7136\u6703\u8A18\u9304\u4F60\u7684\u8A0A\u606F\u3002",
-    "\u4E4B\u5F8C\u82E5\u9700\u8981\u5C0F\u9F8D\u8766\u57F7\u884C\u4EFB\u52D9\uFF0C\u53EA\u8981\u900F\u904E /edit \u5373\u53EF\u66F4\u65B0\u8A2D\u5B9A\u3002",
-  ].join(`
-`);
+    t("core.noTaskMessage1", {}, glang()),
+    t("core.noTaskMessage2", {}, glang()),
+  ].join("\n");
 }
 async function Js(e, t, r, n) {
   let s = await Ts(e, t, r, n);
@@ -19196,15 +16625,14 @@ function Zl(e, t) {
   let r = typeof e == "string" ? e.trim() : "",
     n = t.map((o) => String(o.repoPath || "").trim()).filter((o) => o !== "");
   return [
-    "\u4F86\u81EA Telegram \u7684\u5A92\u9AD4\u8A0A\u606F",
+    i18nT("core.mediaMessageFromTelegram", {}, glang()),
     "",
-    "\u4F7F\u7528\u8005\u6587\u5B57\uFF1A",
-    r || "\uFF08\u7121\uFF09",
+    i18nT("core.userTextLabel", {}, glang()),
+    r || i18nT("core.noneLabel", {}, glang()),
     "",
-    "\u9644\u4EF6\uFF1A",
-    ...(n.length > 0 ? n.map((o) => `- ${o}`) : ["- \uFF08\u7121\uFF09"]),
-  ].join(`
-`);
+    i18nT("core.attachmentsLabel", {}, glang()),
+    ...(n.length > 0 ? n.map((o) => `- ${o}`) : [`- ${i18nT("core.noneLabel", {}, glang())}`]),
+  ].join("\n");
 }
 var ln = new se(),
   Ik = 3e3;
@@ -19216,7 +16644,7 @@ function Cf(e) {
 }
 function vk(e) {
   let t = e.from;
-  if (!t) return "\u672A\u77E5\u767C\u9001\u8005";
+  if (!t) return i18nT("core.unknownSender", {}, glang());
   let r = [t.first_name, t.last_name].filter(Boolean),
     n = r.length > 0 ? r.join(" ") : (t.username ?? `user-${t.id}`);
   return t.username ? `${n} (@${t.username})` : n;
@@ -19271,7 +16699,7 @@ async function Rk(e, t, r, n) {
       branch: t,
     });
   } catch (i) {
-    console.warn(`\u522A\u9664\u66AB\u5B58\u5A92\u9AD4 ${r} \u5931\u6557`, {
+    console.warn(i18nT("log.media.deleteTempFailed", { key: r }, glang()), {
       branch: t,
       error: i instanceof Error ? i.message : String(i),
     });
@@ -19316,17 +16744,17 @@ function Pk(e) {
 function xf(e) {
   switch (e) {
     case "photo":
-      return "\u{1F4F7} \u7167\u7247";
+      return t("media.photo", {}, glang());
     case "video":
-      return "\u{1F3AC} \u5F71\u7247";
+      return t("media.video", {}, glang());
     case "audio":
-      return "\u{1F3B5} \u97F3\u8A0A";
+      return t("media.audio", {}, glang());
     case "document":
-      return "\u{1F4C4} \u6587\u4EF6";
+      return t("media.document", {}, glang());
     case "voice":
-      return "\u{1F399}\uFE0F \u8A9E\u97F3";
+      return t("media.voice", {}, glang());
     default:
-      return "\u{1F4C1} \u5A92\u9AD4";
+      return t("media.media", {}, glang());
   }
 }
 function xi(e, t_files, r, n) {
@@ -19486,7 +16914,7 @@ async function Ys(e, t_msg) {
       };
     (await xn(n, s.github.owner, s.github.repo, l, {
       role: "user",
-      source: "\u5C0F\u9F8D\u8766",
+      source: t("system.source_name", {}, glang()),
       issue_number: l,
       comment_id: X.data.id,
       github_comment_url: X.data.html_url ?? null,
@@ -19709,7 +17137,7 @@ async function Nk(e, t_file, r) {
   if (
     (await xn(s, o.github.owner, o.github.repo, d, {
       role: "user",
-      source: "\u5C0F\u9F8D\u8766",
+      source: t("system.source_name", {}, glang()),
       issue_number: d,
       comment_id: Me.data.id,
       github_comment_url: Me.data.html_url ?? null,
@@ -19739,12 +17167,12 @@ async function Nk(e, t_file, r) {
   w && (await e.reply(m.restingMessage));
 }
 ln.on("message:photo", async (e) => {
-  let t = e.message.photo,
+  let ph = e.message.photo,
     n = {
       field: "photo",
-      label: "\u{1F4F7} \u7167\u7247",
+      label: t("mediaLabel.photo", {}, glang()),
       ext: ".jpg",
-      fileId: t[t.length - 1].file_id,
+      fileId: ph[ph.length - 1].file_id,
       fileName: null,
       mimeType: null,
       duration: null,
@@ -19753,50 +17181,50 @@ ln.on("message:photo", async (e) => {
   s ? await Nk(e, n, s) : await Ys(e, n);
 });
 ln.on("message:voice", async (e) => {
-  let t = e.message.voice;
+  let vc = e.message.voice;
   await Ys(e, {
     field: "voice",
-    label: "\u{1F399}\uFE0F \u8A9E\u97F3",
+    label: t("mediaLabel.voice", {}, glang()),
     ext: ".ogg",
-    fileId: t.file_id,
+    fileId: vc.file_id,
     fileName: null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    mimeType: vc.mime_type ?? null,
+    duration: vc.duration ?? null,
   });
 });
 ln.on("message:video", async (e) => {
-  let t = e.message.video;
+  let vd = e.message.video;
   await Ys(e, {
     field: "video",
-    label: "\u{1F3AC} \u5F71\u7247",
+    label: t("mediaLabel.video", {}, glang()),
     ext: ".mp4",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    fileId: vd.file_id,
+    fileName: vd.file_name ?? null,
+    mimeType: vd.mime_type ?? null,
+    duration: vd.duration ?? null,
   });
 });
 ln.on("message:audio", async (e) => {
-  let t = e.message.audio;
+  let au = e.message.audio;
   await Ys(e, {
     field: "audio",
-    label: "\u{1F3B5} \u97F3\u8A0A",
+    label: t("mediaLabel.audio", {}, glang()),
     ext: "",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
-    duration: t.duration ?? null,
+    fileId: au.file_id,
+    fileName: au.file_name ?? null,
+    mimeType: au.mime_type ?? null,
+    duration: au.duration ?? null,
   });
 });
 ln.on("message:document", async (e) => {
-  let t = e.message.document;
+  let doc = e.message.document;
   await Ys(e, {
     field: "document",
-    label: "\u{1F4C4} \u6587\u4EF6",
+    label: t("mediaLabel.document", {}, glang()),
     ext: "",
-    fileId: t.file_id,
-    fileName: t.file_name ?? null,
-    mimeType: t.mime_type ?? null,
+    fileId: doc.file_id,
+    fileName: doc.file_name ?? null,
+    mimeType: doc.mime_type ?? null,
     duration: null,
   });
 });
@@ -19817,17 +17245,17 @@ async function Pf(e) {
   let s = await Ke(t, r);
   return s && s.step === "awaiting_env_input" ? (s.mode === "edit" ? "edit" : "new") : null;
 }
-async function Mf(e, t) {
+async function Mf(e, flow) {
   let { store: r, octokit: n, config: s } = e.services,
     o = e.chat?.id;
   if (!o) return !1;
-  let i = t === "templates" ? "templates" : t === "edit" ? "edit_flow" : "new_flow",
+  let i = flow === "templates" ? "templates" : flow === "edit" ? "edit_flow" : "new_flow",
     a = (e.message?.text ?? "").trim(),
     l,
     c,
     d,
     m;
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     if (!S || S.step !== "awaiting_env") return !1;
     ((l = S.pendingEnvs ?? []),
@@ -19849,11 +17277,11 @@ async function Mf(e, t) {
       e,
       o,
       m,
-      "\u26A0\uFE0F \u8ACB\u8F38\u5165\u74B0\u5883\u8B8A\u6578\u7684\u503C",
+      t("templates.envValueRequired", {}, glang()),
       { reply_markup: hr(i) },
     );
     if (S && S !== m)
-      if (t === "templates") {
+      if (flow === "templates") {
         let U = await be(r, o);
         U && (await oe(r, o, { ...U, promptMessageId: S }));
       } else {
@@ -19870,12 +17298,10 @@ async function Mf(e, t) {
         e,
         o,
         m,
-        `\u{1F511} \u8ACB\u8F38\u5165 *${O(S)}* \u7684\u503C
-
-\uFF08${y + 1}/${l.length}\uFF09`,
+        t("templates.enterEnvValue", { name: O(S), current: y + 1, total: l.length }, glang()),
         { parse_mode: "MarkdownV2", reply_markup: hr(i) },
       );
-    if (t === "templates") {
+    if (flow === "templates") {
       let K = await be(r, o);
       K && (await oe(r, o, { ...K, collectedEnvs: c, currentEnvIndex: y, promptMessageId: U }));
     } else {
@@ -19892,10 +17318,10 @@ async function Mf(e, t) {
     } catch (K) {
       (console.error(`[template-env-collector] Failed to set secret ${S}:`, K),
         await e.reply(
-          `\u274C \u8A2D\u5B9A ${S} \u5931\u6557\uFF1A${K instanceof Error ? K.message : String(K)}`,
+          t("templates.setEnvFailed", { name: S, error: K instanceof Error ? K.message : String(K) }, glang()),
         ));
     }
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     S &&
       (await oe(r, o, {
@@ -19918,21 +17344,19 @@ async function Mf(e, t) {
         step: S.mode === "edit" ? "awaiting_workflow_enabled" : "awaiting_template",
       }));
   }
-  if (t === "templates") {
+  if (flow === "templates") {
     let S = await be(r, o);
     if (S) {
       let U = `${
         P.length > 0
-          ? `\u2705 \u5DF2\u8A2D\u5B9A ${P.length} \u500B\u74B0\u5883\u8B8A\u6578
-
-`
+          ? t("templates.envsSet", { count: P.length }, glang()) + "\n\n"
           : ""
-      }\u78BA\u8A8D\u5B89\u88DD\u7BC4\u672C *${O(S.templateName)}* \u5230\u9F8D\u8766\u5821\uFF1F`;
+      }${t("templates.confirmInstallTo", { templateName: O(S.templateName) }, glang())}`;
       await nu(e, o, m, U, { parse_mode: "MarkdownV2", reply_markup: qo(S.templateName) });
     }
   } else
     P.length > 0 &&
-      (await e.reply(`\u2705 \u5DF2\u8A2D\u5B9A ${P.length} \u500B\u74B0\u5883\u8B8A\u6578`));
+      (await e.reply(t("templates.envsSet", { count: P.length }, glang())));
   return !0;
 }
 async function Gk(e, t) {
@@ -20093,13 +17517,7 @@ async function llmValidateModel(e, t, r) {
         return { ok: o, skipped: !1 };
       }
       case "ollama-cloud": {
-        let n = await fetch("https://ollama.com/v1/models", {
-          headers: { Authorization: `Bearer ${t}` },
-        });
-        if (!n.ok) return { ok: !0, skipped: !0 };
-        let s = await n.json(),
-          o = Array.isArray(s?.data) && s.data.some((i) => i?.id === r);
-        return { ok: o, skipped: !1 };
+        return { ok: !0, skipped: !0 };
       }
       default:
         return { ok: !0, skipped: !0 };
@@ -20390,8 +17808,8 @@ llmComposer.on("message:text", async (e, t) => {
 });
 var su = new se();
 su.on("message:text", async (e) => {
-  let t = e.message.text;
-  if (!t || t.startsWith("/")) return;
+  let text = e.message.text;
+  if (!text || text.startsWith("/")) return;
   let { store: r, octokit: n, config: s } = e.services,
     o = e.chat.id,
     i = await be(r, o);
@@ -20414,16 +17832,15 @@ su.on("message:text", async (e) => {
     await wl(e);
     return;
   }
-  let m = await Ge(r, o);
+  let gLang = glang(),
+    m = await Ge(r, o);
   if (!m) {
-    await e.reply(
-      "\u76EE\u524D\u6C92\u6709\u4F5C\u7528\u4E2D\u7684 Issue\uFF0C\u8ACB\u5148\u7528 /new \u5EFA\u7ACB\u4E00\u500B\u3002",
-    );
+    await e.reply(t("system.no_active_issue", {}, gLang));
     return;
   }
   let w = await Js(n, s.github.owner, s.github.repo, m),
     y = !w.acceptsDispatch,
-    _ = y ? null : await e.reply("\u{1F4AC} \u6B63\u5728\u8655\u7406\u8A0A\u606F..."),
+    _ = y ? null : await e.reply(t("system.processing", {}, gLang)),
     I = Vs(
       {
         message_id: e.message.message_id,
@@ -20431,7 +17848,7 @@ su.on("message:text", async (e) => {
         from: e.message.from,
         chat: e.message.chat,
       },
-      { content: t },
+      { content: text },
     ),
     P = await n.rest.issues.createComment({
       owner: s.github.owner,
@@ -20442,10 +17859,10 @@ su.on("message:text", async (e) => {
   if (
     (typeof P.data.id == "number" &&
       w.branchExists &&
-      (await Zr(n, s.github.owner, s.github.repo, m, P.data.id, t),
+      (await Zr(n, s.github.owner, s.github.repo, m, P.data.id, text),
       await xn(n, s.github.owner, s.github.repo, m, {
         role: "user",
-        source: "\u5C0F\u9F8D\u8766",
+        source: t("system.source_name", {}, gLang),
         issue_number: m,
         comment_id: P.data.id,
         github_comment_url: P.data.html_url ?? null,
@@ -20456,7 +17873,7 @@ su.on("message:text", async (e) => {
           username: e.message.from?.username ?? null,
           date: e.message.date ?? null,
         },
-        content: t,
+        content: text,
         created_at: new Date().toISOString(),
       })),
     !y && _)
@@ -20472,7 +17889,7 @@ su.on("message:text", async (e) => {
       await e.api.editMessageText(
         o,
         _.message_id,
-        "\u{1F4AC} \u5DF2\u6536\u5230\u60A8\u7684\u8A0A\u606F\uFF01",
+        t("system.messageReceived", {}, gLang),
       ));
     return;
   }
@@ -20484,7 +17901,7 @@ function Of(e, t, r) {
     n.use(Pd(t.telegram)),
     n.use(async (ctx, next) => {
       ctx.language = await getLanguage(ctx.services);
-      ctx.t = (key, params) => t(key, params, ctx.language);
+      ctx.t = (key, params) => i18nT(key, params, ctx.language);
       await next();
     }),
     n.use(za),
@@ -21110,41 +18527,35 @@ function cu(e, t, r = {}) {
   console.log(`[altShiftClawCore] Telegram relay decision
 ${JSON.stringify({ issueNumber: e?.number ?? null, commentId: t?.id ?? null, ...r }, null, 2)}`);
 }
-function Zs(e, t, r, n = !1) {
-  let s = lr(t.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09";
+function Zs(e, comment, r, n = !1) {
+  let gLang = glang(),
+    s = lr(comment.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, gLang);
   if (n) return s;
   let o =
       r === "edited"
-        ? `Issue #${e.number} \u7559\u8A00\u5DF2\u66F4\u65B0\uFF1A${e.title}`
-        : `Issue #${e.number} \u6709\u65B0\u7559\u8A00\uFF1A${e.title}`,
-    i = t.html_url || "";
-  return [o, "", s, ...(i ? ["", i] : [])]
-    .join(
-      `
-`,
-    )
-    .trim();
+        ? t("core.issueCommentUpdated", { number: e.number, title: e.title }, gLang)
+        : t("core.issueNewComment", { number: e.number, title: e.title }, gLang),
+    i = comment.html_url || "";
+  return [o, "", s, ...(i ? ["", i] : [])].join("\n").trim();
 }
 function eo(e, t, r, n = !1) {
   let s = Zs(e, t, r, n);
   return { text: or(s), parseMode: "MarkdownV2" };
 }
-function Hf(e, t, r, n = !1) {
-  if (!n) return eo(e, t, r, !1);
-  let s = lr(t.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09";
+function Hf(e, comment, r, n = !1) {
+  if (!n) return eo(e, comment, r, !1);
+  let s = lr(comment.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, glang());
   return { text: or(s), parseMode: "MarkdownV2" };
 }
-function zf(e, t, r = "") {
+function zf(e, maxLen, r = "") {
   let n = String(e || "").trim();
-  if (!Number.isInteger(t) || t <= 0 || n.length <= t) return n;
-  let s = ["[\u5167\u5BB9\u904E\u9577\uFF0C\u5DF2\u622A\u65B7]"];
+  if (!Number.isInteger(maxLen) || maxLen <= 0 || n.length <= maxLen) return n;
+  let gLang = glang(),
+    s = [t("core.contentTruncated", {}, gLang)];
   r && s.push(r);
-  let o = `
-
-${s.join(`
-`)}`,
-    i = Math.max(0, t - o.length);
-  return `${n.slice(0, i).trimEnd()}${o}`.slice(0, t);
+  let o = "\n\n" + s.join("\n"),
+    i = Math.max(0, maxLen - o.length);
+  return `${n.slice(0, i).trimEnd()}${o}`.slice(0, maxLen);
 }
 function Ni(e, t, r, n, s, o = !1) {
   let i = n && typeof n.text == "string" ? n : { text: "" };
@@ -21153,12 +18564,12 @@ function Ni(e, t, r, n, s, o = !1) {
   if (a.text.length <= s)
     return (
       console.warn(
-        `Issue #${e.number} \u7684 Telegram \u8A0A\u606F\u904E\u9577\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u8F49\u9001`,
+        i18nT("log.relay.tooLongPlainText", { issue: e.number }, glang()),
       ),
       a
     );
   console.warn(
-    `Issue #${e.number} \u7684 Telegram \u8A0A\u606F\u904E\u9577\uFF0C\u5C07\u622A\u65B7\u539F\u6587\u5F8C\u91CD\u65B0\u8F49\u63DB MarkdownV2`,
+    i18nT("log.relay.tooLongTruncate", { issue: e.number }, glang()),
   );
   let l = Zs(e, t, r, o),
     c = zf(l, s, t.html_url || ""),
@@ -21169,9 +18580,9 @@ function Qf(e, t, r) {
   let n = t && typeof t.text == "string" ? t : { text: "" };
   if (n.text.length <= r) return n;
   console.warn(
-    "Telegram progress relay \u8A0A\u606F\u904E\u9577\uFF0C\u5C07\u622A\u65B7\u539F\u6587\u5F8C\u91CD\u65B0\u8F49\u63DB MarkdownV2",
+    i18nT("log.relay.progressTooLongTruncate", {}, glang()),
   );
-  let s = lr(e.body || "", { stripToolRunStatusPrefix: !0 }).trim() || "\uFF08\u7A7A\u767D\uFF09",
+  let s = lr(e.body || "", { stripToolRunStatusPrefix: !0 }).trim() || i18nT("core.blank", {}, glang()),
     o = zf(s, r, e.html_url || ""),
     i = or(o);
   return i.length <= r ? { text: i, parseMode: "MarkdownV2" } : { text: o };
@@ -21179,12 +18590,15 @@ function Qf(e, t, r) {
 function Kf(e) {
   return String(e || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-function Oi(e, t) {
-  if (typeof e != "string") return "\u5DF2\u9644\u4E0A\u5716\u7247";
-  let r = String(t || "")
+function Oi(e, path) {
+  let gLang = glang(),
+    attached = t("core.imageAttached", {}, gLang),
+    attachedShort = t("core.imageAttachedShort", {}, gLang);
+  if (typeof e != "string") return attached;
+  let r = String(path || "")
       .trim()
       .replace(/^\/+/, ""),
-    n = r ? new RegExp(`\\\`${Kf(r)}\\\`|${Kf(r)}`, "g") : null,
+    n = r ? new RegExp(`\`${Kf(r)}\`|${Kf(r)}`, "g") : null,
     s = /^.*!\[[^\]]*]\([^)]+\).*$\n?/gm;
   return (
     e
@@ -21192,29 +18606,21 @@ function Oi(e, t) {
       .split(/\r?\n/)
       .map((i) => {
         if (!n) return i;
-        if (/(图片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, "\u5DF2\u9644\u4E0A");
+        if (/(图片|image|photo)\s*[:：]/i.test(i)) return i.replace(n, attachedShort);
         let a = i.trim();
         return a && n.test(a)
-          ? ((n.lastIndex = 0), i.replace(n, "\u5DF2\u9644\u4E0A\u5716\u7247"))
+          ? ((n.lastIndex = 0), i.replace(n, attached))
           : ((n.lastIndex = 0), i);
       })
-      .join(
-        `
-`,
-      )
-      .replace(
-        /\n{3,}/g,
-        `
-
-`,
-      )
-      .trim() || "\u5DF2\u9644\u4E0A\u5716\u7247"
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim() || attached
   );
 }
-function lu(e, t, r, n = !1) {
+function lu(e, evt, r, n = !1) {
   return n
-    ? lr(t?.body || "", { stripToolRunStatusPrefix: n }).trim() || "\uFF08\u7A7A\u767D\uFF09"
-    : Zs(e, t, r, !1);
+    ? lr(evt?.body || "", { stripToolRunStatusPrefix: n }).trim() || t("core.blank", {}, glang())
+    : Zs(e, evt, r, !1);
 }
 function Vf(e, t, r, n, s, o = !1) {
   if (!s || typeof n?.text != "string") return n;
@@ -21228,29 +18634,16 @@ function Vf(e, t, r, n, s, o = !1) {
   }
   return { ...n, text: Oi(n.text, s.path) };
 }
-function Jf(e, t, r, n, s, o, i = !1) {
+function Jf(e, issue, r, n, s, o, i = !1) {
   if (!s || !o) return n;
-  let a = lu(e, t, r, i),
+  let gLang = glang(),
+    a = lu(e, issue, r, i),
     l = Oi(a, s.path),
-    c = [
-      l,
-      "",
-      "\u5716\u7247\u8ACB\u9EDE\u64CA\u9023\u7D50\u6253\u958B\uFF1A",
-      `[\u958B\u555F\u5716\u7247](${o})`,
-    ]
-      .join(
-        `
-`,
-      )
-      .trim();
+    clickLabel = t("core.imageClickLinkToOpen", {}, gLang),
+    c = [l, "", clickLabel, `[${t("core.openImage", {}, gLang)}](${o})`].join("\n").trim();
   return n.parseMode === "MarkdownV2"
     ? { ...n, text: or(c) }
-    : {
-        ...n,
-        text: `${l}
-\u5716\u7247\u8ACB\u9EDE\u64CA\u9023\u7D50\u6253\u958B\uFF1A
-${o}`,
-      };
+    : { ...n, text: `${l}\n${clickLabel}\n${o}` };
 }
 function Yf(e) {
   return (
@@ -21330,16 +18723,17 @@ function Yk(e) {
     ? `https://github.com/jeffsia-blacksmith/altShiftClawToolkit/blob/main/skills/${encodeURIComponent(r)}/README.md`
     : "";
 }
-function Zf(e, t, r) {
-  let n = zk(e, t, r) || Qk(e, t),
+function Zf(e, issue, r) {
+  let gLang = glang(),
+    n = zk(e, issue, r) || Qk(e, issue),
     s = Yk(r),
-    o = Vk(e, t, r?.id);
+    o = Vk(e, issue, r?.id);
   if (!n) return;
-  let i = new F().url("\u958B\u555F GitHub", n);
+  let i = new F().url(t("kb.openGithub", {}, gLang), n);
   return (
     s
-      ? i.url("\u6280\u80FD\u8AAA\u660E", s)
-      : o && i.url("\u958B\u555F\u5DE5\u4F5C\u76EE\u9304", o),
+      ? i.url(t("kb.skillDocs", {}, gLang), s)
+      : o && i.url(t("kb.openWorkdir", {}, gLang), o),
     i
   );
 }
@@ -21353,8 +18747,8 @@ function eg(e, t) {
     o = pm(s)[0];
   return o ? { kind: "repo-path", branch: Rn(e?.number), path: o } : null;
 }
-async function tg(e, t, r) {
-  let n = `${e.github.apiBaseUrl}/repos/${e.github.owner}/${e.github.repo}/contents/${t}?ref=${encodeURIComponent(r)}`,
+async function tg(e, path, r) {
+  let n = `${e.github.apiBaseUrl}/repos/${e.github.owner}/${e.github.repo}/contents/${path}?ref=${encodeURIComponent(r)}`,
     s = await fetch(n, {
       headers: {
         Authorization: `token ${e.github.token}`,
@@ -21362,7 +18756,7 @@ async function tg(e, t, r) {
         "User-Agent": e.github.userAgent,
       },
     });
-  if (!s.ok) throw new Error(`\u53D6\u5F97 repo \u6A94\u6848 ${t} \u5931\u6557: ${s.status}`);
+  if (!s.ok) throw new Error(t("errors.getFileFailed", { path, status: s.status }, glang()));
   let o = s.headers.get("content-type") || "application/octet-stream";
   return { bytes: new Uint8Array(await s.arrayBuffer()), contentType: o };
 }
@@ -21410,21 +18804,21 @@ async function du(e, t, r) {
 function Zk(e, t) {
   if (!e || !t)
     return (
-      console.warn("issue_comment payload \u7F3A\u5C11 issue \u6216 comment \u6B04\u4F4D"),
+      console.warn(i18nT("log.relay.payloadMissingFields", {}, glang())),
       !0
     );
   if (kr(t.body)) return !0;
   if (lm(t.body))
     return (
       console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1ALine \u4F86\u6E90\u7559\u8A00\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipLineSource", { issue: e.number }, glang()),
       ),
       !0
     );
   if (en(t.body, "schedule-flow"))
     return (
       console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1A\u6392\u7A0B\u8A2D\u5B9A\u6D41\u7A0B\u7559\u8A00\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipScheduleSetup", { issue: e.number }, glang()),
       ),
       !0
     );
@@ -21433,7 +18827,7 @@ function Zk(e, t) {
     s = !!(Cs(t.body) || ll(t.body));
   return !n && !r && !s
     ? (console.log(
-        `\u7565\u904E Issue #${e.number}\uFF1Acomment \u7F3A\u5C11 telegram metadata\uFF0C\u4E0D\u8F49\u9001 Telegram`,
+        i18nT("log.relay.skipMissingMeta", { issue: e.number }, glang()),
       ),
       !0)
     : !1;
@@ -21450,12 +18844,12 @@ async function eE(e, t) {
     m = d?.chatId ?? a?.chat_id ?? l?.chat_id;
   if (
     (console.log(
-      `\u6B63\u5728\u8655\u7406 Issue #${n.number} \u7684\u65B0\u7559\u8A00\uFF0Cissue telegram-meta=${JSON.stringify(l)} request telegram-meta=${JSON.stringify(a)}`,
+      i18nT("log.relay.processingNewComment", { issue: n.number, issueMeta: JSON.stringify(l), requestMeta: JSON.stringify(a) }, glang()),
     ),
     !m)
   )
     return (
-      console.log(`\u7565\u904E Issue #${n.number}\uFF1A\u6C92\u6709\u53EF\u7528\u7684 chat_id`),
+      console.log(i18nT("log.relay.skipNoChatId", { issue: n.number }, glang())),
       null
     );
   let w =
@@ -21557,7 +18951,7 @@ async function rE(e, t, r, n, s) {
         }
       } catch (ye) {
         (console.warn(
-          `Issue #${o.number} \u7684 Telegram \u5716\u7247\u8F49\u9001\u5931\u6557\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u8F49\u9001\uFF1A${ye instanceof Error ? ye.message : String(ye)}`,
+          i18nT("log.relay.imageRelayFailedPlainText", { issue: o.number, error: ye instanceof Error ? ye.message : String(ye) }, glang()),
         ),
           (S = U),
           (he = !!Y && !I));
@@ -21596,7 +18990,7 @@ async function rE(e, t, r, n, s) {
     ))
       throw he;
     console.warn(
-      `Issue #${o.number} \u7684 Telegram \u683C\u5F0F\u89E3\u6790\u5931\u6557\uFF0C\u6539\u7528\u7D14\u6587\u5B57\u91CD\u9001\uFF1A${he.message}`,
+      i18nT("log.relay.formatParseFailedResend", { issue: o.number, error: he.message }, glang()),
     );
     let ye = Zs(o, i, a, Re);
     ((S = Ni(o, i, a, { text: ye }, l.telegram.maxMessageLength)),
@@ -21669,7 +19063,7 @@ function oE(e) {
         .replace(/<!--\s*line-meta:\s*\{[\s\S]*?\}\s*-->\s*/g, "")
         .replace(/<a\s+href=(?:"([^"]*)"|'([^']*)')\s*>([\s\S]*?)<\/a>/gi, "$3 ($1$2)")
         .replace(/<\/?(?:b|i|u|s|tg-spoiler|code|pre|blockquote)\s*>/gi, "")
-        .replace(/^\*\*来自：\*\*.*$/gm, "")
+        .replace(/^\*\*(?:来自：|From:)\*\*.*$/gm, "")
         .replace(/^\s*---\s*$/gm, "")
         .trim();
 }
@@ -21784,7 +19178,7 @@ async function gE(e, t, r, n) {
     return sg(s)
       ? !1
       : (console.warn(
-          "[coding-agent] \u8B80\u53D6 issue workflow \u6E05\u55AE\u5931\u6557\uFF0C\u6539\u7531 dispatch \u6D41\u7A0B\u8655\u7406",
+          i18nT("log.codingAgent.readWorkflowListFailed", {}, glang()),
           { issueNumber: n, error: s instanceof Error ? s.message : String(s) },
         ),
         null);
@@ -21798,35 +19192,35 @@ async function hE(e, t, r, n) {
     return sg(o)
       ? !1
       : (console.warn(
-          "[coding-agent] \u8B80\u53D6 issue branch \u6E05\u55AE\u5931\u6557\uFF0C\u6539\u7531\u6D3E\u5DE5\u6D41\u7A0B\u8655\u7406",
+          i18nT("log.codingAgent.readBranchListFailed", {}, glang()),
           { issueNumber: n, error: o instanceof Error ? o.message : String(o) },
         ),
         null);
   }
 }
-function wE(e) {
-  return `\u300C${e || "\u5C0F\u9F8D\u8766"}\u300D\u5DF2\u7D93\u6536\u5230\u65B0\u7684\u6307\u793A\uFF0C\u6B63\u5728\u5E6B\u5FD9\u5B89\u6392\u8655\u7406\u4E2D\uFF0C\u8ACB\u7A0D\u7B49\u4E00\u4E0B\uFF0C\u4E8B\u60C5\u5F88\u5FEB\u5C31\u6703\u6709\u9032\u5C55\u3002`;
+function wE(e, gLang = glang()) {
+  return t("core.instructionReceived", { name: e || t("system.source_name", {}, gLang) }, gLang);
 }
-function bE(e, t) {
-  let r = e || "\u5C0F\u9F8D\u8766";
-  if (fE(t))
+function bE(e, err, gLang = glang()) {
+  let r = e || t("system.source_name", {}, gLang);
+  if (fE(err))
     return [
-      `\u{1F99E}\u300C${r}\u300D\u73FE\u5728\u6B63\u5728\u4F11\u606F\u4E2D\uFF0C\u5148\u5225\u64D4\u5FC3\u3002`,
+      t("core.restingMessage1", { name: r }, gLang),
       "",
-      "\u4F60\u7684\u8A0A\u606F\u6211\u5DF2\u7D93\u5148\u5E6B\u4F60\u4FDD\u7559\u4E0B\u4F86\u4E86\uFF0C\u4E0D\u6703\u6F0F\u6389\u3002",
-      "\u5982\u679C\u4F60\u60F3\u99AC\u4E0A\u53EB\u9192\u7260\uFF0C\u8ACB\u4F7F\u7528 /enable \u555F\u52D5\u3002",
-    ].join(`
-`);
-  if (og(t))
+      t("core.restingMessage2", {}, gLang),
+      t("core.restingMessage3", {}, gLang),
+    ].join("\n");
+  if (og(err))
     return [
-      "\u76EE\u524D\u5C0F\u9F8D\u8766\u5C1A\u672A\u8A2D\u5B9A\u4EFB\u52D9\uFF0C\u4F46\u6211\u4F9D\u7136\u6703\u8A18\u9304\u4F60\u7684\u8A0A\u606F\u3002",
-      "\u4E4B\u5F8C\u82E5\u9700\u8981\u5C0F\u9F8D\u8766\u57F7\u884C\u4EFB\u52D9\uFF0C\u53EA\u8981\u900F\u904E /edit \u5373\u53EF\u66F4\u65B0\u8A2D\u5B9A\u3002",
-    ].join(`
-`);
-  let n = t instanceof Error ? t.message : "\u672A\u77E5\u932F\u8AA4";
-  return [`\u{1F99E}\u300C${r}\u300D\u6D3E\u5DE5\u5931\u6557\u3002`, "", `- \u932F\u8AA4\uFF1A${n}`]
-    .join(`
-`);
+      t("core.noTaskMessage1", {}, gLang),
+      t("core.noTaskMessage2", {}, gLang),
+    ].join("\n");
+  let n = err instanceof Error ? err.message : t("core.unknownError", {}, gLang);
+  return [
+    t("core.dispatchFailed", { name: r }, gLang),
+    "",
+    t("core.dispatchErrorLine", { error: n }, gLang),
+  ].join("\n");
 }
 function mu(e) {
   return iE(e, "");
@@ -21839,14 +19233,14 @@ async function ig(e, t, r, n, s = "") {
   if ((await hE(o, a, l, t)) === !1)
     return (
       console.log(
-        `[coding-agent] \u7565\u904E Issue #${t} \u6D3E\u5DE5\uFF1Aissue \u5206\u652F\u4E0D\u5B58\u5728`,
+        i18nT("log.codingAgent.skipNoBranch", { issue: t }, glang()),
       ),
       { issueNumber: t, progressCommentId: null }
     );
   if ((await gE(o, a, l, t)) === !1)
     return (
       console.log(
-        `[coding-agent] \u7565\u904E Issue #${t} \u6D3E\u5DE5\uFF1Aissue workflow \u4E0D\u5B58\u5728`,
+        i18nT("log.codingAgent.skipNoWorkflow", { issue: t }, glang()),
       ),
       { issueNumber: t, progressCommentId: null }
     );
@@ -21893,46 +19287,46 @@ function ag(e) {
     : mu(t).trim() !== "";
 }
 async function fu(e, t) {
-  let r = e.issue?.number ?? "\u672A\u77E5";
+  let r = e.issue?.number ?? "unknown";
   if (!e.issue || !e.comment) {
     console.warn(
-      `issue_comment.${e.action} payload \u7F3A\u5C11 issue \u6216 comment \u6B04\u4F4D\uFF0C\u7565\u904E\u5C0F\u9F8D\u8766\u6D3E\u5DE5`,
+      i18nT("log.codingAgent.payloadMissingSkip", { action: e.action }, glang()),
     );
     return;
   }
   let n = e.comment.body;
   if (il(n)) {
-    console.log(`\u7565\u904E Issue #${r} \u7684\u7CFB\u7D71\u7559\u8A00\u6D3E\u5DE5`);
+    console.log(i18nT("log.codingAgent.skipSystemComment", { issue: r }, glang()));
     return;
   }
   if (en(n, "schedule-flow")) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u6392\u7A0B\u8A2D\u5B9A\u7D00\u9304\u7559\u8A00\u6D3E\u5DE5`,
+      i18nT("log.codingAgent.skipScheduleRecord", { issue: r }, glang()),
     );
     return;
   }
   if (!al(n)) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1Acomment \u7F3A\u5C11 telegram metadata`,
+      i18nT("log.codingAgent.skipMissingMeta", { issue: r }, glang()),
     );
     return;
   }
   if (e.action === "created" && Rs(n, "pending")) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A\u5A92\u9AD4\u7559\u8A00\u5C1A\u672A finalized`,
+      i18nT("log.codingAgent.skipMediaNotFinalized", { issue: r }, glang()),
     );
     return;
   }
   if (e.action === "edited" && !As(n, e.changes?.body?.from ?? null)) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1Aedited \u4E8B\u4EF6\u4E0D\u662F\u5A92\u9AD4 finalized transition`,
+      i18nT("log.codingAgent.skipEditedNotFinalized", { issue: r }, glang()),
     );
     return;
   }
   let s = mu(n);
   if (!s) {
     console.log(
-      `\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A\u4F7F\u7528\u8005\u8A0A\u606F\u70BA\u7A7A`,
+      i18nT("log.codingAgent.skipEmptyUserMessage", { issue: r }, glang()),
     );
     return;
   }
@@ -21941,9 +19335,9 @@ async function fu(e, t) {
   if (!a.acceptsDispatch) {
     let l =
       !a.branchExists || !a.workflowExists
-        ? "\u7F3A\u5C11 issue \u5206\u652F\u6216 workflow\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F"
-        : "workflow disabled\uFF0C\u6539\u70BA\u8A18\u4E8B\u672C\u6A21\u5F0F";
-    console.log(`\u7565\u904E Issue #${r} \u7684\u5C0F\u9F8D\u8766\u6D3E\u5DE5\uFF1A${l}`);
+        ? i18nT("log.codingAgent.reasonMissingBranchOrWorkflow", {}, glang())
+        : i18nT("log.codingAgent.reasonWorkflowDisabled", {}, glang());
+    console.log(i18nT("log.codingAgent.skipOther", { issue: r, reason: l }, glang()));
     return;
   }
   await ig(
@@ -21972,18 +19366,17 @@ function _E(e) {
   return e.config.telegram.defaultChatId ?? e.config.telegram.allowedChatId ?? null;
 }
 function TE(e) {
-  let t = `https://github.com/${e.config.github.owner}/${e.config.github.repo}`;
-  return `\u{1F389} \u592A\u597D\u4E86\uFF01${e.config.profileName} \u5DF2\u7D93\u6E96\u5099\u597D\u56C9\uFF01
-\u{1F99E} \u4F60\u7684\u5C0F\u9F8D\u8766\u5728\u9019\u88E1\u7B49\u4F60 \u2192 ${t}`;
+  let url = `https://github.com/${e.config.github.owner}/${e.config.github.repo}`;
+  return t("system.welcomeReady1", { profileName: e.config.profileName }, glang()) + "\n" + t("system.welcomeReady2", { url }, glang());
 }
-async function kE(e, t) {
+async function kE(e, chatId) {
   let { octokit: r, store: n, config: s } = e,
     { owner: o, repo: i } = s.github,
     a = "default",
     l = i,
-    c = `${i} \u7684\u9810\u8A2D\u5C0F\u9F8D\u8766`,
+    c = t("system.defaultLobsterDescription", { name: i }, glang()),
     d = ci({
-      meta: { source: "auto-init", chat_id: t, ts: new Date().toISOString() },
+      meta: { source: "auto-init", chat_id: chatId, ts: new Date().toISOString() },
       agentProfile: { name: l, description: c },
     }),
     { data: m } = await r.rest.issues.create({ owner: o, repo: i, title: l, body: d }),
@@ -21997,12 +19390,12 @@ async function kE(e, t) {
       i,
       y,
       _,
-      `chore: \u521D\u59CB\u5316 issue #${m.number} orphan \u5206\u652F\uFF08\u7BC4\u672C\uFF1A${a}\uFF09`,
+      `chore: init issue #${m.number} orphan branch (template: ${a})`,
     ),
     await Sr(r, o, i, m.number, a),
     await Vr(e.d1, { repo: s.github.repoFullName, issueNumber: m.number, template: a }),
-    await rr(n, m.number, t),
-    console.log("[auto-init] \u5DF2\u81EA\u52D5\u5EFA\u7ACB\u7B2C\u4E00\u96BB\u5C0F\u9F8D\u8766", {
+    await rr(n, m.number, chatId),
+    console.log(i18nT("log.autoInit.firstLobsterCreated", {}, glang()), {
       issueNumber: m.number,
       title: l,
     }),
@@ -22015,42 +19408,42 @@ async function EE(e) {
   await r.put(lg, "true");
   try {
     (await Ci(t, s, o, "INIT_GITHUB_CLAW", "false"),
-      console.log("[auto-init] \u5DF2\u5C07 INIT_GITHUB_CLAW repo variable \u8A2D\u70BA false"));
+      console.log(i18nT("log.autoInit.variableSetFalse", {}, glang())));
   } catch (i) {
-    console.warn("[auto-init] \u7121\u6CD5\u66F4\u65B0 INIT_GITHUB_CLAW repo variable", i);
+    console.warn(i18nT("log.autoInit.variableUpdateFailed", {}, glang()), i);
   }
 }
-async function ug(e, t) {
-  if (!yE(e, t)) {
+async function ug(e, env) {
+  if (!yE(e, env)) {
     console.log("[installation.created] skip unrelated installation event", {
-      configuredRepo: t.config.github.repoFullName,
+      configuredRepo: env.config.github.repoFullName,
       installationId: e.installation?.id ?? null,
     });
     return;
   }
-  let r = _E(t);
+  let r = _E(env);
   if (!r) {
     console.warn("[installation.created] telegram chat id is missing, skip welcome message");
     return;
   }
-  let n = new it(t.config.telegram.botToken, { apiRoot: t.config.telegram.apiBaseUrl || void 0 });
-  if ((await n.sendMessage(r, TE(t)), t.config.initGitHubClaw)) {
-    if ((await t.store.get(lg)) === "true") {
-      console.log("[auto-init] \u5DF2\u57F7\u884C\u904E\u521D\u59CB\u5316\uFF0C\u8DF3\u904E");
+  let n = new it(env.config.telegram.botToken, { apiRoot: env.config.telegram.apiBaseUrl || void 0 });
+  if ((await n.sendMessage(r, TE(env)), env.config.initGitHubClaw)) {
+    if ((await env.store.get(lg)) === "true") {
+      console.log(i18nT("log.autoInit.alreadyInitialized", {}, glang()));
       return;
     }
     try {
-      let o = await kE(t, r);
-      (await EE(t),
+      let o = await kE(env, r);
+      (await EE(env),
         await n.sendMessage(
           r,
-          `\u{1F99E} \u5DF2\u81EA\u52D5\u5EFA\u7ACB\u7B2C\u4E00\u96BB\u5C0F\u9F8D\u8766\u300C${o.title}\u300D(#${o.number})\uFF01`,
+          t("system.autoInitCreated", { title: o.title, number: o.number }, glang()),
         ));
     } catch (o) {
-      (console.error("[auto-init] \u81EA\u52D5\u5EFA\u7ACB\u5C0F\u9F8D\u8766\u5931\u6557", o),
+      (console.error(i18nT("log.autoInit.createFailed", {}, glang()), o),
         await n.sendMessage(
           r,
-          "\u26A0\uFE0F \u81EA\u52D5\u5EFA\u7ACB\u5C0F\u9F8D\u8766\u5931\u6557\uFF0C\u8ACB\u624B\u52D5\u4F7F\u7528 /new \u5EFA\u7ACB\u3002",
+          t("system.autoInitFailed", {}, glang()),
         ));
     }
   }
@@ -22162,30 +19555,35 @@ function vE(e) {
     return null;
   }
 }
-function CE(e, t, r, n, s, o) {
-  let i = O(e),
+function CE(e, issueNum, r, n, s, o) {
+  let gLang = glang(),
+    i = O(e),
     a =
-      t && r
-        ? `\u{1F99E} ${O(r)} \\#${t}`
-        : t
-          ? `\u{1F99E} \\#${t}`
-          : "\u{1F99E} \u76EE\u6A19\u5C0F\u9F8D\u8766",
+      issueNum && r
+        ? `\u{1F99E} ${O(r)} \\#${issueNum}`
+        : issueNum
+          ? `\u{1F99E} \\#${issueNum}`
+          : t("skills.targetLobsterFallback", {}, gLang),
     l = o === "skill_remove",
-    d = l ? "\u79FB\u9664" : o === "skill_update" ? "\u66F4\u65B0" : "\u5B89\u88DD";
+    d = l
+      ? t("skills.action_remove", {}, gLang)
+      : o === "skill_update"
+        ? t("skills.action_update", {}, gLang)
+        : t("skills.action_install", {}, gLang);
   switch (n) {
     case "success":
       return l
-        ? `\u2705 \u5DF2\u5F9E ${a} \u79FB\u9664\u6280\u80FD *${i}*`
-        : `\u2705 \u6280\u80FD *${i}* \u5DF2${d}\u5230 ${a}`;
+        ? t("skills.removed_message", { name: i, target: a }, gLang)
+        : t("skills.installed_message", { name: i, action: d, target: a }, gLang);
     case "cancelled":
-      return `\u26A0\uFE0F \u6280\u80FD *${i}* ${d}\u5DF2\u53D6\u6D88`;
+      return t("skills.cancelled_message", { name: i, action: d }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C \u6280\u80FD *${i}* ${d}\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("skills.failed_message", { name: i, action: d }, gLang);
     default:
-      return `\u2139\uFE0F \u6280\u80FD *${i}* ${d}\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(n || s || "unknown")}`;
+      return t("skills.ended_message", { name: i, action: d, result: O(n || s || "unknown") }, gLang);
   }
 }
 async function wg(e, t) {
@@ -22195,9 +19593,9 @@ async function bg(e, t) {
   let r = await Xt(t.d1, e);
   return r ? { requestId: r.requestId } : null;
 }
-async function RE(e, t, r) {
+async function RE(e, requestId, r) {
   let n = e.workflow_run,
-    s = await At(r.d1, t);
+    s = await At(r.d1, requestId);
   if (!s || s.channel !== "telegram" || !s.chatId) return;
   let o = Number.parseInt(s.chatId, 10);
   if (!Number.isInteger(o) || o <= 0) return;
@@ -22214,23 +19612,24 @@ async function RE(e, t, r) {
       });
       c = w.title;
     } catch {}
-  let d = CE(a, l, c, n.conclusion, n.status, s.sourceType ?? null),
+  let gLang = glang(),
+    d = CE(a, l, c, n.conclusion, n.status, s.sourceType ?? null),
     m = new it(r.config.telegram.botToken, { apiRoot: r.config.telegram.apiBaseUrl || void 0 });
   try {
     if (
       (i && Number.isInteger(i) && i > 0
         ? await m.editMessageText(o, i, d, { parse_mode: "MarkdownV2" })
         : await m.sendMessage(o, d, { parse_mode: "MarkdownV2" }),
-      await Ne(r.d1, t, { status: "notified", notifiedAt: new Date().toISOString() }),
+      await Ne(r.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() }),
       l && n.conclusion === "success")
     ) {
       let w =
           s.sourceType === "skill_update"
-            ? "\u66F4\u65B0"
+            ? t("skills.action_update", {}, gLang)
             : s.sourceType === "skill_remove"
-              ? "\u79FB\u9664"
-              : "\u5B89\u88DD",
-        y = `\u{1F6E0} \u6280\u80FD **${a}** \u5DF2${w}\u5B8C\u6210\u3002`;
+              ? t("skills.action_remove", {}, gLang)
+              : t("skills.action_install", {}, gLang),
+        y = t("skills.issue_comment_completed", { name: a, action: w }, gLang);
       try {
         await r.octokit.rest.issues.createComment({
           owner: r.config.github.owner,
@@ -22244,7 +19643,7 @@ async function RE(e, t, r) {
     }
   } catch (w) {
     throw (
-      await Ne(r.d1, t, {
+      await Ne(r.d1, requestId, {
         status: "failed_to_notify",
         errorMessage: w instanceof Error ? w.message : String(w),
       }),
@@ -22313,22 +19712,20 @@ function AE(e, t) {
     "template"
   );
 }
-function xE(e, t, r) {
+function xE(e, conclusion, status, gLang = glang()) {
   let n = O(e);
-  switch (t) {
+  switch (conclusion) {
     case "success":
-      return `\u2705 \u7BC4\u672C *${n}* \u5DF2\u5B89\u88DD\u5230\u9F8D\u8766\u5821
-
-\u{1F99E} \u63A5\u4E0B\u4F86\u53EF\u4EE5\u7528 /new \u5EFA\u7ACB\u4E00\u96BB\u65B0\u7684\u5C0F\u9F8D\u8766\u56C9\uFF01`;
+      return t("templates.installed_message", { name: n }, gLang);
     case "cancelled":
-      return `\u26A0\uFE0F \u7BC4\u672C *${n}* \u5B89\u88DD\u5DF2\u53D6\u6D88`;
+      return t("templates.cancelled_message", { name: n }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C \u7BC4\u672C *${n}* \u5B89\u88DD\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("templates.failed_message", { name: n }, gLang);
     default:
-      return `\u2139\uFE0F \u7BC4\u672C *${n}* \u5B89\u88DD\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(t || r || "unknown")}`;
+      return t("templates.ended_message", { name: n, result: O(conclusion || status || "unknown") }, gLang);
   }
 }
 async function Sg(e, t) {
@@ -22338,9 +19735,9 @@ async function Ig(e, t) {
   let r = await Xt(t.d1, e);
   return r ? { requestId: r.requestId } : null;
 }
-async function PE(e, t, r) {
+async function PE(e, requestId, r) {
   let n = e.workflow_run,
-    s = await At(r.d1, t);
+    s = await At(r.d1, requestId);
   if (!s || s.channel !== "telegram" || !s.chatId) return;
   let o = Number.parseInt(s.chatId, 10);
   if (!Number.isInteger(o) || o <= 0) return;
@@ -22351,9 +19748,7 @@ async function PE(e, t, r) {
     d = s.sourceId === "line-bot" && n.conclusion === "success";
   try {
     if (d) {
-      let m = `\u2705 \u7BC4\u672C *${O(a)}* \u5DF2\u5B89\u88DD\u5B8C\u6210\uFF01
-
-\u{1F916} \u8981\u7E7C\u7E8C\u8A2D\u5B9A LINE Bot \u90E8\u7F72\u55CE\uFF1F`,
+      let m = t("line.postInstallPrompt", { name: O(a) }, glang()),
         w = op(),
         y = null;
       (i && Number.isInteger(i) && i > 0
@@ -22369,10 +19764,10 @@ async function PE(e, t, r) {
       i && Number.isInteger(i) && i > 0
         ? await c.editMessageText(o, i, l, { parse_mode: "MarkdownV2" })
         : await c.sendMessage(o, l, { parse_mode: "MarkdownV2" });
-    await Ne(r.d1, t, { status: "notified", notifiedAt: new Date().toISOString() });
+    await Ne(r.d1, requestId, { status: "notified", notifiedAt: new Date().toISOString() });
   } catch (m) {
     throw (
-      await Ne(r.d1, t, {
+      await Ne(r.d1, requestId, {
         status: "failed_to_notify",
         errorMessage: m instanceof Error ? m.message : String(m),
       }),
@@ -22452,31 +19847,26 @@ function ME(e) {
     return null;
   }
 }
-function OE(e, t, r, n) {
+function OE(e, status, r, n, gLang = glang()) {
   let s = O(n);
   switch (e) {
     case "success": {
-      let o = [`\u2705 LINE Bot Worker *${s}* \u90E8\u7F72\u5B8C\u6210\uFF01`];
+      let o = [t("line.deployed_message", { name: s }, gLang)];
       if (r) {
         let i = `https://developers.line.biz/console/channel/${r}/messaging-api`;
-        o.push(
-          "",
-          "\u{1F517} \u8ACB\u5230 LINE Developers Console \u958B\u555F\u300CUse webhook\u300D\uFF1A",
-          O(i),
-        );
+        o.push("", t("line.enable_webhook_instruction", {}, gLang), O(i));
       }
-      return o.join(`
-`);
+      return o.join("\n");
     }
     case "cancelled":
-      return `\u26A0\uFE0F LINE Bot Worker *${s}* \u90E8\u7F72\u5DF2\u53D6\u6D88`;
+      return t("line.deploy_cancelled_message_callback", { name: s }, gLang);
     case "failure":
     case "timed_out":
     case "startup_failure":
     case "action_required":
-      return `\u274C LINE Bot Worker *${s}* \u90E8\u7F72\u5931\u6557\uFF0C\u8ACB\u67E5\u770B workflow run log`;
+      return t("line.deploy_failed_message_callback", { name: s }, gLang);
     default:
-      return `\u2139\uFE0F LINE Bot Worker *${s}* \u90E8\u7F72\u7D50\u675F\uFF0C\u7D50\u679C\uFF1A${O(e || t || "unknown")}`;
+      return t("line.deploy_ended_message_callback", { name: s, result: O(e || status || "unknown") }, gLang);
   }
 }
 async function Ag(e, t) {
@@ -22576,7 +19966,7 @@ function Og(e, t) {
         i = Rs(n.comment.body, "pending"),
         a = pu(n, t).catch((c) => {
           throw (
-            console.error("\u8F49\u9001 Issue \u7559\u8A00\u5230 Telegram \u5931\u6557", c),
+            console.error(i18nT("log.webhook.relayToTelegramFailed", {}, glang()), c),
             c
           );
         });
@@ -22590,7 +19980,7 @@ function Og(e, t) {
       }
       let l = fu(n, t).catch((c) => {
         throw (
-          console.error("\u6D3E\u9001 Issue \u7559\u8A00\u5230 coding-agent \u5931\u6557", c),
+          console.error(i18nT("log.webhook.dispatchToCodingAgentFailed", {}, glang()), c),
           c
         );
       });
@@ -22601,7 +19991,7 @@ function Og(e, t) {
         o = As(n.comment.body, n.changes?.body?.from ?? null),
         i = pu(n, t).catch((l) => {
           console.error(
-            "\u8F49\u9001\u5DF2\u7DE8\u8F2F Issue \u7559\u8A00\u5230 Telegram \u5931\u6557",
+            i18nT("log.webhook.relayEditedToTelegramFailed", {}, glang()),
             l,
           );
         });
@@ -22612,7 +20002,7 @@ function Og(e, t) {
       let a = ag(n)
         ? fu(n, t).catch((l) => {
             console.error(
-              "\u6D3E\u9001\u5DF2\u7DE8\u8F2F Issue \u7559\u8A00\u5230 coding-agent \u5931\u6557",
+              i18nT("log.webhook.dispatchEditedToCodingAgentFailed", {}, glang()),
               l,
             );
           })
@@ -22627,7 +20017,7 @@ function Og(e, t) {
         await ug(n, t);
       } catch (s) {
         console.error(
-          "GitHub App \u5B89\u88DD\u5B8C\u6210\u6B61\u8FCE\u8A0A\u606F\u767C\u9001\u5931\u6557",
+          i18nT("log.webhook.installWelcomeFailed", {}, glang()),
           s,
         );
       }
@@ -22636,21 +20026,21 @@ function Og(e, t) {
       try {
         (await pg(n, t), await vg(n, t), await yg(n, t), await xg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.requested \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "requested" }, glang()), s);
       }
     }),
     r.on("workflow_run.in_progress", async ({ payload: n }) => {
       try {
         (await mg(n, t), await Cg(n, t), await _g(n, t), await Pg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.in_progress \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "in_progress" }, glang()), s);
       }
     }),
     r.on("workflow_run.completed", async ({ payload: n }) => {
       try {
         (await fg(n, t), await Rg(n, t), await Tg(n, t), await Mg(n, t));
       } catch (s) {
-        console.error("\u8655\u7406 workflow_run.completed \u5931\u6557", s);
+        console.error(i18nT("log.webhook.workflowRunFailed", { event: "completed" }, glang()), s);
       }
     }),
     r
@@ -22670,7 +20060,7 @@ bu.post("/github/webhook", async (e) => {
   } catch (l) {
     let c = l instanceof Error ? l.message : String(l);
     return (
-      console.error("GitHub webhook \u8655\u7406\u5931\u6557:", c),
+      console.error(i18nT("log.webhook.handleFailed", {}, glang()), c),
       e.json({ ok: !1, error: c }, 400)
     );
   }

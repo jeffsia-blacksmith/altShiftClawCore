@@ -8,11 +8,12 @@
 ```
 altShiftClawCore/
 ├── src/                      # 【可编辑源码】反混淆工作区（见下）
-│   ├── index.js              # 格式化后的 Worker 源码（22k 行，可编辑）
-│   ├── index.orig.bundle.js  # 原始 bundle 基准（回归比对用，不打包）
+│   ├── index.js              # 格式化后的 Worker 源码（~20k 行，可编辑）
+│   ├── modules/              # 已抽离的独立模块（content-type / tweetnacl shim、workflow-notifications）
 │   └── MODULE_MAP.md         # 混淆名 → 功能 的模组导航图
 ├── build.mjs                 # esbuild：src/index.js → GitHubClawCore/index.js
-├── package.json              # npm run build / check
+├── package.json              # npm run build / check / test:guardrails
+├── test/guardrails.mjs       # e2e 护栏（/health、/github/webhook、CRUD round-trip）
 ├── GitHubClawCore/
 │   ├── index.js              # 【build 产物】Cloudflare Worker（压缩 bundle）← Terraform 读这个
 │   └── migrations/           # D1 database migrations（0001–0005）
@@ -20,7 +21,8 @@ altShiftClawCore/
 │   ├── main.tf               # cloudflare_worker + D1 + cron + 全部 bindings
 │   ├── variables.tf / outputs.tf / versions.tf
 ├── .github/workflows/
-│   └── publish-package.yml   # 打包 zip + manifest 发布到 GitHub Pages
+│   ├── publish-package.yml   # 打包 zip + manifest 发布到 GitHub Pages
+│   └── guardrails.yml        # PR/push 自动跑 build check + e2e 护栏
 └── github-claw-worker-package.json   # 版本 manifest（autoupdate 比对用）
 ```
 

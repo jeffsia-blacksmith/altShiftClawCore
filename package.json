@@ -6,9 +6,22 @@
   "description": "altShiftClawCore worker package — editable src/ + esbuild rebuild to GitHubClawCore/index.js",
   "scripts": {
     "build": "node build.mjs",
-    "check": "node build.mjs --check"
+    "build:v2": "node build-v2.mjs",
+    "check": "node build.mjs --check",
+    "check:v2": "node build-v2.mjs --check",
+    "test:guardrails": "node test/guardrails.mjs",
+    "test:guardrails-v2": "node test/guardrails-v2.mjs",
+    "test:shadow-diff": "node test/shadow-diff.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "content-type": "^1.0.5",
+    "tweetnacl": "^1.0.3",
+    "hono": "4.12.32",
+    "@octokit/webhooks": "14.2.0",
+    "grammy": "1.45.1",
+    "octokit": "5.0.5"
   }
 }

@@ -1,20 +1,17 @@
-// build.mjs — 把可编辑的 src/worker.js 重新打包压缩成 GitHubClawCore/index.js
-// GitHubClawCore/index.js 是 Terraform 部署时 filebase64 读取的产物。
-//
+// build-v2.mjs — src-v2/ 重写版打包（side-by-side，§10.3）
+// 产物：GitHubClawCore/index.v2.js（shadow 阶段不接流量）
 // 用法：
-//   node build.mjs            # src/worker.js → GitHubClawCore/index.js（minified）
-//   node build.mjs --check    # 只打包到暂存并比对与 index.js.orig 的差异，不覆盖
-//
-// 需求：npm i（安装 esbuild）
+//   node build-v2.mjs            # src/worker.js → GitHubClawCore/index.v2.js（minified）
+//   node build-v2.mjs --check    # 只打包到暂存并比对，不覆写
+// 与 build.mjs（旧 bundle）并存，互不干扰；swap 时机由 §10.8 验收决定。
 import { build } from "esbuild";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { writeFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const SRC = join(root, "src/worker.js");
-const OUT = join(root, "GitHubClawCore/index.js");
-const ORIG = join(root, "src/index.orig.bundle.js");
+const OUT = join(root, "GitHubClawCore/index.v2.js");
 const checkOnly = process.argv.includes("--check");
 
 const result = await build({
@@ -28,13 +25,14 @@ const result = await build({
   // @octokit/webhooks-methods exports node (createHmac) + web (crypto.subtle) 分支；
   // Workers 运行时只有 Web Crypto（crypto.subtle），所以选 browser 分支。
   conditions: ["browser"],
+  // src-v2 复用旧 bundle 的 tweetnacl 用于 repo secret 加密（libsodium sealed box）。
   // tweetnacl/nacl-fast.js 含 `require('crypto')` Node fallback；Workers 用全局 `crypto`
-  // 走不到该分支，故用 empty.js 占位。
+  // 走不到该分支，故用 empty.js 占位（同旧 bundle build.mjs）。
   alias: { crypto: join(root, "src/modules/empty.js") },
 });
 const output = result.outputFiles[0].text;
 
-// 完整性检查：入口必须是 export default 且含 fetch handler
+// 完整性检查（对齐 build.mjs 语义）
 if (!/export\s*\{[^}]*\bas default\b/.test(output)) {
   console.error("❌ 打包结果缺少 default export，中止。");
   process.exit(1);
@@ -44,11 +42,9 @@ if (!/\bfetch\b/.test(output.slice(-2000))) {
 }
 
 if (checkOnly) {
-  const orig = existsSync(ORIG) ? readFileSync(ORIG, "utf8") : "";
-  console.log(`打包大小: ${output.length} bytes`);
-  if (orig) console.log(`原始基准: ${orig.length} bytes（差 ${output.length - orig.length}）`);
-  console.log("（--check：未覆写 index.js）");
+  console.log(`[v2] 打包大小: ${output.length} bytes`);
+  console.log("（--check：未覆写 index.v2.js）");
 } else {
   writeFileSync(OUT, output);
-  console.log(`✅ 已写入 ${OUT}（${output.length} bytes）`);
+  console.log(`✅ [v2] 已写入 ${OUT}（${output.length} bytes）`);
 }

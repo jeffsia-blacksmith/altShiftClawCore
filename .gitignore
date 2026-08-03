@@ -5,3 +5,16 @@ _site/
 .terraform.lock.hcl
 
 node_modules/
+
+# test bundle (built by test/guardrails.mjs)
+test/.test-bundle.mjs
+test/.test-bundle-v2.mjs
+
+# shadow-diff harness build artifacts (built by test/shadow-diff.mjs)
+test/.shadow-old.mjs
+test/.shadow-new.mjs
+
+# local-only wrangler dev config (not for production)
+wrangler.local.toml
+.dev.vars
+.wrangler/

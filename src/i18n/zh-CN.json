@@ -3,7 +3,20 @@
     "processing": "💬 正在处理消息...",
     "error_start": "❌ 执行 /start 时发生错误，请稍后再试。",
     "no_active_issue": "目前没有作用中的 Issue，请先用 /new 建立一个。",
-    "source_name": "小龙虾"
+    "source_name": "小龙虾",
+    "defaultLobsterDescription": "{name} 的预设小龙虾",
+    "messageReceived": "💬 已收到您的讯息！",
+    "welcomeReady1": "🎉 太好了！{profileName} 已经准备好啰！",
+    "welcomeReady2": "🦞 你的小龙虾在这里等你 → {url}",
+    "autoInitCreated": "🦞 已自动建立第一只小龙虾「{title}」(#{number})！",
+    "autoInitFailed": "⚠️ 自动建立小龙虾失败，请手动使用 /new 建立。"
+  },
+  "mediaLabel": {
+    "photo": "📷 照片",
+    "voice": "🎙️ 语音",
+    "video": "🎬 视频",
+    "audio": "🎵 音频",
+    "document": "📄 文件"
   },
   "menu": {
     "active_lobster": "🦞 目前的小龙虾",
@@ -15,7 +28,8 @@
     "list": "📋 Issue 列表",
     "current": "🦞 目前的小龙虾",
     "new": "➕ 新增小龙虾",
-    "close": "🔒 关闭小龙虾"
+    "close": "🔒 关闭小龙虾",
+    "useCommand": "请使用 {command} 指令。"
   },
   "help": {
     "title": "🦞 {repoFullName}",
@@ -42,7 +56,7 @@
   },
   "skills": {
     "process_expired": "⚠️ 流程已过期，请重新 /skills",
-    "installed_preview": "📦 *{skillName}* ✅ (已安装){description}\n\n此技能已安装于 {target}，请选择操作：",
+    "installed_preview": "📦 *{skillName}* ✅ \\(已安装\\){description}\n\n此技能已安装于 {target}，请选择操作：",
     "preview": "📦 *{skillName}*{description}\n\n是否要安装此技能到 {target}？",
     "confirm_overwrite": "⚠️ 技能 *{skillName}* 已安装在 {target}，是否覆盖？",
     "select_install": "🛠 选择要安装的技能到 {target}",
@@ -63,7 +77,15 @@
     "failed_message": "❌ 技能 *{name}* {action}失败，请查看 workflow run log",
     "ended_message": "ℹ️ 技能 *{name}* {action}结束，结果：{result}",
     "target_lobster_fallback": "目标小龙虾",
-    "issue_comment_completed": "🛠️ 技能 **{name}** 已{action}完成。"
+    "issue_comment_completed": "🛠️ 技能 **{name}** 已{action}完成。",
+    "targetLobsterFallback": "🦞 目标小龙虾",
+    "installing": "⏳ 安装中...",
+    "removing": "⏳ 移除中...",
+    "installing_progress": "⏳ 技能 *{name}* 正在安装到 {target}，完成后会通知你",
+    "removing_progress": "⏳ 技能 *{name}* 正在从 {target} 移除，完成后会通知你",
+    "remove_confirm": "🗑 确定要从 {target} 移除技能「*{name}*」吗？\n\n移除后该技能的所有文件将被删除，如需要可重新安装。",
+    "install_cancelled": "❌ 已取消技能安装",
+    "secret_value_required": "⚠️ 技能 {name} 的环境变量值不能为空，请重新输入"
   },
   "schedule": {
     "workflow_defined_label": "由 Workflow 定义",
@@ -257,7 +279,85 @@
     "not_in_payload_step": "⚠️ 目前不在 Payload 设定步骤",
     "paused_alert": "⏸️ 已停用排程",
     "activated_alert": "▶️ 已启用排程",
-    "deleted_alert": "🗑️ 已删除排程"
+    "deleted_alert": "🗑️ 已删除排程",
+    "cardNextRun": "下次执行：{time}",
+    "cardPrompt": "提示：{prompt}",
+    "workflowState": {
+      "disabled": "停用",
+      "running": "启用 \\(正在执行任务 {run}\\)",
+      "idle": "启用 \\(闲置中\\)"
+    },
+    "statusPaused": "已停用",
+    "statusActive": "启用中",
+    "workflowStateActive": "启用中",
+    "workflowStateDisabledManually": "已手动停用",
+    "card": {
+      "detailTitle": "🗂️ 🦞 {name} (#{issueNumber}) 排程详情",
+      "standaloneDetailTitle": "🗂️ {label} 排程详情",
+      "id": "🆔 {id}",
+      "status": "📍 状态：{status}",
+      "rule": "🗓️ 规则：{rule}",
+      "nextRun": "⏭️ 下次执行：{nextRun}",
+      "notify": "🔔 通知：{state}",
+      "notifyOn": "开启",
+      "notifyOff": "关闭",
+      "task": "📝 任务：{prompt}",
+      "payload": "📦 Payload：{payload}",
+      "deleteHint": "如果这笔排程是之前已收工的小龙虾留下的，也可以直接从这里删掉。"
+    },
+    "listTitle": "🗂️ 🦞 {name} (#{issueNumber}) 的排程列表",
+    "listEmpty": "目前还没有排程。",
+    "listManageHint": "请点下方按钮管理指定排程。",
+    "thisChatListTitle": "🗂️ 这个聊天目前的排程列表",
+    "thisChatListEmpty": "目前没有排程。",
+    "thisChatListHint": "请点下方按钮查看细目或删除排程。",
+    "setupTaskPrompt": "📝 (1/4) 正在为 🦞 {name} (#{issueNumber}) 设定排程\n\n请告诉我你希望这只小龙虾定期执行的任务是什么？（给小龙虾的提示词）",
+    "editTaskPrompt": "✏️ (1/2) 请输入排程 {name} 的新任务内容（给小龙虾的提示词）",
+    "editTimePrompt": "🕒 (1/2) 请输入排程 {name} 的新执行时间\n\n例如：每 5 分钟、每小时整点、每天中午12点、每周一下午2点、星期一跟星期三的下午三点、每个工作日下午2点、每个假日早上9点、每天9:00、12:00、15:00、18:00、21:00、24:00执行一次",
+    "editPayloadPrompt": "📦 (1/2) 请设定排程 {name} 的 Payload 资料？(可选)\n\n目前值：{current}\n直接输入新的 Payload 内容，或点选「略过」清空。\n若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。",
+    "flow": {
+      "timeExamples": "今天晚上6点、明天早上8点、每 5 分钟、每小时整点、每天中午12点、每周一下午2点、每个工作日下午2点、每个假日早上9点、每天 9:00、12:00、18:00 执行",
+      "timePromptQuestion": "收到！你希望在什么时候执行？",
+      "examplesLine": "例如：{examples}",
+      "payloadPromptLine1": "请设定排程的 Payload 资料？(可选)",
+      "payloadPromptLine2": "直接输入 Payload 内容，或点选「略过」跳过此步骤。",
+      "payloadPromptLine3": "若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。",
+      "actionCreate": "建立",
+      "actionUpdate": "更新",
+      "configCardTitle": "✅ {badge} 已{action}排程",
+      "fieldId": "排程ID",
+      "fieldType": "排程类型",
+      "fieldTime": "排程时间",
+      "fieldNextRun": "下次执行时间",
+      "fieldPrompt": "给小龙虾的提示词",
+      "fieldPayload": "Payload 资料",
+      "configCommentLog": "🗓️ 已{action}排程设定纪录\n\n🆔 {id}\n📝 {prompt}\n📦 {payload}",
+      "scheduleNotFound": "⚠️ 找不到指定排程，请重新开启管理排程。",
+      "stateLost": "⚠️ 排程设定状态遗失，请重新设定排程。",
+      "createFailed": "❌ 建立排程失败，请稍后再试。",
+      "listFetchFailed": "❌ 取得排程列表时发生错误，请稍后再试。",
+      "ambiguousClarify": "请再说一次你要的排程时间。",
+      "ambiguousReply": "请直接回覆完整时间叙述，例如：{examples}",
+      "failedUnderstand": "我这次没看懂这个排程时间。",
+      "failedReply": "请换一种更清楚的说法重新输入，例如：{examples}",
+      "scheduleNotFoundShort": "⚠️ 找不到这笔排程",
+      "lobsterClosedDeleteOnly": "⚠️ 这笔排程的小龙虾已收工，只能删除",
+      "fallbackIssueTitle": "排程小龙虾",
+      "cancelSetupToast": "❌ 已取消排程设定",
+      "cancelSetupMessage": "取消设定排程！",
+      "setupExpired": "⚠️ 排程设定已过期",
+      "stateLostShort": "⚠️ 排程设定状态遗失",
+      "createFailedShort": "❌ 建立排程失败",
+      "payloadSkipped": "⏭️ 已略过 Payload",
+      "notInPayloadStep": "⚠️ 目前不在 Payload 设定步骤",
+      "pausedToast": "⏸️ 已停用排程",
+      "activatedToast": "▶️ 已启用排程",
+      "deletedToast": "🗑️ 已删除排程",
+      "parseUnknownFallback": "我这次没看懂这个排程时间，请换一种更清楚的说法。",
+      "parseNoBinding": "我现在暂时没办法判断这个排程时间，请稍后再试，或换一种更清楚的说法。",
+      "parseAmbiguousFallback": "我有点不确定你指的是哪一种排程时间，请直接用完整句子再说一次。",
+      "timeAlreadyPassed": "这个时间已经过了，请改成未来的时间。"
+    }
   },
   "kb": {
     "confirmClose": "😭 确定关闭",
@@ -306,7 +406,10 @@
     "defaultReply": "💬 预设回应",
     "issueNumberLabel": "🦞 小龙虾",
     "timezone": "🕐 时区",
-    "back": "⬅️ 返回"
+    "back": "⬅️ 返回",
+    "openGithub": "开启 GitHub",
+    "skillDocs": "技能说明",
+    "openWorkdir": "开启工作目录"
   },
   "newFlow": {
     "stepName": "名称",
@@ -375,7 +478,13 @@
     "noTemplatesInstalled": "⚠️ 目前龙虾堡尚未安装任何范本，请先用 /templates 安装。",
     "errorTemplateNotInstalled": "❌ 范本尚未安装到龙虾堡",
     "errorTemplateReadFailed": "❌ 读取范本失败",
-    "errorCreateFailed": "❌ 建立小龙虾时发生错误。"
+    "notInstalled": "范本 {name} 尚未安装到龙虾堡（templates/{name}/ 不存在）",
+    "readFailed": "读取范本 {name} 失败：{error}",
+    "errorCreateFailed": "❌ 建立小龙虾时发生错误。",
+    "envValueRequired": "⚠️ 请输入环境变量的值",
+    "setEnvFailed": "❌ 设定 {name} 失败：{error}",
+    "envsSet": "✅ 已设定 {count} 个环境变量",
+    "confirmInstallTo": "确认安装范本 *{templateName}* 到龙虾堡？"
   },
   "skillCatalog": {
     "audio-transcriber": "语音转文字",
@@ -422,10 +531,10 @@
     "closeConfirmHint": "点一只给我，我会再帮你确认一次，不会让它突然就收工。",
     "closeError": "❌ 执行 /close 时发生错误，请稍后再試。",
     "noActiveLobsterSelected": "⚠️ 尚未选择小龙虾，请先用 /list 选择。",
-    "memoryCleared": "🧹 已清除小龙虾 #{number} 记忆",
+    "memoryCleared": "🧹 已清除小龙虾 \\#{number} 记忆",
     "triggerWorkflowFailed": "❌ 触发 workflow `{name}` 失败：{error}",
     "workflowTriggered": "⚙️ 已触发 workflow `{name}`。",
-    "workflowNoInputs": "- 这个 workflow 没有额外输入参数。",
+    "workflowNoInputs": "\\- 这个 workflow 没有额外输入参数。",
     "workflowCannotTrigger": "⚠️ 无法触发 workflow `{name}`。",
     "workflowMissingRequiredInputs": "缺少必填参数：",
     "workflowProvideInputsPrompt": "请直接用自然语言把这些值补齐后再送一次。",
@@ -496,7 +605,41 @@
     "workflowEnabledMessage": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
     "workflowDisabledMessage": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
     "workflow_state_active": "启用中",
-    "workflow_state_disabled_manually": "已手动停用"
+    "workflow_state_disabled_manually": "已手动停用",
+    "unfilled": "（未填）",
+    "none": "无",
+    "infoCardTitle": "ℹ️ 小龙虾资讯",
+    "infoCardModels": "🤖 使用模型",
+    "infoCardTemplate": "📄 已套用范本",
+    "infoCardSkills": "🧩 已安装技能",
+    "infoCardSchedules": "⏰ 已设定排程",
+    "infoCardTaskStatus": "⚒️ 任务执行状态",
+    "instructionReceived": "「{name}」已经收到新的指示，正在帮忙安排处理中，请稍等一下，事情很快就会有进展。",
+    "dispatchFailed": "🦞「{name}」派工失败。",
+    "dispatchErrorLine": "- 错误：{error}",
+    "imageAttached": "已附加图片",
+    "imageAttachedShort": "已附加",
+    "imageClickLinkToOpen": "图片请点击链接打开：",
+    "openImage": "开启图片",
+    "blank": "（空白）",
+    "issueCommentUpdated": "Issue #{number} 留言已更新：{title}",
+    "issueNewComment": "Issue #{number} 有新留言：{title}",
+    "contentTruncated": "[内容过长，已截断]",
+    "queryWorkflowFailed": "❌ 查询 workflow 状态时发生错误。",
+    "inferWorkflowFailed": "❌ 推导 workflow `{name}` 参数时发生错误。",
+    "notSet": "（未设定）",
+    "lobsterHash": "小龙虾 #{issueNumber}",
+    "lobsterLabel": "小龙虾 #{number}",
+    "lobsterLabelWithTitle": "小龙虾 #{number}「{title}」",
+    "workflowEnabledOk": "✅ 已启用 workflow {name}，小龙虾 {number} 将自动接受派工。",
+    "workflowDisabledOk": "✅ 已停用 workflow {name}，小龙虾 {number} 暂时不接受派工。",
+    "buttonExpired": "⚠️ 按钮已过期，请重新操作",
+    "cancelled": "已取消",
+    "noneLabel": "（无）",
+    "infoCardLLM": "🧠 AI 模型设置",
+    "llmProviderLabel": "提供商",
+    "llmModelLabel": "模型",
+    "llmNotSet": "（未设置）"
   },
   "templates": {
     "name_default": "预设范本",
@@ -514,13 +657,37 @@
     "cancelled_message": "⚠️ 范本 *{name}* 部署已取消",
     "failed_message": "❌ 范本 *{name}* 部署失败，请查看 workflow run log",
     "ended_message": "ℹ️ 范本 *{name}* 部署结束，结果：{result}",
-    "sync_complete_ask_line": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？"
+    "sync_complete_ask_line": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？",
+    "fileBinary": "模板文件 {path} 为二进制，无法读取",
+    "nestedTooDeep": "模板目录 {path}/ 嵌套深度超过单次查询支持范围",
+    "unknownGraphqlError": "未知 GraphQL 错误",
+    "process_expired": "⚠️ 流程已过期，请重新 /templates",
+    "confirm_install": "确认安装范本 *{name}* 到龙虾堡？{modelLine}",
+    "model_line": "\n模型：`{model}`",
+    "secrets_all_set": "✅ 范本 *{name}* 需要的 Secrets 皆已设定：\n\n{list}\n\n要更换吗？",
+    "secrets_missing": "⚠️ 范本 *{name}* 需要以下 Secrets：\n\n{list}",
+    "secrets_status": "⚠️ 范本 *{name}* 的 Secrets 状态：\n\n{list}",
+    "env_set": "✅ `{env}`（已设定）",
+    "env_missing": "🔵 `{env}`（缺少）",
+    "not_found": "⚠️ 找不到该范本",
+    "install_prompt": "📦 *{name}*{desc}\n\n是否要安装此范本到龙虾堡？",
+    "confirm_overwrite": "⚠️ 范本 *{name}* 已存在于龙虾堡，是否覆盖？",
+    "select_model_prompt": "🤖 范本 *{name}* 需要先选择模型",
+    "model_format_error": "⚠️ 模型数据格式错误",
+    "model_not_found": "⚠️ 找不到该模型选项",
+    "saving_model": "⏳ 储存模型中...",
+    "installing": "⏳ 安装中...",
+    "installing_progress": "⏳ 范本 *{name}* 正在安装到龙虾堡，完成后会通知你",
+    "install_cancelled": "❌ 已取消范本安装",
+    "enter_env_value": "🔑 请输入 *{envName}* 的值\n\n（{current}/{total}）",
+    "env_skipped": "⏭️ 已略过环境变数设定",
+    "env_keepall": "⏭️ 沿用现有设定"
   },
   "line": {
     "setup_failed": "❌ 设定失败：{error}",
     "ask_bot_id": "📝 请输入 *LINE Bot ID*（必填）",
     "skipped_alert": "⏭️ 已略过",
-    "skipped_install_message": "✅ 范本 *line-bot* 已安装完成！\n\n之后可以手动触发 `install-line-bot` workflow 来部署。",
+    "skipped_install_message": "✅ 范本 *line\\-bot* 已安装完成！\n\n之后可以手动触发 `install-line-bot` workflow 来部署。",
     "ask_issue_number": "📝 请输入 *小龙虾编号（Issue Number）*（跳过则自动建立）",
     "ask_utc_offset": "🕒 请输入时区（例如 `+08:00`，跳过就用预设）",
     "missing_required": "⚠️ 缺少必填栏位",
@@ -537,11 +704,11 @@
     "edit_ask_issue_number": "📝 请输入新的 *小龙虾编号（Issue Number）*（跳过则自动建立）",
     "edit_ask_utc_offset": "🕒 请输入新的时区（例如 `+08:00`，跳过则保留目前设定）",
     "confirm_deploy_title": "确认部署 LINE Bot？",
-    "confirm_reply_msg": "- 预设回应：{value}",
+    "confirm_reply_msg": "\\- 预设回应：{value}",
     "none_label": "（无）",
-    "confirm_lobster": "- 小龙虾：{value}",
+    "confirm_lobster": "\\- 小龙虾：{value}",
     "auto_create_label": "自动建立",
-    "confirm_timezone": "- 时区：`{value}`",
+    "confirm_timezone": "\\- 时区：`{value}`",
     "error_bot_id_required": "⚠️ LINE Bot ID 为必填栏位，请输入",
     "error_bot_id_format": "⚠️ LINE Bot ID 格式不正确，应为 `@` 开头（例如 `@mybot`），请重新输入",
     "ask_channel_id": "📝 请输入 *LINE Bot Channel ID*（必填，纯数字）",
@@ -554,6 +721,176 @@
     "enable_webhook_instruction": "🔗 请到 LINE Developers Console 开启「Use webhook」：",
     "deploy_cancelled_message_callback": "⚠️ LINE Bot Worker *{name}* 部署已取消",
     "deploy_failed_message_callback": "❌ LINE Bot Worker *{name}* 部署失败，请查看 workflow run log",
-    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}"
+    "deploy_ended_message_callback": "ℹ️ LINE Bot Worker *{name}* 部署结束，结果：{result}",
+    "postInstallPrompt": "✅ 范本 *{name}* 已安装完成！\n\n🤖 要继续设定 LINE Bot 部署吗？",
+    "process_expired": "⚠️ 流程已过期"
+  },
+  "api": {
+    "rateLimit": {
+      "minutes": "已达 API 速率上限，约 {minutes} 分钟后重置",
+      "soon": "已达 API 速率上限，即将重置",
+      "bare": "已达 API 速率上限"
+    }
+  },
+  "aiPrompt": {
+    "parser": {
+      "systemPrompt": "你是 GitHub Actions workflow_dispatch 参数解析器。\n任务是根据 workflow input 定义与用户自然语言，输出可直接 dispatch 的 JSON。\n只能使用 workflow 已定义的 inputs 名称，不能捏造不存在的字段。\n若用户消息中出现 key=value 片段，且 key 恰好是 workflow 已定义的 input 名称，必须优先直接采用该值。\n对于 key=value 输入，不要翻译 key、不要改写 value、不要自行推断，除非值是空的。\n若同一字段同时出现在 key=value 与自然语言描述中，优先以 key=value 为准。\n若必填字段无法安全推断，请放入 missingRequired。\n若 workflow 有 default，且用户没有明确覆盖，可直接沿用 default。\n只输出单个 JSON 对象，格式如下：\n{\"inputs\":{\"input_name\":\"value\"},\"missingRequired\":[\"required_input\"]}",
+      "rule1": "若用户消息中出现 line_worker_name=foo 这类片段，请直接放入 inputs.line_worker_name = \"foo\"",
+      "rule2": "仅接受 workflow 已定义的 input 名称作为 key",
+      "paramDescription": "workflow 参数：{name}",
+      "inputsDescription": "根据用户消息推断出的 workflow_dispatch 参数",
+      "missingRequiredDescription": "仍然无法安全推断的必填 workflow 参数名称",
+      "noInputs": "- 这个 workflow 没有定义任何 workflow_dispatch inputs。"
+    }
+  },
+  "errors": {
+    "notAFile": "{name} 不是文件",
+    "getFileFailed": "取得 repo 档案 {path} 失败：{status}"
+  },
+  "media": {
+    "photo": "📷 照片",
+    "video": "🎬 影片",
+    "audio": "🎵 音讯",
+    "document": "📄 文件",
+    "voice": "🎙️ 语音",
+    "media": "📁 媒体"
+  },
+  "log": {
+    "newFlow": {
+      "readSuccess": "[Telegram new-flow] 读取流程状态成功",
+      "readFailed": "[Telegram new-flow] 读取流程状态失败",
+      "write": "[Telegram new-flow] 写入流程状态",
+      "clear": "[Telegram new-flow] 清除流程状态"
+    },
+    "workspace": {
+      "readIssueBranchFailed": "[workspace] 读取 issue 分支状态失败",
+      "readWorkflowFailed": "[workspace] 读取 workflow 状态失败"
+    },
+    "issueStatus": {
+      "readIssueFailed": "[issue-status] 读取 issue 失败",
+      "readScheduleFailed": "[issue-status] 读取排程失败",
+      "readTemplateMetaFailed": "[issue-status] 读取模板 metadata 失败",
+      "readBranchFileFailed": "[issue-status] 读取分支文件失败",
+      "readWorkflowRunsFailed": "[issue-status] 读取 workflow runs 失败",
+      "sendMessageFailed": "[{tag}] 传送 issue 状态消息失败",
+      "readLLMSettingsFailed": "[issue-status] 读取 LLM 设置失败"
+    },
+    "branch": {
+      "existsSkip": "分支 {branch} 已存在，略过建立",
+      "orphanCreated": "已建立 orphan 分支 {branch}（{sha}）",
+      "templateReset": "已重设分支 {branch} 的模板文件（{sha}）"
+    },
+    "sync": {
+      "workflowRenamed": "已将 {file} 的 workflow name 改为 issue #{issue}",
+      "workflowNameNotFound": "{file} 未找到小龙虾任务 workflow name 样式，workflow name 维持原样",
+      "alreadyInSync": "{file} 已存在於 {repo} 且内容相同，略过同步",
+      "done": "已在 {repo} 同步 {file}"
+    },
+    "editNew": {
+      "rebuildBranchReadTemplateFailed": "[/edit] 重建 issue 分支时读取模板失败：{error}",
+      "workflowSyncFailed": "[/edit] issue workflow 同步失败",
+      "preparingLobsterData": "[/new] 准备送出小龙虾资料",
+      "setWorkflowStateFailed": "[/edit] 设定 workflow 状态失败：{error}",
+      "issueUpdateOk": "[/edit] GitHub Issue 更新成功",
+      "templateResetOk": "[/edit] 模板重设成功",
+      "templateResetFailed": "[/edit] 模板重设失败：{error}",
+      "issueCreateOk": "[/new] GitHub Issue 建立成功",
+      "issueWriteFailed": "[/new] GitHub Issue 写入失败：{error}",
+      "sendStatusCardFailed": "[/new] 传送状态卡片失败",
+      "readTemplateListFailed": "[/{command}] 读取模板清单失败",
+      "finishNewFlowFailed": "[/{command}] finishNewFlow 失败：{error}",
+      "unexpectedTextInputStep": "[/{command}] 未预期的文字输入步骤",
+      "finishNewFlowReservedFieldFailed": "[/{command}] finishNewFlow 保留字段失败",
+      "revalidateTemplateListFailed": "[/{command}] 重新验证模板清单失败",
+      "finishNewFlowTemplateChoiceFailed": "[/{command}] finishNewFlow 模板选择失败",
+      "finishNewFlowWorkflowChoiceFailed": "[/{command}] finishNewFlow workflow 选择失败",
+      "finishNewFlowEnvSkipFailed": "[/{command}] finishNewFlow env skip 失败",
+      "readIssueFailed": "[/{command}] 读取 issue 失败",
+      "enteringNameStep": "[/{command}] 进入等待名称阶段",
+      "commandReceivedEnteringName": "[/{command}] 收到 /{command} 指令，进入等待名称阶段"
+    },
+    "command": {
+      "executionFailed": "[/{command}] 执行失败：{error}",
+      "skillsListFailed": "[/skills] listRemoteSkills 失败：{error}",
+      "templatesListFailed": "[/templates] listRemoteTemplates 失败：{error}"
+    },
+    "workflow": {
+      "dispatchUsingAI": "[Workflow dispatch] 使用 Workers AI 推导 workflow inputs",
+      "dispatchAIFailedRetry": "[Workflow dispatch] Workers AI 推导 workflow inputs 失败，准备重试",
+      "clearDispatchFailed": "[/{command}] dispatchWorkflow 失败",
+      "enableFailed": "[/{command}] 启用 workflow 失败：{error}",
+      "disableFailed": "[/{command}] 停用 workflow 失败：{error}",
+      "queryFailed": "[/{command}] 查询 workflow 失败：{error}",
+      "resolveCommandFailed": "[workflow] resolveWorkflowCommand 失败",
+      "inferInputsFailed": "[workflow] inferWorkflowDispatchInputs 失败：{error}",
+      "autoupdateDispatchFailed": "[workflow] autoupdate notification dispatch 失败",
+      "dispatchFailed": "[workflow] dispatchWorkflow 失败：{error}"
+    },
+    "access": {
+      "notFullyConfigured": "[AccessGuard] TELEGRAM_ALLOWED_FROM_ID 与 TELEGRAM_ALLOWED_CHAT_ID 必须同时设定，拒绝所有请求。"
+    },
+    "schedule": {
+      "validateAIFailed": "[排程] 验证 AI 排程结果失败",
+      "missingAIBinding": "[排程] 缺少 AI 绑定，无法解析自然语言排程时间",
+      "aiParseFailedRetry": "[排程] AI 时间解析失败 (attempt {attempt}/{total})",
+      "aiParseFinalFailed": "[排程] AI 时间解析最终失败",
+      "createCommentFailed": "[排程] 建立 issue comment 失败：{error}"
+    },
+    "scheduleFlow": {
+      "handlingInput": "[排程 flow] handling input",
+      "unknownStep": "[排程 flow] unknown step"
+    },
+    "templateReset": {
+      "readListFailed": "[template_reset] 读取模板清单失败",
+      "resetFailed": "[template_reset] 重置失败：{error}"
+    },
+    "media": {
+      "deleteTempFailed": "删除暂存媒体 {key} 失败：{error}"
+    },
+    "relay": {
+      "tooLongPlainText": "Issue #{issue} 的 Telegram 讯息过长，改用纯文字转送",
+      "tooLongTruncate": "Issue #{issue} 的 Telegram 讯息过长，将截断原文后重新转换 MarkdownV2",
+      "progressTooLongTruncate": "Telegram progress relay 讯息过长，将截断原文后重新转换 MarkdownV2",
+      "payloadMissingFields": "issue_comment payload 缺少 issue 或 comment 栏位",
+      "skipLineSource": "略过 Issue #{issue}：Line 来源留言不转送 Telegram",
+      "skipScheduleSetup": "略过 Issue #{issue}：排程设定流程留言不转送 Telegram",
+      "skipMissingMeta": "略过 Issue #{issue}：comment 缺少 telegram metadata，不转送 Telegram",
+      "processingNewComment": "正在处理 Issue #{issue} 的新留言，issue telegram-meta={issueMeta} request telegram-meta={requestMeta}",
+      "skipNoChatId": "略过 Issue #{issue}：没有可用的 chat_id",
+      "imageRelayFailedPlainText": "Issue #{issue} 的 Telegram 图片转送失败，改用纯文字转送：{error}",
+      "formatParseFailedResend": "Issue #{issue} 的 Telegram 格式解析失败，改用纯文字重送：{error}"
+    },
+    "codingAgent": {
+      "readWorkflowListFailed": "[coding-agent] 读取 issue workflow 清单失败，改由 dispatch 流程处理",
+      "readBranchListFailed": "[coding-agent] 读取 issue branch 清单失败，改由派工流程处理",
+      "skipNoBranch": "[coding-agent] 略过 Issue #{issue} 派工：issue 分支不存在",
+      "skipNoWorkflow": "[coding-agent] 略过 Issue #{issue} 派工：issue workflow 不存在",
+      "payloadMissingSkip": "issue_comment.{action} payload 缺少 issue 或 comment 栏位，略过小龙虾派工",
+      "skipSystemComment": "略过 Issue #{issue} 的系统留言派工",
+      "skipScheduleRecord": "略过 Issue #{issue} 的排程设定纪录留言派工",
+      "skipMissingMeta": "略过 Issue #{issue} 的小龙虾派工：comment 缺少 telegram metadata",
+      "skipMediaNotFinalized": "略过 Issue #{issue} 的小龙虾派工：媒体留言尚未 finalized",
+      "skipEditedNotFinalized": "略过 Issue #{issue} 的小龙虾派工：edited 事件不是媒体 finalized transition",
+      "skipEmptyUserMessage": "略过 Issue #{issue} 的小龙虾派工：使用者讯息为空",
+      "skipOther": "略过 Issue #{issue} 的小龙虾派工：{reason}",
+      "reasonMissingBranchOrWorkflow": "缺少 issue 分支或 workflow，改为记事本模式",
+      "reasonWorkflowDisabled": "workflow disabled，改为记事本模式"
+    },
+    "autoInit": {
+      "firstLobsterCreated": "[auto-init] 已自动建立第一只小龙虾",
+      "variableSetFalse": "[auto-init] 已将 INIT_GITHUB_CLAW repo variable 设为 false",
+      "variableUpdateFailed": "[auto-init] 无法更新 INIT_GITHUB_CLAW repo variable：{error}",
+      "alreadyInitialized": "[auto-init] 已执行过初始化，跳过",
+      "createFailed": "[auto-init] 自动建立小龙虾失败：{error}"
+    },
+    "webhook": {
+      "relayToTelegramFailed": "转送 Issue 留言到 Telegram 失败：{error}",
+      "dispatchToCodingAgentFailed": "派送 Issue 留言到 coding-agent 失败：{error}",
+      "relayEditedToTelegramFailed": "转送已编辑 Issue 留言到 Telegram 失败：{error}",
+      "dispatchEditedToCodingAgentFailed": "派送已编辑 Issue 留言到 coding-agent 失败：{error}",
+      "installWelcomeFailed": "GitHub App 安装完成欢迎讯息发送失败：{error}",
+      "workflowRunFailed": "处理 workflow_run.{event} 失败：{error}",
+      "handleFailed": "GitHub webhook 处理失败：{error}"
+    }
   }
 }
