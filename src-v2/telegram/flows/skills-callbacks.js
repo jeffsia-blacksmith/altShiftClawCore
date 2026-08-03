@@ -138,10 +138,10 @@ export function registerSkillCallbacks(composer) {
     const target = targetLabel(state, lang);
     if ((state.installedSkills ?? []).includes(skillName)) {
       await setSkillState(store, chatId, { ...state, step: "preview_installed", skillName });
-      await ctx.editMessageText(t("skills.installed_preview", { skillName: name, description: desc, target }, lang), { reply_markup: installedPreviewKeyboard(skillName, lang) });
+      await ctx.editMessageText(t("skills.installed_preview", { skillName: name, description: desc, target }, lang), { parse_mode: "MarkdownV2", reply_markup: installedPreviewKeyboard(skillName, lang) });
     } else {
       await setSkillState(store, chatId, { ...state, step: "preview", skillName });
-      await ctx.editMessageText(t("skills.preview", { skillName: name, description: desc, target }, lang), { reply_markup: previewKeyboard(skillName, lang) });
+      await ctx.editMessageText(t("skills.preview", { skillName: name, description: desc, target }, lang), { parse_mode: "MarkdownV2", reply_markup: previewKeyboard(skillName, lang) });
     }
   });
 
@@ -163,7 +163,7 @@ export function registerSkillCallbacks(composer) {
     } catch {}
     if (alreadyInstalled) {
       await setSkillState(store, chatId, { ...state, step: "confirm_overwrite", skillName });
-      await ctx.editMessageText(t("skills.confirm_overwrite", { skillName, target: targetLabel(state, lang) }, lang), { reply_markup: overwriteKeyboard(skillName, lang) });
+      await ctx.editMessageText(t("skills.confirm_overwrite", { skillName, target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: overwriteKeyboard(skillName, lang) });
       return;
     }
     // env check
@@ -181,7 +181,7 @@ export function registerSkillCallbacks(composer) {
     const skills = await fetchSkillsCatalog(config).catch(() => []);
     await ctx.answerCallbackQuery();
     const installedSet = new Set(state.installedSkills ?? []);
-    await ctx.editMessageText(t("skills.select_install", { target: targetLabel(state, lang) }, lang), { reply_markup: skillsListKeyboard(skills, 0, installedSet, lang) });
+    await ctx.editMessageText(t("skills.select_install", { target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: skillsListKeyboard(skills, 0, installedSet, lang) });
   });
 
   // skills_update_from_list:<name>
@@ -206,7 +206,7 @@ export function registerSkillCallbacks(composer) {
     const skillName = ctx.callbackQuery.data.slice("skills_remove_from_list:".length);
     await setSkillState(store, chatId, { ...state, step: "remove_confirm_from_list", skillName });
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(t("skills.remove_confirm", { target: targetLabel(state, lang), name: skillName }, lang), { reply_markup: removeConfirmKeyboard(skillName, lang) });
+    await ctx.editMessageText(t("skills.remove_confirm", { target: targetLabel(state, lang), name: skillName }, lang), { parse_mode: "MarkdownV2", reply_markup: removeConfirmKeyboard(skillName, lang) });
   });
 
   // skills_remove_confirm_from_list:<name>
@@ -227,14 +227,14 @@ export function registerSkillCallbacks(composer) {
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         const { d1, config } = ctx.services;
-        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "remove-skill", workflowPath: ".github/workflows/remove-skill.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId, sourceType: "skill_remove" });
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "remove-skill", workflowPath: ".github/workflows/remove-skill.yml", title: ctx.callbackQuery?.message?.text ?? "", channel: "telegram", messageId: ctx.callbackQuery?.message?.message_id ?? null, sourceId: skillName, sourceType: "skill_remove", chatId, payloadJson: JSON.stringify({ issue_number: state.issueNumber }) });
       } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) {
       logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) });
     }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.removing", {}, lang));
-    await ctx.editMessageText(t("skills.removing_progress", { name: skillName, target: targetLabel(state, lang) }, lang), { reply_markup: { inline_keyboard: [] } });
+    await ctx.editMessageText(t("skills.removing_progress", { name: skillName, target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
   });
 
   // skills_remove_back:<name>
@@ -250,7 +250,7 @@ export function registerSkillCallbacks(composer) {
     const meta = await fetchSkillMeta(config, skillName).catch(() => null);
     const name = meta?.name || skillName;
     const desc = meta?.description ? `\n\n${meta.description}` : "";
-    await ctx.editMessageText(t("skills.installed_preview", { skillName: name, description: desc, target: targetLabel(state, lang) }, lang), { reply_markup: installedPreviewKeyboard(skillName, lang) });
+    await ctx.editMessageText(t("skills.installed_preview", { skillName: name, description: desc, target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: installedPreviewKeyboard(skillName, lang) });
   });
 
   // skills_existing_secret:reuse|modify
@@ -296,11 +296,14 @@ export function registerSkillCallbacks(composer) {
     const state = await getSkillState(store, chatId);
     if (!state) { await ctx.answerCallbackQuery(t("skills.process_expired", {}, lang)); return; }
     const skillName = ctx.callbackQuery.data.slice("skills_confirm:".length);
-    // 写入 collected secrets
+    // 写入 collected secrets（对齐旧 bundle L15100: 空/缺值 → throw → 安装中止）
     for (const [name, val] of Object.entries(state.collectedEnvs ?? {})) {
       const upperName = name.trim().toUpperCase();
       const trimmedVal = val.trim();
-      if (!upperName || !trimmedVal) continue;
+      if (!upperName || !trimmedVal) {
+        await ctx.answerCallbackQuery(t("skills.secret_value_required", { name }, lang));
+        return;
+      }
       try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     }
     const requestId = crypto.randomUUID();
@@ -309,16 +312,22 @@ export function registerSkillCallbacks(composer) {
         owner, repo, workflow_id: "skills.yml", ref: "main",
         inputs: { skill_name: skillName, issue_number: String(state.issueNumber), request_id: requestId },
       });
-      // D1 workflow notification record（对齐旧 bundle Gt）
+      // D1 workflow notification record（对齐旧 bundle Gt — 含 title/channel/messageId/payloadJson）
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         const { d1, config } = ctx.services;
-        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "skills", workflowPath: ".github/workflows/skills.yml", sourceId: skillName, issueNumber: state.issueNumber, chatId, sourceType: "skill_install" });
+        const payloadJson = JSON.stringify({ issue_number: state.issueNumber });
+        await createWorkflowNotification(d1, {
+          requestId, repo: config.github.repoFullName, workflowName: "skills",
+          workflowPath: ".github/workflows/skills.yml", title: ctx.callbackQuery?.message?.text ?? "",
+          channel: "telegram", chatId, messageId: ctx.callbackQuery?.message?.message_id ?? null,
+          sourceId: skillName, sourceType: "skill_install", payloadJson,
+        });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.installing", {}, lang));
-    await ctx.editMessageText(t("skills.installing_progress", { name: skillName, target: targetLabel(state, lang) }, lang), { reply_markup: { inline_keyboard: [] } });
+    await ctx.editMessageText(t("skills.installing_progress", { name: skillName, target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
   });
 
   // skills_cancel:0
@@ -328,7 +337,7 @@ export function registerSkillCallbacks(composer) {
     const lang = ctx.language ?? glang();
     if (chatId) await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("core.cancelled", {}, lang));
-    try { await ctx.editMessageText(t("skills.install_cancelled", {}, lang), { reply_markup: { inline_keyboard: [] } }); } catch {}
+    try { await ctx.editMessageText(t("skills.install_cancelled", {}, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } }); } catch {}
   });
 
   // skills_page:<n>
@@ -342,7 +351,7 @@ export function registerSkillCallbacks(composer) {
     const skills = await fetchSkillsCatalog(config).catch(() => []);
     await ctx.answerCallbackQuery();
     const installedSet = new Set(state.installedSkills ?? []);
-    await ctx.editMessageText(t("skills.select_install", { target: targetLabel(state, lang) }, lang), { reply_markup: skillsListKeyboard(skills, page, installedSet, lang) });
+    await ctx.editMessageText(t("skills.select_install", { target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: skillsListKeyboard(skills, page, installedSet, lang) });
   });
 }
 
@@ -364,7 +373,7 @@ async function enterEnvCheck(ctx, skillName, state, lang) {
   if (existing.length > 0) {
     await setSkillState(store, chatId, { ...state, step: "confirm_existing_secret", skillName, requiredEnvs: missing, existingRequiredEnvs: existing, currentEnvIndex: 0, collectedEnvs: {} });
     const list = existing.map((e) => `- *${e}*`).join("\n");
-    await ctx.editMessageText(t("skills.secret_exists", { skillName, existingSecrets: list }, lang), { reply_markup: existingSecretKeyboard(lang) });
+    await ctx.editMessageText(t("skills.secret_exists", { skillName, existingSecrets: list }, lang), { parse_mode: "MarkdownV2", reply_markup: existingSecretKeyboard(lang) });
   } else if (missing.length > 0) {
     await startEnvCollection(ctx, missing, { ...state, skillName }, lang);
   } else {
@@ -377,7 +386,7 @@ async function startEnvCollection(ctx, envs, state, lang) {
   const { store } = ctx.services;
   const chatId = ctx.chat?.id;
   await setSkillState(store, chatId, { ...state, step: "awaiting_env", requiredEnvs: envs, currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-  await ctx.editMessageText(t("skills.need_envs", { skillName: state.skillName, envName: envs[0], currentIndex: 1, totalLength: envs.length }, lang), { reply_markup: envCancelKeyboard(lang) });
+  await ctx.editMessageText(t("skills.need_envs", { skillName: state.skillName, envName: envs[0], currentIndex: 1, totalLength: envs.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
 }
 
 // goToConfirmInstall — Tf 等价
@@ -385,7 +394,7 @@ async function goToConfirmInstall(ctx, state, lang) {
   const { store } = ctx.services;
   const chatId = ctx.chat?.id;
   await setSkillState(store, chatId, { ...state, step: "confirm_install" });
-  await ctx.editMessageText(t("skills.confirm_install", { skillName: state.skillName, target: targetLabel(state, lang) }, lang), { reply_markup: confirmKeyboard(state.skillName, lang) });
+  await ctx.editMessageText(t("skills.confirm_install", { skillName: state.skillName, target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(state.skillName, lang) });
 }
 
 // handleSkillEnvText — Pm 等价，message:text 中 awaiting_env 步骤
@@ -404,7 +413,7 @@ export async function handleSkillEnvText(ctx) {
   const collected = { ...(state.collectedEnvs ?? {}) };
   const trimmed = text.trim();
   if (!trimmed) {
-    await ctx.reply(t("skills.pleaseEnterEnvValue", { envName }, lang), { reply_markup: envCancelKeyboard(lang) });
+    await ctx.reply(t("skills.pleaseEnterEnvValue", { envName }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
     return true;
   }
   collected[envName] = trimmed;
@@ -415,20 +424,20 @@ export async function handleSkillEnvText(ctx) {
     await setSkillState(store, chatId, { ...state, currentEnvIndex: next, collectedEnvs: collected });
     const replyText = t("skills.enterEnvValue", { envName: envs[next], current: next + 1, total: envs.length }, lang);
     if (state.promptMessageId) {
-      try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); }
-      catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }
+      try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); }
+      catch { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); }
     } else {
-      await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) });
+      await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
     }
   } else {
     // 全部收集完 → confirm_install
     await setSkillState(store, chatId, { ...state, step: "confirm_install", collectedEnvs: collected });
     const replyText = t("skills.confirm_install", { skillName: state.skillName, target: targetLabel(state, lang) }, lang);
     if (state.promptMessageId) {
-      try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: confirmKeyboard(state.skillName, lang) }); }
-      catch { await ctx.reply(replyText, { reply_markup: confirmKeyboard(state.skillName, lang) }); }
+      try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(state.skillName, lang) }); }
+      catch { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(state.skillName, lang) }); }
     } else {
-      await ctx.reply(replyText, { reply_markup: confirmKeyboard(state.skillName, lang) });
+      await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(state.skillName, lang) });
     }
   }
   return true;

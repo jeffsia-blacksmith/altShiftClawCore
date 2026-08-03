@@ -1,11 +1,10 @@
 // http/telegram-webhook.js — Telegram webhook secret + path 验证
 // 行为对齐旧 bundle ou（L17932-17955）。
-// R1 guardrail 契约：
+// 契约：
 //   path != TELEGRAM_WEBHOOK_PATH → 落空（next() → Hono 404）
 //   x-telegram-bot-api-secret-token != secret → 401 {ok:false, error:"Invalid secret"}
-//   valid secret → 200 {ok:true}，update 在 waitUntil 内由 bot 处理（R3 接入）
-//
-// R1 阶段：secret + path 校验完成；bot.handleUpdate 在 R3 接入，R1 暂回 200 不处理 update。
+//   valid secret → 200 {ok:true}，update 在 waitUntil 内由 bot.handleUpdate 处理。
+//   bot 未注入（防御性）→ 仍消费 body，回 200。
 
 export function createTelegramWebhookHandler({ config, services, bot }) {
   return async (c, next) => {
@@ -25,7 +24,7 @@ export function createTelegramWebhookHandler({ config, services, bot }) {
         bot.handleUpdate(update).catch((e) => console.error("[Bot Error]", e)),
       );
     } else {
-      // R1 占位：消费 body 避免 Hono 报错，但不处理 update
+      // 防御性回退：bot 未注入时仍消费 body，回 200
       await c.req.json();
     }
     return c.json({ ok: true });

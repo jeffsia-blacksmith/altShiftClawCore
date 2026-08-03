@@ -10,7 +10,8 @@
     "check": "node build.mjs --check",
     "check:v2": "node build-v2.mjs --check",
     "test:guardrails": "node test/guardrails.mjs",
-    "test:guardrails-v2": "node test/guardrails-v2.mjs"
+    "test:guardrails-v2": "node test/guardrails-v2.mjs",
+    "test:shadow-diff": "node test/shadow-diff.mjs"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"

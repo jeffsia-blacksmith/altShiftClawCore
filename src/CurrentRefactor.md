@@ -235,6 +235,38 @@ bundle 大量用 `t` 作普通局部变数（message text、params、conclusion�
 
 ---
 
+## 9b. Phase S / T / U / V — Shadow-Diff + Active-Path + Full-Chain + Full-Relay 验证状态
+
+> 详细审计记录见 `src/AUDIT-DEEP.md`（§8 Phase S / §10 Phase T / §10.6 Phase U / §10.7 Phase V）。
+
+| 阶段 | 方法 | 结果 |
+|------|------|------|
+| **Phase S** | `test/shadow-diff.mjs` 空态/错误路径 side-by-side（28 场景） | 25 identical / 3 allowed / 0 regressions |
+| **Phase T** | 4 个 glm-5.2 探针审计活跃路径（/llm dispatch、album flush、auto-init）+ 修复 | 全部 FIXED；shadow-diff + guardrails 全绿 |
+| **Phase U** | 4 个端到端 full-chain 场景（单图/相册×2/auto-init）+ 单条媒体对齐 + GraphQL 回归 | 27 identical / 5 allowed / 0 regressions（32 场景） |
+| **Phase V** | 完整 relay 子系统重写（per-comment KV、artifact binary download、parse-fallback、inline keyboard、reply threading、MarkdownV2 formatter、skip-logic 对齐旧 Zk） | shadow-diff 27/5/0；guardrails 40/0；build 688KB |
+
+**当前护栏汇总：** shadow-diff 32 场景（27 identical / 5 allowed / 0 regressions）；guardrails-v2 40 passed / 0 failed。
+
+**5 个允许差异（全部有据、有文档 §6/§10）：**
+1. `/schedules` ×2 — v2 跳过冗余 `GET /actions/workflows`（回复逐字节一致）。
+2. `/llm` no-active — v2 跳过冗余 `GET /actions/workflows`（回复一致）。
+3. 单图 no-branch — 旧 bundle §6.2 bug（`[undefined]` 标签，i18n 遮蔽）→ v2 `[📷 Photo]`（v2 正确）。
+4. auto-init — `new Date().toISOString()` 时间戳非确定（串行执行，非行为差异）。
+
+**Phase V 关键修复（relay 子系统完整实现）：**
+- **`src-v2/telegram/relay.js`** — 全新 ~520 行模块，100% 对齐旧 bundle `pu`/`eE`/`tE`/`rE`（L19031-19030）+ 所有 helper。
+- **per-comment KV tracking**: `comment-relay:{commentId}` 存 relayed message ID；`telegram-progress:comment:{commentId}` + `telegram-progress:request:{chatId}:{msgId}` 存 relay state。支持 edited comment → edit-in-place（editMessageText/editMessageCaption）。
+- **artifact binary download**: `detectPhotoCandidate` 检测 artifacts-meta images 或 repo file paths；`downloadArtifact` 从 GitHub API fetch raw blob → `InputFile` binary 上传到 Telegram。>10MB → 文本 + 链接 fallback。
+- **MarkdownV2 parse-failure retry**: catch "can't parse entities" → `buildFullRelayText` → retry sendMessage/editMessageText with plain text。
+- **inline keyboard**: `buildRelayKeyboard` — Open GitHub + Skill Docs / Open Workdir 按钮（对齐旧 `Zf`）。
+- **reply threading**: `reply_parameters` with request msg_id（对齐旧 `m`）。
+- **`escapeMdV2Formatted`** (markdown.js) — 对齐旧 `or()` L4974：保留 code blocks、inline code、links、bold、strikethrough、headings、list markers；仅转义其余 MarkdownV2 特殊字符。v2 旧 `escapeMarkdownV2`（basic char escape）保留给 field-level escaping。
+- **`shouldSkipRelay` 对齐旧 `Zk`**: 检查 COMMENT body meta（telegram-meta/brain-result/tool-run），非 ISSUE body。人类无 meta 评论 → 跳过 relay（仅 coding-agent 系统评论被 relay）。
+- **guardrails 测试更新**: issue_comment relay 测试改用 brain-result meta comment + Bot sender（模拟 coding-agent 输出）。
+
+---
+
 ## 9. 待办与下一步
 
 - **i18n 主线（阶段 B）：✅ 全部完成（Phase 2a-2e）。** 当前 bundle 是完全 i18n 化、行为不变的稳定基线。可作 from-scratch 重写的行为对照基准。

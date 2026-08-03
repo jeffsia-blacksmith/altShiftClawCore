@@ -110,7 +110,7 @@ let pass = 0, fail = 0;
 async function hit(label, url, opts, check) {
   try {
     const req = new Request(`https://test.dev${url}`, opts);
-    const res = await handler(req, MOCK_ENV, { waitUntil: () => {} });
+    const res = await handler(req, MOCK_ENV, { waitUntil: () => { } });
     await check(res);
     console.log(`  ✓ ${label}`);
     pass++;
@@ -364,11 +364,13 @@ console.log("guardrails-v2: GitHub webhook event dispatch");
   const env = baseEnv();
   // issue body 含 telegram-meta chat_id=111（对齐护栏 guardedEnv 的 chat id）
   const issueBody = `<!-- telegram-meta: {"chat_id":111,"msg_id":50} -->\n\n\`\`\`json\n{"name":"Test","description":"d"}\n\`\`\``;
+  // comment body 含 brain-result meta（coding-agent output）— Zk 不跳过
+  const commentBody = `Hello from GitHub\n\n<!-- githubclaw-brain-result: {"source":"githubclaw-worker-brain"} -->`;
   const payload = JSON.stringify({
     action: "created",
     issue: { number: 7, title: "Test issue", body: issueBody, html_url: "https://github.com/test-owner/test-repo/issues/7" },
-    comment: { id: 99, body: "Hello from GitHub", html_url: "https://github.com/test-owner/test-repo/issues/7#issuecomment-99" },
-    sender: { login: "human-user", type: "User" },
+    comment: { id: 99, body: commentBody, html_url: "https://github.com/test-owner/test-repo/issues/7#issuecomment-99" },
+    sender: { login: "claw-bot", type: "Bot" },
   });
   const sig = "sha256=" + createHmac("sha256", env.GITHUB_WEBHOOK_SECRET).update(payload).digest("hex");
   const tgReplies = [];
@@ -700,8 +702,11 @@ console.log("guardrails-v2: Media relay + album queue");
       throw new Error(`album_queue not flushed, size=${env.SCHEDULES_DB.albumQueueSize()}`);
     // 应有且仅有 1 条 createComment（抢答的 handler 发的）
     if (comments.length !== 1) throw new Error(`expected 1 createComment, got ${comments.length}`);
-    if (!comments[0].includes("×2")) throw new Error(`album comment missing count: ${comments[0]}`);
-    console.log("  ✓ photo album (2 photos, media_group_id) → flush + 1 createComment ×2");
+    // 无分支 → 对齐旧 bundle Vs：telegram-meta header + messageFromSource + --- + per-media listing
+    if (!comments[0].includes("telegram-meta")) throw new Error(`album comment missing telegram-meta header: ${comments[0]}`);
+    if (!comments[0].includes("---")) throw new Error(`album comment missing separator: ${comments[0]}`);
+    if ((comments[0].match(/📷 Photo/g) || []).length !== 2) throw new Error(`album comment missing per-photo listing: ${comments[0]}`);
+    console.log("  ✓ photo album (2 photos, media_group_id) → flush + 1 createComment (parity Vs body)");
     pass++;
   } catch (e) {
     console.error(`  ✗ photo album: ${e.message}`);
@@ -725,6 +730,15 @@ console.log("guardrails-v2: Auto-init (installation.created + initGitHubClaw)");
     tg.getMe(),
     tg.sendMessage(tgReplies),
     gh.createIssue(1),
+    gh.graphql({
+      "default": {
+        ".github/workflows/issue-N.yml": "name: 执行小龙虾任务 #0\non: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n",
+        "prompt.md": "You are a helpful assistant.\n",
+      },
+    }),
+    gh.gitBatch(),
+    gh.createOrUpdateFile([]),
+    gh.repoVariable(),
   ]);
   const ctx = capturingCtx();
   try {
@@ -918,7 +932,7 @@ await (async () => {
     if (missing.length) throw new Error(`zh missing keys: ${missing.slice(0, 5).join(", ")}`);
     const extra = zhKeys.filter((k) => !enKeys.includes(k));
     if (extra.length) throw new Error(`zh extra keys: ${extra.slice(0, 5).join(", ")}`);
-    if (enKeys.length !== 813) throw new Error(`expected 813 leaf keys, got ${enKeys.length}`);
+    if (enKeys.length !== 814) throw new Error(`expected 814 leaf keys, got ${enKeys.length}`);
     console.log(`  ✓ i18n parity ${enKeys.length}×2 (en=zh, zero mismatch)`);
     pass++;
   } catch (e) {

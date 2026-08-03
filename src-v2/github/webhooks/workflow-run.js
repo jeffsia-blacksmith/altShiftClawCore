@@ -73,6 +73,31 @@ function extractRequestId(title) {
   const m = (title ?? "").match(/\|\s*req:([A-Za-z0-9-]+)\s*$/i);
   return m ? m[1] : null;
 }
+// vE — 从 payload_json 解析 issue_number（对齐 L19525-19535）
+function parseIssueNumberFromPayload(payloadJson) {
+  if (!payloadJson) return null;
+  try {
+    const parsed = JSON.parse(payloadJson);
+    const n = Number.parseInt(String(parsed.issue_number ?? ""), 10);
+    return Number.isInteger(n) && n > 0 ? n : null;
+  } catch { return null; }
+}
+// ME — 从 payload_json 解析 line_bot_channel_id（对齐 L19829-19837）
+function parseLineChannelId(payloadJson) {
+  if (!payloadJson) return null;
+  try {
+    const parsed = JSON.parse(payloadJson);
+    return String(parsed.line_bot_channel_id ?? "").trim() || null;
+  } catch { return null; }
+}
+// IE — skills display_title 清洗（对齐 L19531-19540）
+function cleanSkillsName(displayTitle, sourceId) {
+  return displayTitle?.replace(/\|\s*req:[A-Za-z0-9-]+\s*$/i, "").replace(/^技能(?:安装|移除):\s*/u, "").trim() || sourceId || "skill";
+}
+// AE — templates display_title 清洗（对齐 L19705-19713）
+function cleanTemplateName(displayTitle, sourceId) {
+  return displayTitle?.replace(/\|\s*req:[A-Za-z0-9-]+\s*$/i, "").replace(/^(?:📚\s*)?(?:范本同步|范本安装):\s*/u, "").trim() || sourceId || "template";
+}
 
 // 发 Telegram 通知
 async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefined) {
@@ -101,39 +126,47 @@ async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefin
   }
 }
 
-// 各完成通知文本 builder
-function autoupdateNotifyText(conclusion, lang) {
+// 各完成通知文本 builder（对齐 zm/CE/xE/OE — 含 status fallback "unknown"）
+function autoupdateNotifyText(conclusion, status, lang) {
   if (conclusion === "success") return t("core.coreUpdateSuccess", {}, lang);
   if (conclusion === "cancelled") return t("core.coreUpdateCancelled", {}, lang);
   if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("core.coreUpdateFailed", {}, lang);
-  return t("core.coreUpdateEnded", { result: escapeMdV2(conclusion) }, lang);
+  return t("core.coreUpdateEnded", { result: escapeMdV2(conclusion || status || "unknown") }, lang);
 }
-function skillsNotifyText(sourceType, conclusion, name, target, lang) {
+function skillsNotifyText(sourceType, conclusion, status, name, target, lang) {
   const action = sourceType === "skill_remove" ? t("skills.action_remove", {}, lang)
     : sourceType === "skill_update" ? t("skills.action_update", {}, lang)
     : t("skills.action_install", {}, lang);
   const eName = escapeMdV2(name);
-  const eTarget = escapeMdV2(target);
+  const eTarget = target; // target 已含 escapeMarkdownV2（🦞 title \#num）
   const eAction = escapeMdV2(action);
   if (conclusion === "success" && sourceType === "skill_remove") return t("skills.removed_message", { name: eName, target: eTarget }, lang);
   if (conclusion === "success") return t("skills.installed_message", { name: eName, action: eAction, target: eTarget }, lang);
   if (conclusion === "cancelled") return t("skills.cancelled_message", { name: eName, action: eAction }, lang);
   if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("skills.failed_message", { name: eName, action: eAction }, lang);
-  return t("skills.ended_message", { name: eName, action: eAction, result: escapeMdV2(conclusion) }, lang);
+  return t("skills.ended_message", { name: eName, action: eAction, result: escapeMdV2(conclusion || status || "unknown") }, lang);
 }
-function templatesNotifyText(conclusion, name, lang) {
+function templatesNotifyText(conclusion, status, name, lang) {
   const eName = escapeMdV2(name);
   if (conclusion === "success") return t("templates.installed_message", { name: eName }, lang);
   if (conclusion === "cancelled") return t("templates.cancelled_message", { name: eName }, lang);
   if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("templates.failed_message", { name: eName }, lang);
-  return t("templates.ended_message", { name: eName, result: escapeMdV2(conclusion) }, lang);
+  return t("templates.ended_message", { name: eName, result: escapeMdV2(conclusion || status || "unknown") }, lang);
 }
-function lineBotNotifyText(conclusion, name, channelId, lang) {
+// OE — lineBot 通知文本（对齐 L19843-19868，含 success webhook instruction）
+function lineBotNotifyText(conclusion, status, name, channelId, lang) {
   const eName = escapeMdV2(name);
-  if (conclusion === "success") return t("line.deployed_message", { name: eName }, lang);
+  if (conclusion === "success") {
+    const lines = [t("line.deployed_message", { name: eName }, lang)];
+    if (channelId) {
+      const url = `https://developers.line.biz/console/channel/${channelId}/messaging-api`;
+      lines.push("", t("line.enable_webhook_instruction", {}, lang), escapeMdV2(url));
+    }
+    return lines.join("\n");
+  }
   if (conclusion === "cancelled") return t("line.deploy_cancelled_message_callback", { name: eName }, lang);
   if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("line.deploy_failed_message_callback", { name: eName }, lang);
-  return t("line.deploy_ended_message_callback", { name: eName, result: escapeMdV2(conclusion) }, lang);
+  return t("line.deploy_ended_message_callback", { name: eName, result: escapeMdV2(conclusion || status || "unknown") }, lang);
 }
 
 export function registerWorkflowRunHandlers(webhooks, env) {
@@ -180,55 +213,78 @@ export function registerWorkflowRunHandlers(webhooks, env) {
 
       if (event !== "completed") return;
 
-      // 完成通知
+      // 完成通知（对齐 SE/RE/PE/GE — 各 path 独立构建通知文本）
       const sourceType = notif.source_type;
       const sourceId = notif.source_id ?? "";
-      const name = sourceId || "workflow";
-      let target = `#${notif.issue_number ?? ""}`.replace("#", "#");
-      if (notif.chat_id && notif.issue_number) {
-        // 简化 target
-        target = `#${notif.issue_number}`;
-      }
+      const payloadJson = notif.payload_json ?? null;
+      const runStatus = r.status; // for default conclusion fallback (zm/CE/xE/OE)
       let text;
+      let replyMarkup = undefined;
+
       if (path === WORKFLOW_PATHS.autoupdate) {
-        text = autoupdateNotifyText(conclusion, lang);
+        text = autoupdateNotifyText(conclusion, runStatus, lang);
       } else if (path === WORKFLOW_PATHS.skills || path === WORKFLOW_PATHS.removeSkill) {
-        text = skillsNotifyText(sourceType, conclusion, name, target, lang);
+        // RE — skills notify（对齐 L19517-19570）
+        const name = cleanSkillsName(displayTitle, sourceId);
+        const issueNum = parseIssueNumberFromPayload(payloadJson);
+        let issueTitle = null;
+        if (issueNum) {
+          try {
+            const { data: iss } = await env.octokit.rest.issues.get({
+              owner: env.config.github.owner, repo: env.config.github.repo, issue_number: issueNum,
+            });
+            issueTitle = iss.title;
+          } catch {}
+        }
+        // CE — target text（对齐 L19545-19563: 🦞 title \#num / 🦞 \#num / fallback）
+        const target = issueNum && issueTitle
+          ? `🦞 ${escapeMdV2(issueTitle)} \\#${issueNum}`
+          : issueNum
+            ? `🦞 \\#${issueNum}`
+            : t("skills.targetLobsterFallback", {}, lang);
+        text = skillsNotifyText(sourceType, conclusion, runStatus, name, target, lang);
+        // skills 成功 + 有 issueNum → 建 issue comment（对齐 RE L19557-19570）
+        if (issueNum && conclusion === "success") {
+          try {
+            const action = sourceType === "skill_update" ? t("skills.action_update", {}, lang)
+              : sourceType === "skill_remove" ? t("skills.action_remove", {}, lang)
+              : t("skills.action_install", {}, lang);
+            await env.octokit.rest.issues.createComment({
+              owner: env.config.github.owner, repo: env.config.github.repo, issue_number: issueNum,
+              body: t("skills.issue_comment_completed", { name: escapeMdV2(name), action }, lang),
+            });
+          } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
+        }
       } else if (path === WORKFLOW_PATHS.templates) {
-        text = templatesNotifyText(conclusion, name, lang);
-        // line-bot 模板安装成功 → 启动 LINE 流
+        // PE — templates notify（对齐 L19727-19770）
+        const name = cleanTemplateName(displayTitle, sourceId);
+        text = templatesNotifyText(conclusion, runStatus, name, lang);
+        // line-bot 模板安装成功 → 启动 LINE 流（对齐 PE L19750-19765）
         if (sourceId === "line-bot" && conclusion === "success") {
-          text = t("line.postInstallPrompt", { name }, lang);
-          // persist LINE flow state + send with continue/skip keyboard
+          const issueNum = parseIssueNumberFromPayload(payloadJson);
+          text = t("line.postInstallPrompt", { name: escapeMdV2(name) }, lang);
           if (notif.chat_id) {
+            const { InlineKeyboard } = await import("grammy");
+            replyMarkup = new InlineKeyboard()
+              .text(t("kb.continueLineBotSetup", {}, lang), "linebot_setup_continue:current")
+              .text(t("kb.triggerLaterManually", {}, lang), "linebot_setup_skip:current");
             try {
-              await env.store.put(`linebot-setup:${notif.chat_id}`, JSON.stringify({ step: "POST_INSTALL_PROMPT", issueNumber: notif.issue_number, promptMessageId: null }), { expirationTtl: 900 });
+              await env.store.put(`linebot-setup:${notif.chat_id}`, JSON.stringify({ step: "POST_INSTALL_PROMPT", issueNumber: issueNum, promptMessageId: null }), { expirationTtl: 900 });
             } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
           }
         }
       } else if (path === WORKFLOW_PATHS.lineBot) {
-        text = lineBotNotifyText(conclusion, name, null, lang);
+        // GE — lineBot notify（对齐 L19885-19916）
+        const channelId = parseLineChannelId(payloadJson);
+        const name = sourceId || "LINE Bot";
+        text = lineBotNotifyText(conclusion, runStatus, name, channelId, lang);
+        // 清除 inline keyboard（对齐 GE L19913: reply_markup: new F()）
+        const { InlineKeyboard } = await import("grammy");
+        replyMarkup = new InlineKeyboard();
       } else {
         return;
       }
-      let lineBotKeyboard = undefined;
-      if (path === WORKFLOW_PATHS.templates && sourceId === "line-bot" && conclusion === "success" && notif.chat_id) {
-        const { InlineKeyboard } = await import("grammy");
-        lineBotKeyboard = new InlineKeyboard()
-          .text(t("kb.continueLineBotSetup", {}, lang), "linebot_setup_continue:current")
-          .text(t("kb.triggerLaterManually", {}, lang), "linebot_setup_skip:current");
-      }
-      await sendNotify({ env }, env, requestId, text, lang, lineBotKeyboard);
-      // skills 成功 + 有 issue_number → 建 issue comment
-      if ((path === WORKFLOW_PATHS.skills || path === WORKFLOW_PATHS.removeSkill) && conclusion === "success" && notif.issue_number) {
-        try {
-          const action = sourceType === "skill_remove" ? t("skills.action_remove", {}, lang) : t("skills.action_install", {}, lang);
-          await env.octokit.rest.issues.createComment({
-            owner: env.config.github.owner, repo: env.config.github.repo, issue_number: notif.issue_number,
-            body: t("skills.issue_comment_completed", { name, action }, lang),
-          });
-        } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
-      }
+      await sendNotify({ env }, env, requestId, text, lang, replyMarkup);
     } catch (e) {
       logError("log.webhook.workflowRunFailed", { event, error: e?.message ?? String(e) });
     }

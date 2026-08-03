@@ -80,6 +80,9 @@ export async function handleFlowText(ctx) {
   const state = await getFlowState(store, chatId);
   if (!state) return false;
 
+  // edit 模式的文本续接由 handleEditText 处理（对齐旧 bundle vm/eT/bl 分支）
+  if (state.mode === "edit") return false;
+
   // R4 子集：仅处理 awaiting_name
   if (state.step === "awaiting_name") {
     const trimmed = text.trim();

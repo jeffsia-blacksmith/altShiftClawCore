@@ -214,9 +214,11 @@ function buildStatusCardText(e, lang) {
         : O(runId);
       statusText = t("schedule.workflowState.running", { run: runLink }, L);
     } else {
-      statusText = O(t("schedule.workflowState.idle", {}, L));
+      // i18n strings for idle/running are pre-escaped (parens already `\(`) —
+      // must NOT wrap in O() (would double-escape). Matches old bundle `Cy`.
+      statusText = t("schedule.workflowState.idle", {}, L);
     }
-    lines.push(`\\- ${statusText}`);
+    lines.push(`\\- Status: ${statusText}`);
   } else {
     lines.push(O("No workflow configured yet. You can run /edit to reset the template and enable the Lobster workflow."));
   }

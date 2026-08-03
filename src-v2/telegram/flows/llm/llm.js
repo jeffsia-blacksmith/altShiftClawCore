@@ -68,6 +68,7 @@ function providerKeyboard(catalog) {
 function keyActionKeyboard() {
   return new InlineKeyboard()
     .text("♻️ Reuse existing Key", "llm_key:reuse")
+    .row()
     .text("🔑 Enter a new API Key", "llm_key:new")
     .row()
     .text("❌ Cancel", "llm_cancel:0");
@@ -183,7 +184,10 @@ export function registerLlm(composer) {
     const { owner, repo } = config.github;
     const chatId = ctx.chat?.id;
     const state = await getLlmState(store, chatId);
-    if (!state) return;
+    if (!state) {
+      await ctx.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
+      return;
+    }
     const providerId = ctx.callbackQuery.data.slice("llm_provider:".length);
     let catalog;
     try {
@@ -237,6 +241,7 @@ export function registerLlm(composer) {
       await ctx.answerCallbackQuery("⚠️ Menu has expired. Please re-run /llm.");
       return;
     }
+    await ctx.answerCallbackQuery();
     const action = ctx.callbackQuery.data.slice("llm_key:".length);
     const msgId = ctx.callbackQuery.message?.message_id;
     if (action === "reuse") {
@@ -364,7 +369,7 @@ export async function handleLlmText(ctx) {
     try {
       const valid = await validateModel(state.provider, state.apiKey, model);
       if (!valid) {
-        await ctx.reply(`❌ Validation failed: provider ${state.provider} cannot find model "${model}". Please check the model name and try again.`);
+        await ctx.reply(`❌ Validation failed: provider ${state.provider} cannot find model "${model}". Please confirm the name and try again.`);
         return true;
       }
     } catch (e) {

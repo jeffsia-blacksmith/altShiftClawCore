@@ -15,7 +15,7 @@ export function registerClear(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
+      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
       return;
     }
     try {

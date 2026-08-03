@@ -6,7 +6,7 @@
 import { t, glang } from "../../i18n/index.js";
 import { logInfo, logWarn, logError } from "../../i18n/log.js";
 import { setActiveIssue } from "../../db/kv-state.js";
-import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } from "../branches.js";
+import { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate, buildIssueBody } from "../branches.js";
 
 const INIT_DONE_KEY = "init_github_claw_done";
 
@@ -27,30 +27,34 @@ function buildWelcomeText(env) {
   return `${t("system.welcomeReady1", { profileName }, lang)}\n${t("system.welcomeReady2", { url }, lang)}`;
 }
 
-// kE — 创建第一只龙虾（对齐 L19372-19404）
+// kE — 创建第一只龙虾（对齐 L19370-19404）
+// 关键差异修复（Phase T）：name/description 用 repo 名（非 profileName）；meta 含 ts + source 在前；
+// body 经 buildIssueBody（ci）；Er→Pn→Sr→Vr→rr 全部不包裹 → 缺模板时抛 TEMPLATE_NOT_INSTALLED → ug catch → autoInitFailed；
+// setActiveIssue 移到最后（对齐 kE L19394）。
 async function createFirstLobster(env, chatId) {
   const { octokit, store, d1, config } = env;
   const { owner, repo, repoFullName } = config.github;
-  const title = config.github.repo ?? "Default Lobster";
-  const profileName = config.profileName ?? title;
-  const meta = { chat_id: chatId, source: "auto-init" };
-  const body = `<!-- telegram-meta: ${JSON.stringify(meta)} -->\n\n\`\`\`json\n${JSON.stringify({ name: title, description: t("system.defaultLobsterDescription", { name: profileName }, glang()) }, null, 2)}\n\`\`\``;
-  const { data } = await octokit.rest.issues.create({ owner, repo, title, body });
-  const issueNumber = data.number;
-  await setActiveIssue(store, issueNumber, chatId);
   const template = "default";
   const personality = config.personality || "";
-  try {
-    const files = await readTemplateFiles(octokit, owner, repo, template, personality);
-    if (files.length > 0) {
-      await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: init issue #${issueNumber} orphan branch (template: ${template})`);
-      await syncWorkflowFile(octokit, owner, repo, issueNumber, template);
-    }
-  } catch (e) {
-    console.warn("[auto-init] template branch/workflow setup skipped:", e.message);
-  }
-  try { await upsertIssueTemplate(d1, repoFullName, issueNumber, template); } catch (e) { console.warn("[auto-init] D1 metadata upsert skipped:", e.message); }
-  return { number: issueNumber, title };
+  const lang = glang();
+  // 对齐 kE L19374-19375：name/title = repo 名，description 用 repo 名
+  const name = repo;
+  const description = t("system.defaultLobsterDescription", { name }, lang);
+  // 对齐 kE L19376-19379：meta = {source, chat_id, ts}（source 在前，含 ts）
+  const meta = { source: "auto-init", chat_id: chatId, ts: new Date().toISOString() };
+  const body = buildIssueBody(meta, { name, description });
+  const { data } = await octokit.rest.issues.create({ owner, repo, title: name, body });
+  const issueNumber = data.number;
+  const branch = `issue-${issueNumber}`;
+  // 对齐 kE L19381-19394：Er→Pn→Sr→Vr→rr（全部不包裹，任一抛出 → autoInitFailed）
+  const files = await readTemplateFiles(octokit, owner, repo, template, personality);
+  const fileItems = files.map((f) => ({ path: f.path, content: f.content }));
+  await createOrphanBranch(octokit, owner, repo, branch, fileItems, `chore: init issue #${issueNumber} orphan branch (template: ${template})`);
+  await syncWorkflowFile(octokit, owner, repo, issueNumber, template);
+  await upsertIssueTemplate(d1, repoFullName, issueNumber, template);
+  await setActiveIssue(store, issueNumber, chatId);
+  logInfo("log.autoInit.firstLobsterCreated", { issueNumber, title: name });
+  return { number: issueNumber, title: data.title };
 }
 
 // EE — 标记 init 完成（对齐 L19405-19414）
@@ -60,11 +64,13 @@ async function markInitDone(env) {
   const { owner, repo } = env.config.github;
   try {
     await octokit.rest.actions.updateRepoVariable({ owner, repo, name: "INIT_GITHUB_CLAW", value: "false" });
+    logInfo("log.autoInit.variableSetFalse", {});
   } catch (e) {
-    if (/404|not found/i.test(e.message ?? "")) {
+    if ((e?.status === 404) || /404|not found/i.test(e?.message ?? "")) {
       await octokit.rest.actions.createRepoVariable({ owner, repo, name: "INIT_GITHUB_CLAW", value: "false" });
+      logInfo("log.autoInit.variableSetFalse", {});
     } else {
-      logWarn("log.autoInit.variableUpdateFailed", { error: e.message });
+      logWarn("log.autoInit.variableUpdateFailed", { error: e?.message ?? String(e) });
     }
   }
 }

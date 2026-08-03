@@ -146,7 +146,7 @@ export function registerTemplateCallbacks(composer) {
     const manifest = await fetchTemplateManifest(config, name).catch(() => ({}));
     const displayName = manifest.name || name;
     const desc = manifest.description ? `\n\n${manifest.description}` : "";
-    await ctx.editMessageText(t("templates.install_prompt", { name: displayName, desc }, lang), { reply_markup: previewKeyboard(lang) });
+    await ctx.editMessageText(t("templates.install_prompt", { name: displayName, desc }, lang), { parse_mode: "MarkdownV2", reply_markup: previewKeyboard(lang) });
   });
 
   // templates_preview_confirm:0
@@ -161,13 +161,18 @@ export function registerTemplateCallbacks(composer) {
     await ctx.answerCallbackQuery();
     if (await isTemplateInstalled(octokit, owner, repo, tplName)) {
       await setTplState(store, chatId, { ...state, step: "confirm_overwrite" });
-      await ctx.editMessageText(t("templates.confirm_overwrite", { name: tplName }, lang), { reply_markup: overwriteKeyboard(lang) });
+      await ctx.editMessageText(t("templates.confirm_overwrite", { name: tplName }, lang), { parse_mode: "MarkdownV2", reply_markup: overwriteKeyboard(lang) });
       return;
     }
     const manifest = await fetchTemplateManifest(config, tplName).catch(() => ({}));
     if (manifest.needModel && manifest.modelVar && manifest.models?.length) {
       await setTplState(store, chatId, { ...state, step: "select_model", modelVar: manifest.modelVar });
-      await ctx.editMessageText(t("templates.select_model_prompt", { name: tplName }, lang), { reply_markup: modelKeyboard(manifest.models, lang) });
+      await ctx.editMessageText(t("templates.select_model_prompt", { name: tplName }, lang), { parse_mode: "MarkdownV2", reply_markup: modelKeyboard(manifest.models, lang) });
+      return;
+    }
+    // 对齐旧 bundle L15346: needModel 但缺 modelVar/models → 报错中止
+    if (manifest.needModel && (!manifest.modelVar || !manifest.models?.length)) {
+      await ctx.answerCallbackQuery(`Template ${tplName} missing modelVar or models setting`);
       return;
     }
     await enterTemplateEnvCheck(ctx, tplName, state, lang);
@@ -186,7 +191,7 @@ export function registerTemplateCallbacks(composer) {
     const installedSet = new Set();
     await Promise.all(list.map(async (c) => { if (await isTemplateInstalled(octokit, owner, repo, c.name)) installedSet.add(c.name); }));
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(t("templates.selectInstallTo", {}, lang), { reply_markup: templatesListKeyboard(list, 0, installedSet, lang) });
+    await ctx.editMessageText(t("templates.selectInstallTo", {}, lang), { parse_mode: "MarkdownV2", reply_markup: templatesListKeyboard(list, 0, installedSet, lang) });
   });
 
   // templates_overwrite:0
@@ -201,7 +206,12 @@ export function registerTemplateCallbacks(composer) {
     const manifest = await fetchTemplateManifest(config, tplName).catch(() => ({}));
     if (manifest.needModel && manifest.modelVar && manifest.models?.length) {
       await setTplState(store, chatId, { ...state, step: "select_model", modelVar: manifest.modelVar });
-      await ctx.editMessageText(t("templates.select_model_prompt", { name: tplName }, lang), { reply_markup: modelKeyboard(manifest.models, lang) });
+      await ctx.editMessageText(t("templates.select_model_prompt", { name: tplName }, lang), { parse_mode: "MarkdownV2", reply_markup: modelKeyboard(manifest.models, lang) });
+      return;
+    }
+    // 对齐旧 bundle: needModel 但缺 modelVar/models → 报错中止
+    if (manifest.needModel && (!manifest.modelVar || !manifest.models?.length)) {
+      await ctx.answerCallbackQuery(`Template ${tplName} missing modelVar or models setting`);
       return;
     }
     await enterTemplateEnvCheck(ctx, tplName, state, lang);
@@ -249,11 +259,11 @@ export function registerTemplateCallbacks(composer) {
       try {
         const { createWorkflowNotification } = await import("../../github/webhooks/workflow-run.js");
         const { d1, config } = ctx.services;
-        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "templates", workflowPath: ".github/workflows/templates.yml", sourceId: tplName, chatId });
+        await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "templates", workflowPath: ".github/workflows/templates.yml", title: ctx.callbackQuery?.message?.text ?? "", channel: "telegram", messageId: ctx.callbackQuery?.message?.message_id ?? null, sourceId: tplName, chatId, payloadJson: JSON.stringify({}) });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
     await clearTplState(store, chatId);
-    await ctx.editMessageText(t("templates.installing_progress", { name: tplName }, lang), { reply_markup: { inline_keyboard: [] } });
+    await ctx.editMessageText(t("templates.installing_progress", { name: tplName }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
   });
 
   // templates_cancel:0
@@ -263,7 +273,7 @@ export function registerTemplateCallbacks(composer) {
     const lang = ctx.language ?? glang();
     if (chatId) await clearTplState(store, chatId);
     await ctx.answerCallbackQuery(t("core.cancelled", {}, lang));
-    try { await ctx.editMessageText(t("templates.install_cancelled", {}, lang), { reply_markup: { inline_keyboard: [] } }); } catch {}
+    try { await ctx.editMessageText(t("templates.install_cancelled", {}, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } }); } catch {}
   });
 
   // templates_env_setup:0
@@ -277,7 +287,7 @@ export function registerTemplateCallbacks(composer) {
     if (pending.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("templates.enter_env_value", { envName: pending[0], total: pending.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("templates.enter_env_value", { envName: pending[0], current: 1, total: pending.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_skip:0 (dead handler, registered for parity)
@@ -304,7 +314,7 @@ export function registerTemplateCallbacks(composer) {
     if (requiredEnvs.length === 0) { await goToTemplateConfirm(ctx, state, lang); return; }
     await ctx.answerCallbackQuery();
     await setTplState(store, chatId, { ...state, step: "awaiting_env", pendingEnvs: requiredEnvs, currentEnvIndex: 0, collectedEnvs: {}, promptMessageId: ctx.callbackQuery?.message?.message_id });
-    await ctx.editMessageText(t("templates.enter_env_value", { envName: requiredEnvs[0], total: requiredEnvs.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
+    await ctx.editMessageText(t("templates.enter_env_value", { envName: requiredEnvs[0], current: 1, total: requiredEnvs.length }, lang), { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) });
   });
 
   // templates_env_keepall:0
@@ -325,7 +335,7 @@ export function registerTemplateCallbacks(composer) {
     const lang = ctx.language ?? glang();
     if (chatId) await clearTplState(store, chatId);
     await ctx.answerCallbackQuery(t("core.cancelled", {}, lang));
-    try { await ctx.editMessageText(t("templates.install_cancelled", {}, lang), { reply_markup: { inline_keyboard: [] } }); } catch {}
+    try { await ctx.editMessageText(t("templates.install_cancelled", {}, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } }); } catch {}
   });
 
   // templates_page:<n>
@@ -341,7 +351,7 @@ export function registerTemplateCallbacks(composer) {
     const installedSet = new Set();
     await Promise.all(list.map(async (c) => { if (await isTemplateInstalled(octokit, owner, repo, c.name)) installedSet.add(c.name); }));
     await ctx.answerCallbackQuery();
-    await ctx.editMessageText(t("templates.selectInstallTo", {}, lang), { reply_markup: templatesListKeyboard(list, page, installedSet, lang) });
+    await ctx.editMessageText(t("templates.selectInstallTo", {}, lang), { parse_mode: "MarkdownV2", reply_markup: templatesListKeyboard(list, page, installedSet, lang) });
   });
 }
 
@@ -359,17 +369,17 @@ async function enterTemplateEnvCheck(ctx, tplName, state, lang) {
   if (missing.length === 0) {
     await setTplState(store, chatId, { ...state, step: "env_warning", pendingEnvs: requiredEnvs });
     const list = existing.map((e) => `✅ \`${e}\``).join("\n");
-    await ctx.editMessageText(t("templates.secrets_all_set", { name: tplName, list }, lang), { reply_markup: secretsAllSetKeyboard(lang) });
+    await ctx.editMessageText(t("templates.secrets_all_set", { name: tplName, list }, lang), { parse_mode: "MarkdownV2", reply_markup: secretsAllSetKeyboard(lang) });
   } else if (existing.length === 0) {
     await setTplState(store, chatId, { ...state, step: "env_warning", pendingEnvs: missing });
     const list = missing.map((e) => `🔵 \`${e}\``).join("\n");
-    await ctx.editMessageText(t("templates.secrets_missing", { name: tplName, list }, lang), { reply_markup: secretsMissingKeyboard(lang) });
+    await ctx.editMessageText(t("templates.secrets_missing", { name: tplName, list }, lang), { parse_mode: "MarkdownV2", reply_markup: secretsMissingKeyboard(lang) });
   } else {
     await setTplState(store, chatId, { ...state, step: "env_warning", pendingEnvs: missing });
     const setList = existing.map((e) => t("templates.env_set", { env: e }, lang));
     const missList = missing.map((e) => t("templates.env_missing", { env: e }, lang));
     const list = [...setList, ...missList].join("\n");
-    await ctx.editMessageText(t("templates.secrets_status", { name: tplName, list }, lang), { reply_markup: secretsMixedKeyboard(lang) });
+    await ctx.editMessageText(t("templates.secrets_status", { name: tplName, list }, lang), { parse_mode: "MarkdownV2", reply_markup: secretsMixedKeyboard(lang) });
   }
 }
 
@@ -379,7 +389,7 @@ async function goToTemplateConfirm(ctx, state, lang) {
   const chatId = ctx.chat?.id;
   await setTplState(store, chatId, { ...state, step: "confirm_install" });
   const modelLine = state.selectedModel ? t("templates.model_line", { model: state.selectedModel }, lang) : "";
-  await ctx.editMessageText(t("templates.confirm_install", { name: state.templateName, modelLine }, lang), { reply_markup: confirmKeyboard(lang) });
+  await ctx.editMessageText(t("templates.confirm_install", { name: state.templateName, modelLine }, lang), { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(lang) });
 }
 
 // handleTemplateEnvText — Mf 等价，message:text 中 awaiting_env 步骤
@@ -400,18 +410,18 @@ export async function handleTemplateEnvText(ctx) {
   const trimmed = text.trim();
   if (!trimmed) {
     const replyText = t("newFlow.envValueRequired", {}, lang);
-    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); } }
-    else { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }
+    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); } }
+    else { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); }
     return true;
   }
   collected[envName] = trimmed;
   try { await ctx.api.deleteMessage(chatId, ctx.message.message_id); } catch {}
   const next = idx + 1;
   if (next < envs.length) {
-    const replyText = t("templates.enter_env_value", { envName: envs[next], total: envs.length }, lang);
+    const replyText = t("templates.enter_env_value", { envName: envs[next], current: next + 1, total: envs.length }, lang);
     await setTplState(store, chatId, { ...state, collectedEnvs: collected, currentEnvIndex: next });
-    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); } }
-    else { await ctx.reply(replyText, { reply_markup: envCancelKeyboard(lang) }); }
+    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); } catch { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); } }
+    else { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: envCancelKeyboard(lang) }); }
   } else {
     // 全部收集完 → 写 secrets + confirm
     for (const [name, val] of Object.entries(collected)) {
@@ -419,14 +429,14 @@ export async function handleTemplateEnvText(ctx) {
       const trimmedVal = val.trim();
       if (!upperName || !trimmedVal) continue;
       try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); }
-      catch (e) { await ctx.reply(t("newFlow.setEnvFailed", { name, error: e.message }, lang)); }
+      catch (e) { await ctx.reply(t("newFlow.setEnvFailed", { name, error: e.message }, lang), { parse_mode: "MarkdownV2" }); }
     }
     await setTplState(store, chatId, { ...state, step: "confirm_install", envCheckDone: true, collectedEnvs: {}, pendingEnvs: [], currentEnvIndex: 0 });
     const envsSetLine = t("newFlow.envsSet", { count: Object.keys(collected).length }, lang);
     const confirmLine = t("newFlow.confirmInstallTo", { templateName: state.templateName }, lang);
     const replyText = `${envsSetLine}\n\n${confirmLine}`;
-    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { reply_markup: confirmKeyboard(lang) }); } catch { await ctx.reply(replyText, { reply_markup: confirmKeyboard(lang) }); } }
-    else { await ctx.reply(replyText, { reply_markup: confirmKeyboard(lang) }); }
+    if (state.promptMessageId) { try { await ctx.api.editMessageText(chatId, state.promptMessageId, replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(lang) }); } catch { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(lang) }); } }
+    else { await ctx.reply(replyText, { parse_mode: "MarkdownV2", reply_markup: confirmKeyboard(lang) }); }
   }
   return true;
 }

@@ -36,47 +36,148 @@ export function buildIssueBody(meta, agentProfile) {
 }
 
 // Er — 读取 templates/<template>/ 目录下所有非 workflow 文件
-export async function readTemplateFiles(octokit, owner, repo, template, personality = "") {
-  let entries;
-  try {
-    const { data } = await octokit.rest.repos.getContent({
-      owner, repo, path: `templates/${template}`, ref: "main",
-    });
-    entries = Array.isArray(data) ? data : [data];
-  } catch {
-    throw Object.assign(new Error(t("templates.notInstalled", { name: template }, glang())), { code: "TEMPLATE_NOT_INSTALLED" });
-  }
-  const files = [];
-  async function walk(items, prefix) {
-    for (const item of items) {
-      const fullPath = prefix ? `${prefix}/${item.name}` : item.name;
-      if (item.type === "file") {
-        // 跳过 .github/workflows/ 下的文件（Sr 单独处理）
-        if (/^\.github\/workflows\//i.test(fullPath)) continue;
-        try {
-          const { data: fileData } = await octokit.rest.repos.getContent({
-            owner, repo, path: `templates/${template}/${fullPath}`, ref: "main",
-          });
-          if (fileData.content) {
-            let content = Buffer.from(fileData.content, "base64").toString("utf8");
-            if (personality) content = content.replace(/\{\{personality\}\}/g, personality);
-            files.push({ path: fullPath, content });
+// 对齐旧 bundle H_/Er/hm（L6842/6864/6820）：GraphQL ReadTemplateTree 单次查询取整棵树（5 层），
+// hm 递归展平为 {path, content}，跳过 .github/workflows/。REST getContent 递归是 v2 早期误改，
+// 这里回归旧 bundle 的 GraphQL 路径以保持 100% 行为一致。
+const READ_TEMPLATE_TREE_QUERY = `
+  query ReadTemplateTree($owner: String!, $repo: String!, $expression: String!) {
+    repository(owner: $owner, name: $repo) {
+      object(expression: $expression) {
+        __typename
+        ... on Tree {
+          entries {
+            ...TemplateTreeEntryLevel1
           }
-        } catch (e) {
-          logWarn("log.editNew.rebuildBranchReadTemplateFailed", { error: e.message });
         }
-      } else if (item.type === "dir") {
-        try {
-          const { data: subEntries } = await octokit.rest.repos.getContent({
-            owner, repo, path: `templates/${template}/${fullPath}`, ref: "main",
-          });
-          if (Array.isArray(subEntries)) await walk(subEntries, fullPath);
-        } catch {}
       }
     }
   }
-  await walk(entries, "");
-  return files;
+
+  fragment TemplateTreeEntryLevel1 on TreeEntry {
+    name
+    type
+    object {
+      __typename
+      ... on Blob {
+        text
+        isBinary
+      }
+      ... on Tree {
+        entries {
+          ...TemplateTreeEntryLevel2
+        }
+      }
+    }
+  }
+
+  fragment TemplateTreeEntryLevel2 on TreeEntry {
+    name
+    type
+    object {
+      __typename
+      ... on Blob {
+        text
+        isBinary
+      }
+      ... on Tree {
+        entries {
+          ...TemplateTreeEntryLevel3
+        }
+      }
+    }
+  }
+
+  fragment TemplateTreeEntryLevel3 on TreeEntry {
+    name
+    type
+    object {
+      __typename
+      ... on Blob {
+        text
+        isBinary
+      }
+      ... on Tree {
+        entries {
+          ...TemplateTreeEntryLevel4
+        }
+      }
+    }
+  }
+
+  fragment TemplateTreeEntryLevel4 on TreeEntry {
+    name
+    type
+    object {
+      __typename
+      ... on Blob {
+        text
+        isBinary
+      }
+      ... on Tree {
+        entries {
+          ...TemplateTreeEntryLevel5
+        }
+      }
+    }
+  }
+
+  fragment TemplateTreeEntryLevel5 on TreeEntry {
+    name
+    type
+    object {
+      __typename
+      ... on Blob {
+        text
+        isBinary
+      }
+      ... on Tree {
+        entries {
+          name
+          type
+        }
+      }
+    }
+  }
+`;
+// H_ — GraphQL 请求 ReadTemplateTree，返回 Tree object 或 null（对齐 L6842-6859）
+async function readTemplateTree(octokit, owner, repo, template) {
+  const s = await octokit.request("POST /graphql", {
+    query: READ_TEMPLATE_TREE_QUERY,
+    variables: { owner, repo, expression: `main:templates/${template}` },
+  });
+  const errs = Array.isArray(s.data?.errors) ? s.data.errors : [];
+  if (errs.length > 0) {
+    const detail = errs[0]?.message?.trim() || t("templates.unknownGraphqlError", {}, glang());
+    throw Object.assign(new Error(t("templates.readFailed", { name: template, error: detail }, glang())), { code: "TEMPLATE_READ_FAILED" });
+  }
+  const obj = s.data?.data?.repository?.object;
+  return !obj || obj.__typename !== "Tree" ? null : obj;
+}
+// hm — 递归展平 Tree entries 为 {path, content}（对齐 L6820-6840）
+function flattenTemplateTree(entries, prefix, personality) {
+  if (!entries?.length) return [];
+  const out = [];
+  for (const s of entries) {
+    const fullPath = prefix ? `${prefix}/${s.name}` : s.name;
+    if (s.type === "blob" && s.object?.__typename === "Blob") {
+      if (s.object.isBinary) throw new Error(t("templates.fileBinary", { path: fullPath }, glang()));
+      if (/^\.github\/workflows\//i.test(fullPath)) continue;
+      let content = s.object.text ?? "";
+      if (personality) content = content.replace(/\{\{personality\}\}/g, personality);
+      out.push({ path: fullPath, content });
+      continue;
+    }
+    if (s.type === "tree" && s.object?.__typename === "Tree") {
+      if (!Array.isArray(s.object.entries)) throw new Error(t("templates.nestedTooDeep", { path: fullPath }, glang()));
+      out.push(...flattenTemplateTree(s.object.entries, fullPath, personality));
+    }
+  }
+  return out;
+}
+export async function readTemplateFiles(octokit, owner, repo, template, personality = "") {
+  const tree = await readTemplateTree(octokit, owner, repo, template);
+  if (!tree) throw Object.assign(new Error(t("templates.notInstalled", { name: template }, glang())), { code: "TEMPLATE_NOT_INSTALLED" });
+  return flattenTemplateTree(tree.entries, "", { personality });
 }
 
 // Pn — 创建 orphan 分支
@@ -120,14 +221,19 @@ export async function syncWorkflowFile(octokit, owner, repo, issueNumber, templa
     const { data } = await octokit.rest.repos.getContent({ owner, repo, path: sourcePath, ref: "main" });
     if (data.content) sourceContent = Buffer.from(data.content, "base64").toString("utf8");
   } catch (e) {
-    if (/404|not found/i.test(e.message ?? "")) {
-      logInfo("log.sync.workflowNameNotFound", { template });
+    if ((e?.status === 404) || /404|not found/i.test(e?.message ?? "")) {
+      // 对齐旧 Sr L6992-6995：源模板无 workflow 文件 → 纯英文日志（非 i18n key）
+      console.log(`Template ${template} does not have ${sourcePath}, skipping workflow sync`);
       return;
     }
     throw e;
   }
   if (!sourceContent) return;
   const newContent = rewriteWorkflowName(sourceContent, issueNumber);
+  // 对齐旧 Sr L7012-7018：name 行是否被改写
+  newContent !== sourceContent
+    ? logInfo("log.sync.workflowRenamed", { file: targetPath, issue: issueNumber })
+    : logInfo("log.sync.workflowNameNotFound", { file: targetPath });
   // 读取已存在的目标文件
   let existingSha;
   try {

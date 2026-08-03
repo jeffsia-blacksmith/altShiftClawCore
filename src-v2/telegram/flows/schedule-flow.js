@@ -477,10 +477,20 @@ export function registerScheduleCallbacks(composer) {
     const { scheduleId, source } = parseSchedCallbackData(ctx.callbackQuery.data);
     const sched = await getSchedule(d1, scheduleId);
     if (!sched) { await ctx.answerCallbackQuery(t("schedule.flow.scheduleNotFoundShort", {}, lang)); return; }
-    // closed-issue guard for chat source
+    // closed-issue guard for chat source — 对齐旧 bundle Ds/Bs: 展示关闭卡 + 仅删除键盘
     if (source === "chat") {
       const closed = await isIssueClosed(octokit, owner, repo, sched.issueNumber);
-      if (closed) { await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang)); return; }
+      if (closed) {
+        await ctx.answerCallbackQuery(t("schedule.flow.lobsterClosedDeleteOnly", {}, lang));
+        let title = "";
+        try { const { data } = await octokit.rest.issues.get({ owner, repo, issue_number: sched.issueNumber }); title = data.title; } catch {}
+        const { InlineKeyboard } = await import("grammy");
+        const closedKb = new InlineKeyboard()
+          .text(t("kb.delete", {}, lang), `schedule_delete:${scheduleId}:${source}`).row()
+          .text(t("kb.back", {}, lang), `schedule_chat_open:${scheduleId}:${source}`);
+        await ctx.reply(scheduleCardText(title, sched.issueNumber, sched, lang), { parse_mode: "MarkdownV2", reply_markup: closedKb });
+        return;
+      }
     }
     if (sched.status === "active") {
       await updateSchedule(d1, scheduleId, { status: "paused" });
@@ -601,7 +611,7 @@ export async function handleScheduleText(ctx) {
   if (state.step === "awaiting_time") {
     // AI 时间解析：优先 Workers AI binding，fallback 到 parseSimpleTime
     const ai = ctx.services.ai;
-    const result = await parseScheduleTime(text, { now: new Date(), ai });
+    const result = await parseScheduleTime(text, { now: new Date(), ai, model: ctx.services.config.scheduleTimeUnderstanding?.model });
     if (result.status === "resolved") {
       if (result.ruleType === "once" && !result.nextRunAt) {
         await ctx.reply(t("schedule.flow.failedUnderstand", {}, lang));
@@ -663,10 +673,14 @@ export async function handleScheduleText(ctx) {
   if (state.step === "awaiting_edit_time") {
     if (!state.scheduleId) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
     const ai = ctx.services.ai;
-    const result = await parseScheduleTime(text, { now: new Date(), ai });
+    const result = await parseScheduleTime(text, { now: new Date(), ai, model: ctx.services.config.scheduleTimeUnderstanding?.model });
     if (result.status === "resolved") {
+      // 对齐旧 bundle uf L14055-14064: 保留 timezone + status（paused 不被重新激活）
+      const current = await getSchedule(d1, state.scheduleId);
       const sched = await updateSchedule(d1, state.scheduleId, {
-        ruleType: result.ruleType, rulePayload: result.rulePayload, nextRunAt: result.nextRunAt,
+        ruleType: result.ruleType, rulePayload: result.rulePayload,
+        timezone: "Asia/Taipei", nextRunAt: result.nextRunAt,
+        status: current?.status === "paused" ? "paused" : "active",
       });
       if (!sched) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
       await onScheduleAction(ctx, sched, "update", lang);
@@ -686,11 +700,15 @@ export async function handleScheduleText(ctx) {
 
 // AI 时间解析（对齐旧 bundle Ul L13887-13940 + Wn L13750-13778）
 // 优先用 Workers AI binding；fallback 到 parseSimpleTime
-async function parseScheduleTime(text, { now, ai }) {
+async function parseScheduleTime(text, { now, ai, model }) {
+  const AI_RETRIES = 2; // Ll=2（对齐旧 bundle L13791）
+  const AI_BACKOFF_MS = 1000; // UT=1e3（对齐旧 bundle L13792）
   if (ai) {
-    try {
-      const model = "meta/llama-4-scout-17b-16e-instruct"; // 默认模型
-      const systemPrompt = `You are a schedule parser.
+    let lastError;
+    for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
+      try {
+        const aiModel = model ?? "@cf/openai/gpt-oss-20b"; // nc（对齐旧 bundle L9213）
+        const systemPrompt = `You are a schedule parser.
 Convert the user's natural-language schedule into exactly one JSON object.
 Output JSON only. No prose, no markdown.
 
@@ -706,36 +724,37 @@ Rules:
 - If cannot parse, return {"status":"unknown","message":"..."}
 
 Current time: ${now.toISOString()}`;
-      const resp = await ai.run(model, {
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: text },
-        ],
-        response_format: { type: "json_object" },
-        max_tokens: 512,
-        temperature: 0,
-      });
-      // 提取 AI 返回文本
-      let aiText = "";
-      if (typeof resp === "string") aiText = resp;
-      else if (resp?.result?.response) aiText = resp.result.response;
-      else if (resp?.response) aiText = resp.response;
-      else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
-      // 解析 JSON
-      const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
-      if (parsed.status === "resolved" && parsed.ruleType && parsed.rulePayload) {
-        const nextRunAt = computeNextRun({ ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, now });
-        return { status: "resolved", ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, nextRunAt };
+        const resp = await ai.run(aiModel, {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: text },
+          ],
+          response_format: { type: "json_object" },
+          max_tokens: 512,
+          temperature: 0,
+        });
+        let aiText = "";
+        if (typeof resp === "string") aiText = resp;
+        else if (resp?.result?.response) aiText = resp.result.response;
+        else if (resp?.response) aiText = resp.response;
+        else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
+        const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
+        if (parsed.status === "resolved" && parsed.ruleType && parsed.rulePayload) {
+          const nextRunAt = computeNextRun({ ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, now });
+          return { status: "resolved", ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, nextRunAt };
+        }
+        if (parsed.status === "ambiguous") {
+          return { status: "ambiguous", message: parsed.message ?? "", candidates: parsed.candidates ?? [] };
+        }
+        return { status: "failed" };
+      } catch (e) {
+        lastError = e;
+        console.error(`[schedule AI] parse failed (attempt ${attempt}/${AI_RETRIES}):`, e?.message ?? String(e));
+        if (attempt < AI_RETRIES) await new Promise(r => setTimeout(r, AI_BACKOFF_MS));
       }
-      if (parsed.status === "ambiguous") {
-        return { status: "ambiguous", message: parsed.message ?? "", candidates: parsed.candidates ?? [] };
-      }
-      return { status: "failed" };
-    } catch (e) {
-      console.error("[schedule AI] parse failed, fallback:", e.message);
     }
+    // 所有重试失败 → fallback（对齐旧 bundle Ul 最终失败路径）
   }
-  // Fallback: 简单解析
   return parseSimpleTime(text);
 }
 function parseSimpleTime(text) {

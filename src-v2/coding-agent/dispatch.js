@@ -18,23 +18,26 @@ function isSystemComment(body) {
 }
 
 // en/al: telegram-meta marker — old bundle al (L6567-6568) requires this
-function parseTelegramMeta(body) {
+// Tr — 任何有效 JSON telegram-meta（不要求 chat_id，对齐旧 bundle al/Tr）
+function parseMetaComment(body) {
   if (!body) return null;
   const m = body.match(/<!--\s*telegram-meta:\s*(\{[\s\S]*?\})\s*-->/);
   if (!m) return null;
-  try {
-    const meta = JSON.parse(m[1]);
-    if (typeof meta.chat_id !== "number") return null;
-    return meta;
-  } catch { return null; }
+  try { return JSON.parse(m[1]); } catch { return null; }
+}
+// kr — 取 telegram-meta，校验 chat_id 为数字（对齐旧 bundle kr L6570）
+function parseTelegramMeta(body) {
+  const meta = parseMetaComment(body);
+  if (!meta || typeof meta.chat_id !== "number") return null;
+  return meta;
 }
 
 function hasCommentMeta(body) {
-  return parseTelegramMeta(body) !== null;
+  return parseMetaComment(body) !== null;
 }
 
 function isScheduleFlowRecord(body) {
-  const meta = parseTelegramMeta(body);
+  const meta = parseMetaComment(body);
   return meta?.source === "schedule-flow";
 }
 
@@ -77,7 +80,7 @@ function stripToUserMessage(body) {
 // cE：从 telegram-meta 解析 event_source / event_data (对齐旧 bundle cE L19089-19099)
 function parseEventSource(issueBody, commentBody) {
   for (const body of [commentBody, issueBody]) {
-    const meta = parseTelegramMeta(body);
+    const meta = parseMetaComment(body);  // Tr — 不要求 chat_id（对齐旧 bundle cE）
     if (meta) {
       if (meta.source === "scheduled-trigger") return { eventSource: "cron", eventData: meta.event_data ?? "" };
       if (meta.event_source) return { eventSource: meta.event_source, eventData: meta.event_data ?? "" };
@@ -96,7 +99,7 @@ function flattenEventData(eventData) {
     for (const [k, v] of Object.entries(parsed)) {
       const key = String(k).trim();
       if (!key) continue;
-      out[key] = typeof v === "string" ? v : JSON.stringify(v);
+      out[key] = v == null ? "" : (typeof v === "string" ? v : (typeof v === "number" || typeof v === "boolean" || typeof v === "bigint" ? String(v) : JSON.stringify(v)));
     }
     return out;
   } catch {
@@ -172,7 +175,7 @@ export async function dispatchCodingAgent(payload, env) {
     logInfo("log.codingAgent.skipScheduleRecord", { issue: issue.number });
     return null;
   }
-  if (!hasCommentMeta(body) && !hasCommentMeta(issue.body ?? "")) {
+  if (!hasCommentMeta(body)) {  // 对齐旧 bundle fu L19317: 仅检查 comment body（非 issue body）
     logInfo("log.codingAgent.skipMissingMeta", { issue: issue.number });
     return null;
   }
@@ -235,7 +238,13 @@ export async function dispatchCodingAgent(payload, env) {
   } catch (e) {
     const errMsg = e?.message ?? "";
     // og: workflow not found (对齐旧 bundle og L19149-19172)
-    const isNotFound = /could not be found|not found/i.test(errMsg) && /workflow/i.test(errMsg);
+    // 检查 e.message + e.response.data.message（合并搜索）
+    const respMsg = e?.response?.data?.message ? String(e.response.data.message).trim().toLowerCase() : "";
+    const combined = `${errMsg.toLowerCase()} ${respMsg}`;
+    const status = e?.status;
+    const isNotFound = ((status === 404 || (typeof status === "number" && status >= 400 && status < 500)) &&
+      combined.includes("workflow") && (combined.includes("not found") || combined.includes("could not be found") || combined.includes("does not exist"))) ||
+      (combined.includes("not found") && combined.includes("workflow") && combined.includes(".yml"));
     // fE: workflow disabled (对齐旧 bundle fE L19140-19148)
     const isDisabled = /cannot trigger a 'workflow_dispatch' on a disabled workflow|workflow_dispatch.*disabled workflow/i.test(errMsg);
     if (progressCommentId != null && isNotFound) {

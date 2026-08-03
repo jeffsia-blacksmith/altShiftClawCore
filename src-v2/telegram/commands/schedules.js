@@ -7,12 +7,12 @@ import { InlineKeyboard } from "grammy";
 import { listSchedulesForChat } from "../../db/schedules.js";
 import { logError } from "../../i18n/log.js";
 
-// Bt — locale-formatted timestamp
+// Bt — locale-formatted timestamp（对齐旧 bundle Bt L5178-5181：仅 timeZone，用 locale 默认格式）
 function formatLocalTime(iso, lang) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei" });
 }
 
 // Ml(r) — issue 标题或 lobsterHash
@@ -29,28 +29,33 @@ function scheduleRuleSummary(r) {
   return `${r.ruleType ?? ""} | ${prompt}${ellipsis}`;
 }
 
-// Dn(l) — 列表文本
+// Dn(l) — 列表文本（对齐旧 bundle Dn：空/非空都带 title + 空行）
 function buildSchedulesListText(schedules, issueTitles, lang) {
+  const lines = [t("schedule.thisChatListTitle", {}, lang), ""];
   if (schedules.length === 0) {
-    return t("schedule.thisChatListEmpty", {}, lang);
+    lines.push(t("schedule.thisChatListEmpty", {}, lang));
+    return lines.join("\n");
   }
-  const lines = [t("schedule.thisChatListTitle", {}, lang)];
   schedules.forEach((r, i) => {
     const title = issueTitles.get(r.issueNumber);
     lines.push(`${i + 1}. ${scheduleItemLabel(r, title, lang)}｜${scheduleRuleSummary(r)}`);
     lines.push(`   🆔 ${r.id}`);
     lines.push(`   ⏭️ ${formatLocalTime(r.nextRunAt, lang)}`);
   });
-  lines.push(t("schedule.thisChatListHint", {}, lang));
+  lines.push("", t("schedule.thisChatListHint", {}, lang));
   return lines.join("\n");
 }
 
 // Bn(l) — 列表键盘
+const MAX_BUTTON_LABEL = 36;
+function truncateButtonLabel(label) {
+  return label.length <= MAX_BUTTON_LABEL ? label : `${label.slice(0, MAX_BUTTON_LABEL - 1)}…`;
+}
 function buildSchedulesKeyboard(schedules, issueTitles, lang) {
   if (schedules.length === 0) return undefined;
   const kb = new InlineKeyboard();
   for (const r of schedules.slice(0, 20)) {
-    const label = `${scheduleItemLabel(r, issueTitles.get(r.issueNumber), lang)}｜${scheduleRuleSummary(r)}`.slice(0, 36);
+    const label = truncateButtonLabel(`${scheduleItemLabel(r, issueTitles.get(r.issueNumber), lang)}｜${scheduleRuleSummary(r)}`);
     kb.text(label, `schedule_chat_open:${r.id}`).row();
   }
   return kb;

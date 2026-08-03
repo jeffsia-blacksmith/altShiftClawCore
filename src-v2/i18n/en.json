@@ -84,7 +84,8 @@
     "installing_progress": "⏳ Installing skill *{name}* to {target}\\. You will be notified when done\\.",
     "removing_progress": "⏳ Removing skill *{name}* from {target}\\. You will be notified when done\\.",
     "remove_confirm": "🗑 Remove skill *{name}* from {target}?\n\nAll files of this skill will be deleted after removal\\. You can reinstall it if needed\\.",
-    "install_cancelled": "❌ Skill installation cancelled"
+    "install_cancelled": "❌ Skill installation cancelled",
+    "secret_value_required": "⚠️ Secret value for {name} is required and cannot be empty"
   },
   "schedule": {
     "workflow_defined_label": "Defined by Workflow",
@@ -678,7 +679,7 @@
     "installing": "⏳ Installing...",
     "installing_progress": "⏳ Installing template *{name}* into Lobster Castle\\. You will be notified when done\\.",
     "install_cancelled": "❌ Template installation cancelled",
-    "enter_env_value": "🔑 Please enter the value for *{envName}*\n\n\\(1/{total}\\)",
+    "enter_env_value": "🔑 Please enter the value for *{envName}*\n\n\\({current}/{total}\\)",
     "env_skipped": "⏭️ Skipped environment variable setup",
     "env_keepall": "⏭️ Keeping existing settings"
   },

@@ -11,6 +11,9 @@ function issueWorkflowFile(issueNumber) {
   return `issue-${issueNumber}.yml`;
 }
 
+// bi(n) — escaped "#<n>" for MarkdownV2（对齐旧 bundle bi L13152）
+const issueRef = (n) => `\\#${n}`;
+
 async function findIssueWorkflow(octokit, owner, repo, issueNumber) {
   const { data } = await octokit.rest.actions.listRepoWorkflows({ owner, repo });
   const path = `.github/workflows/${issueWorkflowFile(issueNumber)}`;
@@ -26,7 +29,7 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
+      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
@@ -38,7 +41,7 @@ export function registerWorkflowControls(composer) {
       }
       await octokit.rest.actions.enableWorkflow({ owner, repo, workflow_id: wf.id });
       await ctx.reply(
-        t("core.workflowEnabledOk", { name: `\`${O(wfFile)}\``, number: `#${active}` }, lang),
+        t("core.workflowEnabledOk", { name: `\`${O(wfFile)}\``, number: issueRef(active) }, lang),
         He,
       );
     } catch (e) {
@@ -55,7 +58,7 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
+      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
@@ -67,7 +70,7 @@ export function registerWorkflowControls(composer) {
       }
       await octokit.rest.actions.disableWorkflow({ owner, repo, workflow_id: wf.id });
       await ctx.reply(
-        t("core.workflowDisabledOk", { name: `\`${O(wfFile)}\``, number: `#${active}` }, lang),
+        t("core.workflowDisabledOk", { name: `\`${O(wfFile)}\``, number: issueRef(active) }, lang),
         He,
       );
     } catch (e) {
@@ -84,7 +87,7 @@ export function registerWorkflowControls(composer) {
     const chatId = ctx.chat?.id;
     const active = chatId ? await getActiveIssue(store, chatId) : null;
     if (!active) {
-      await ctx.reply(t("core.noActiveLobsterSelected", {}, lang), He);
+      await ctx.reply(O(t("core.noActiveLobsterSelected", {}, lang)), He);
       return;
     }
     const wfFile = issueWorkflowFile(active);
@@ -92,7 +95,7 @@ export function registerWorkflowControls(composer) {
       const wf = await findIssueWorkflow(octokit, owner, repo, active);
       if (!wf) {
         await ctx.reply(
-          t("core.workflowNotCreatedYet", { number: `#${active}`, name: `\`${O(wfFile)}\`` }, lang),
+          t("core.workflowNotCreatedYet", { number: issueRef(active), name: `\`${O(wfFile)}\`` }, lang),
           He,
         );
         return;
@@ -104,7 +107,7 @@ export function registerWorkflowControls(composer) {
             ? t("schedule.workflowStateDisabledManually", {}, lang)
             : String(wf.state);
       await ctx.reply(
-        t("core.workflowStatusCard", { number: `#${active}`, name: `\`${O(wfFile)}\``, status: stateText, id: String(wf.id) }, lang),
+        t("core.workflowStatusCard", { number: issueRef(active), name: `\`${O(wfFile)}\``, status: O(stateText), id: String(wf.id) }, lang),
         He,
       );
     } catch (e) {

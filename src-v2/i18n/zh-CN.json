@@ -84,7 +84,8 @@
     "installing_progress": "⏳ 技能 *{name}* 正在安装到 {target}，完成后会通知你",
     "removing_progress": "⏳ 技能 *{name}* 正在从 {target} 移除，完成后会通知你",
     "remove_confirm": "🗑 确定要从 {target} 移除技能「*{name}*」吗？\n\n移除后该技能的所有文件将被删除，如需要可重新安装。",
-    "install_cancelled": "❌ 已取消技能安装"
+    "install_cancelled": "❌ 已取消技能安装",
+    "secret_value_required": "⚠️ 技能 {name} 的环境变量值不能为空，请重新输入"
   },
   "schedule": {
     "workflow_defined_label": "由 Workflow 定义",
@@ -678,7 +679,7 @@
     "installing": "⏳ 安装中...",
     "installing_progress": "⏳ 范本 *{name}* 正在安装到龙虾堡，完成后会通知你",
     "install_cancelled": "❌ 已取消范本安装",
-    "enter_env_value": "🔑 请输入 *{envName}* 的值\n\n（1/{total}）",
+    "enter_env_value": "🔑 请输入 *{envName}* 的值\n\n（{current}/{total}）",
     "env_skipped": "⏭️ 已略过环境变数设定",
     "env_keepall": "⏭️ 沿用现有设定"
   },

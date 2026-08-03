@@ -181,12 +181,40 @@ async function osEditFinalize(ctx, state) {
   const templateChain = [state.template, existingTemplate, "default"].filter(Boolean);
 
   // 1. 同步 workflow yml（对齐 sT — 每次 edit 都同步）
+  let syncedTemplate = null;
   for (const tpl of templateChain) {
     try {
       const { syncWorkflowFile } = await import("../../github/branches.js");
       await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl);
+      syncedTemplate = tpl;
       break;
     } catch {}
+  }
+
+  // 1b. 确保 issue-N orphan 分支存在（对齐旧 bundle nT L7338 — 每次 edit 都检查）
+  // 如果分支被删除，从 template chain 重建
+  let branchExists = false;
+  try { await octokit.rest.git.getRef({ owner, repo, ref: `heads/issue-${issueNumber}` }); branchExists = true; } catch {}
+  if (!branchExists && !state.resetTemplate) {
+    const { readTemplateFiles, createOrphanBranch } = await import("../../github/branches.js");
+    let rebuilt = false;
+    for (const tpl of templateChain) {
+      try {
+        const files = await readTemplateFiles(octokit, owner, repo, tpl, config.personality || "");
+        await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: init issue #${issueNumber} orphan branch (rebuild, template: ${tpl})`);
+        rebuilt = true;
+        break;
+      } catch (e) {
+        logWarn("log.editNew.rebuildBranchReadTemplateFailed", { error: e?.message ?? String(e) });
+      }
+    }
+    if (!rebuilt) {
+      // fallback: .gitkeep only（对齐 nT L7380-7386）
+      try {
+        const { createOrphanBranch } = await import("../../github/branches.js");
+        await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, [{ path: ".gitkeep", content: "" }], `chore: init issue #${issueNumber} orphan branch (no template fallback)`);
+      } catch (e) { logError("log.editNew.rebuildBranchFailed", { error: e?.message ?? String(e) }); }
+    }
   }
 
   // 2. 更新 issue title + body
@@ -214,7 +242,7 @@ async function osEditFinalize(ctx, state) {
   }
 
   // 4. resetTemplate — 重建 orphan 分支
-  let finalTemplate = existingTemplate ?? "default";
+  let finalTemplate = existingTemplate ?? syncedTemplate ?? "default";
   if (state.resetTemplate && state.template) {
     try {
       const { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } = await import("../../github/branches.js");

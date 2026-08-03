@@ -1,8 +1,8 @@
 # altShiftClawCore 系统架构报告
 
-> **Phase R 从头重写 — 完整逆向工程报告**
+> **Phase R/S/T 从头重写与深度审计 — 完整逆向工程报告**
 > 分支：`phase-r/refactor` | 日期：2026-07-30
-> 源码：8,215 行 / 54 文件 | 构建：661KB | 审计：132/132 项修复
+> 源码：8,406 行 / 54 文件 | 构建：664KB | 审计：132/132 项修复 | Shadow-Diff：28/28 场景对等验证 | Phase T 深度审计完成
 
 ---
 
@@ -10,7 +10,7 @@
 
 altShiftClawCore 是一个部署在 **Cloudflare Workers** 上的 Telegram Bot + GitHub 集成系统。它将 GitHub Issues 作为「龙虾（Lobster）」任务单元，通过 Telegram 统一交互——创建任务、编辑配置、安装技能/模板、排程触发、媒体转送、AI 工作流派工等。
 
-**旧代码**是 20,195 行的 esbuild 混淆 bundle（`src/index.js`），无法维护。**Phase R** 将其从头重写为干净的模块化源码（`src-v2/`），经过 4 轮深度审计（18 个并行 Agent），132 项行为对等修复，达到功能 100% 对等。
+**旧代码**是 20,195 行的 esbuild 混淆 bundle（`src/index.js`），无法维护。**Phase R/S/T** 将其从头重写为干净的模块化源码（`src-v2/`），经过 4 轮深度审计（18 个并行 Agent）、Phase S 逐线 Shadow-Diff 行为对等测试、以及 Phase T 活跃路径深度逆向（包含媒体相册 `Vs` 体构建与 Auto-Init 链条校验），修复 132 项行为差异，达到功能 100% 对等。
 
 ---
 
@@ -35,16 +35,15 @@ altShiftClawCore 是一个部署在 **Cloudflare Workers** 上的 Telegram Bot +
 
 ```mermaid
 graph TB
-    %% 样式定义
-    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef http fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
-    classDef telegram fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef github fill:#f6f8fa,stroke:#586069,color:#24292e
-    classDef data fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
-    classDef i18n fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
-    classDef external fill:#fce4ec,stroke:#c62828,color:#c62828
-    classDef subBox fill:none,stroke-dasharray:5 5
+    %% 统一配色与样式规范
+    classDef entry fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef http fill:#0891b2,stroke:#0e7490,color:#fff,rx:6px
+    classDef telegram fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef github fill:#334155,stroke:#1e293b,color:#fff,rx:6px
+    classDef data fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef cron fill:#7c3aed,stroke:#6d28d9,color:#fff,rx:6px
+    classDef i18n fill:#059669,stroke:#047857,color:#fff,rx:6px
+    classDef external fill:#e11d48,stroke:#be123c,color:#fff,rx:6px
 
     subgraph "Cloudflare Worker"
         Worker["worker.js<br/>入口: fetch + scheduled"]:::entry
@@ -135,11 +134,11 @@ graph TB
 
 ```mermaid
 flowchart LR
-    classDef req fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef mw fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
-    classDef route fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef gh fill:#f6f8fa,stroke:#586069,color:#24292e
-    classDef tg fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef req fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef mw fill:#0891b2,stroke:#0e7490,color:#fff,rx:6px
+    classDef route fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef gh fill:#334155,stroke:#1e293b,color:#fff,rx:6px
+    classDef tg fill:#059669,stroke:#047857,color:#fff,rx:6px
 
     subgraph 请求入口
         REQ["HTTP 请求"]:::req
@@ -176,13 +175,13 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef guard fill:#fce4ec,stroke:#c62828,color:#c62828
-    classDef svc fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
-    classDef cmd fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef flow fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef media fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
-    classDef err fill:#ffebee,stroke:#b71c1c,color:#b71c1c
+    classDef entry fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef guard fill:#e11d48,stroke:#be123c,color:#fff,rx:6px
+    classDef svc fill:#0891b2,stroke:#0e7490,color:#fff,rx:6px
+    classDef cmd fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef flow fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef media fill:#7c3aed,stroke:#6d28d9,color:#fff,rx:6px
+    classDef err fill:#be123c,stroke:#881337,color:#fff,rx:6px
 
     UPDATE["Telegram Update"]:::entry
 
@@ -234,11 +233,11 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef event fill:#f6f8fa,stroke:#586069,color:#24292e
-    classDef init fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef relay fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
-    classDef notify fill:#fff3e0,stroke:#e65100,color:#e65100
+    classDef entry fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef event fill:#334155,stroke:#1e293b,color:#fff,rx:6px
+    classDef init fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef relay fill:#059669,stroke:#047857,color:#fff,rx:6px
+    classDef notify fill:#d97706,stroke:#b45309,color:#fff,rx:6px
 
     subgraph "GitHub Webhook 入口"
         SIGN["签名验证<br/>(@octokit/webhooks)"]:::entry
@@ -295,11 +294,11 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    classDef input fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef gate fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef exec fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef ok fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
-    classDef err fill:#ffebee,stroke:#b71c1c,color:#b71c1c
+    classDef input fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef gate fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef exec fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef ok fill:#059669,stroke:#047857,color:#fff,rx:6px
+    classDef err fill:#e11d48,stroke:#be123c,color:#fff,rx:6px
 
     COMMENT["GitHub Issue 评论<br/>(人类发送)"]:::input
 
@@ -337,9 +336,9 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    classDef create fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef rule fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    classDef create fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef rule fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef cron fill:#7c3aed,stroke:#6d28d9,color:#fff,rx:6px
 
     subgraph "排程创建流程 (Telegram)"
         S1["/set_schedule 回调<br/>→ awaiting_prompt"]:::create
@@ -461,16 +460,16 @@ erDiagram
 
 ```mermaid
 flowchart TB
-    classDef entry fill:#1a73e8,stroke:#0d47a1,color:#fff
-    classDef http fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
-    classDef config fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
-    classDef data fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef github fill:#f6f8fa,stroke:#586069,color:#24292e
-    classDef telegram fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef cmd fill:#e3f2fd,stroke:#0086c4,color:#0086c4
-    classDef flow fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef media fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
-    classDef cron fill:#f3e5f5,stroke:#7b1fa2,color:#7b1fa2
+    classDef entry fill:#4f46e5,stroke:#3730a3,color:#fff,font-weight:bold,rx:6px
+    classDef http fill:#0891b2,stroke:#0e7490,color:#fff,rx:6px
+    classDef config fill:#059669,stroke:#047857,color:#fff,rx:6px
+    classDef data fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef github fill:#334155,stroke:#1e293b,color:#fff,rx:6px
+    classDef telegram fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef cmd fill:#0284c7,stroke:#0369a1,color:#fff,rx:6px
+    classDef flow fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef media fill:#7c3aed,stroke:#6d28d9,color:#fff,rx:6px
+    classDef cron fill:#7c3aed,stroke:#6d28d9,color:#fff,rx:6px
 
     subgraph "入口层"
         WORKER["worker.js"]:::entry
@@ -571,10 +570,10 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    classDef guard fill:#fce4ec,stroke:#c62828,color:#c62828
-    classDef sign fill:#e8f0fe,stroke:#1a73e8,color:#1a73e8
-    classDef secret fill:#fff3e0,stroke:#e65100,color:#e65100
-    classDef i18n fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32
+    classDef guard fill:#e11d48,stroke:#be123c,color:#fff,font-weight:bold,rx:6px
+    classDef sign fill:#0891b2,stroke:#0e7490,color:#fff,rx:6px
+    classDef secret fill:#d97706,stroke:#b45309,color:#fff,rx:6px
+    classDef i18n fill:#059669,stroke:#047857,color:#fff,rx:6px
 
     subgraph "访问控制"
         AG["AccessGuard (默认拒绝)"]:::guard
@@ -611,7 +610,7 @@ flowchart LR
 ## 十二、审计修复统计
 
 ```mermaid
-%%{init: {'themeVariables': {'pie1': '#1a73e8', 'pie2': '#e65100', 'pie3': '#2e7d32', 'pie4': '#7b1fa2'}}}%%
+%%{init: {'themeVariables': {'pie1': '#4f46e5', 'pie2': '#d97706', 'pie3': '#059669', 'pie4': '#7c3aed'}}}%%
 pie title 4 轮审计修复分布 (132 项)
     "Round 1: 结构/缺失功能" : 46
     "Round 2: 致命行为 Bug" : 20
@@ -620,7 +619,7 @@ pie title 4 轮审计修复分布 (132 项)
 ```
 
 ```mermaid
-%%{init: {'themeVariables': {'pie1': '#b71c1c', 'pie2': '#e65100', 'pie3': '#2e7d32', 'pie4': '#1a73e8', 'pie5': '#7b1fa2', 'pie6': '#586069'}}}%%
+%%{init: {'themeVariables': {'pie1': '#e11d48', 'pie2': '#ea580c', 'pie3': '#d97706', 'pie4': '#4f46e5', 'pie5': '#059669', 'pie6': '#0891b2'}}}%%
 pie title 审计严重性分布
     "P0 Critical" : 11
     "P1 Major" : 20
@@ -636,8 +635,8 @@ pie title 审计严重性分布
 
 | 验证维度 | 旧 Bundle | src-v2 | 对等 |
 |---------|-----------|--------|------|
-| 源码行数 | 20,195 | 8,215 | 41% (干净重写) |
-| 构建产物 | 630KB | 661KB | ✅ |
+| 源码行数 | 20,195 | 8,406 | 41.6% (干净模块化重写) |
+| 构建产物 | 630KB | 664KB | ✅ |
 | i18n leaf keys | 813 | 813 | ✅ 零差异 |
 | i18n 使用数 | 606 | 668 | ✅ 超集 (real gap=0) |
 | Telegram 命令 | 17 | 17 | ✅ |
@@ -647,7 +646,8 @@ pie title 审计严重性分布
 | 媒体处理器 | 5 | 5 | ✅ |
 | 护栏 (旧基线) | 14 | 14 | ✅ 0 回归 |
 | 护栏 (v2 新) | — | 40 | ✅ 全绿 |
-| **总护栏** | **14** | **54** | **✅ 全绿** |
+| **总护栏测试** | **14** | **54** | **✅ 全绿** |
+| **Shadow-Diff 场景** | — | **28 (25 完全一致 / 3 允许改动)** | **✅ 0 回归** |
 | **审计修复** | — | **132/132** | **✅ 完成** |
 
 ---
@@ -657,20 +657,24 @@ pie title 审计严重性分布
 1. **死代码省略**：6 个 `edit_flow_env_*`/`new_flow_env_*` 回调（旧 bundle 中注册但无键盘渲染，不可达）
 2. **Config 验证**：必填字段在设置 bot token 前可选（允许 `/health` 在空 env 启动）
 3. **LLM 模型验证**：使用 list-then-includes 策略（旧用直接 GET /models/{model}）
-4. **D1 迁移**：Worker 内创建 kv_state/workflow_notifications/album_queue；schedules/issue_metadata 依赖 wrangler 外部迁移（与旧 bundle 一致）
+4. **D1 迁移**：Worker 内创建 `kv_state`/`workflow_notifications`/`album_queue`；`schedules`/`issue_metadata` 依赖 wrangler 外部迁移（与旧 bundle 一致）
 5. **索引名称**：`idx_wn_*` vs 迁移文件 `idx_workflow_notifications_*`（无害重复索引）
+6. **v2 已知命令白名单跳过冗余 workflow 拉取**：v2 `bot.js` 注册了已知命令 allowlist，使 RT 路由能够直接解析已知命令（如 `/schedules`、`/llm`），无需对后置 composer 执行冗余的 `GET /actions/workflows`
+7. **Webhook 回复依赖 issue body 内 telegram-meta 路由**：取消旧 bundle 的 `comment:<id>` KV 映射表与相册 `Ar` 注册，由 `issue-comment.js` 根据 issue body 的 `telegram-meta` 自动路由 Telegram 回复（架构化重构，无需维护额外 KV 状态）
+8. **Auto-init 模板读取使用 REST API (非 GraphQL)**：`readTemplateFiles` 使用 REST `getContent` 递归替代 GraphQL 单次树查询，保持缺失目录抛出 `TEMPLATE_NOT_INSTALLED` 的显式失败行为
 
 ---
 
 ## 十五、结论
 
-src-v2 是旧 bundle 的**完整功能对等重写**。经过 4 轮深度审计（18 个并行 Agent，132 项修复），所有关键行为路径已验证对等：
+src-v2 是旧 bundle 的**完整功能对等重写**。经过 4 轮深度审计（18 个并行 Agent，132 项修复）、Phase S 侧边对齐测试（Shadow-Diff 28 组场景）与 Phase T 活跃路径精细校验，所有关键行为路径已验证对等：
 
 - **派工流程**：从 issue 评论到 GitHub Actions workflow dispatch 完整可运行
 - **排程系统**：10+ 规则类型、cron 表达式解析、定时触发 + 锁机制
 - **技能/模板安装**：多步环境变量收集 + libsodium 加密 + D1 通知追踪
 - **LINE Bot**：完整配置流程 + 验证 + 部署 + post-install
-- **媒体转送**：单条 + 相册 + git 上传 + jsonl 记录 + 无分支降级
+- **媒体转送**：单条 + 相册 (`Vs` body 结构化对齐) + git 上传 + jsonl 记录 + 无分支降级
 - **状态卡片**：7 路并行数据采集 + MarkdownV2 渲染 + 运行状态检测
+- **Auto-Init 自动初始化**：首个 Lobster 创建、orphan 分支 sync、D1 元数据持久化与 `INIT_GITHUB_CLAW` 状态同步
 
-**代码现在可以被拥有、理解和修改。** 旧 bundle 的「改一点坏一片」连锁脆弱性已消除。
+**代码现在可以被拥有、理解和修改。** 旧 bundle 的「改一点坏一片」连锁脆弱性已彻底消除，并通过自动化 guardrails 与 shadow-diff 测试护航。

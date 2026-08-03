@@ -1,7 +1,7 @@
 // commands/current.js — /current + /status 命令
 // 行为对齐旧 bundle Qp（L12222-12243）—— /current 与 /status 共用同一 handler。
 // 护栏 #7（无 active issue）→ reply core.noTrackedLobster。
-// active 路径（Hp/gp/qd 复杂渲染）在 R3 仅做最小占位，R7+ 补全。
+// active 路径 → sendStatusCard（status-card.js：7 路并行采集 + MarkdownV2 信息卡）。
 
 import { getActiveIssue } from "../../db/kv-state.js";
 import { sendStatusCard } from "../status-card.js";
