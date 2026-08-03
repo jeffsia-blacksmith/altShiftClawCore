@@ -2,7 +2,7 @@
 
 > 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
 > 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-08-03（**Phase W 实地端到端 smoke 通过 + MarkdownV2/空值 bug 扫描修复** —— src-v2 以 `wrangler dev` + `.dev.vars` 真凭证本地起服，15 bot 命令全 200 OK、管理类 workflows、Telegram→Worker→GitHub issue→workflow dispatch→Pi Coding Agent(Llama 3.3 70B)→result comment→relay 回 Telegram 完整链路验证；修 `skills-callbacks.js` `targetLabel()` MarkdownV2 `#` 转义 bug；经 `/autoupdate` joblog 深查 + i18n 反引号扫描，定位并修复一批 EN i18n 缺闭合反引号（`workflowTriggered/CannotTrigger/Triggering`，新旧 bundle 同款）+ v2 `triggerWorkflowFailed` 错误未转义 + `deploy-lobster-burger.yml` repo variable 空值 422（toolkit+seed 两份 `set_var_if_nonempty` 守卫）；build 689KB；详见 §9c）；前轮 2026-07-30 Phase R 深度审计 4 轮完成 —— src-v2 8215 行，58 文件，17 命令 + 62 活跃回调 + 7 webhook + 5 媒体全对等；54 护栏绿（14 old + 40 v2）；i18n 813×2 对等，real gap=0；132 项审计修复全部完成；详见 `src/AUDIT-DEEP.md`）
+> 最后更新：2026-08-03（**Phase W 实地端到端 smoke 通过 + MarkdownV2/空值 bug 扫描修复 + workflow 标签英文化** —— src-v2 以 `wrangler dev` + `.dev.vars` 真凭证本地起服，15 bot 命令全 200 OK、管理类 workflows、Telegram→Worker→GitHub issue→workflow dispatch→Pi Coding Agent(Llama 3.3 70B)→result comment→relay 回 Telegram 完整链路验证；修 `skills-callbacks.js` `targetLabel()` MarkdownV2 `#` 转义 bug；经 `/autoupdate` joblog 深查 + i18n 反引号扫描，定位并修复一批 EN i18n 缺闭合反引号（`workflowTriggered/CannotTrigger/Triggering`，新旧 bundle 同款）+ v2 `triggerWorkflowFailed` 错误未转义 + `deploy-lobster-burger.yml` repo variable 空值 422（toolkit+seed 两份 `set_var_if_nonempty` 守卫）；将 `autoupdate.yml`/`deploy-lobster-burger.yml` 的 GitHub Action UI 标签由中文译为英文（toolkit+seed 同步，并推进 smoke repo）；build 689KB；详见 §9c）；**剩余阻断**：smoke repo `CLOUDFLARE_API_TOKEN` secret 权限不足致 `/workers/subdomain` 403（待用户配置 token）；前轮 2026-07-30 Phase R 深度审计 4 轮完成 —— src-v2 8215 行，58 文件，17 命令 + 62 活跃回调 + 7 webhook + 5 媒体全对等；54 护栏绿（14 old + 40 v2）；i18n 813×2 对等，real gap=0；132 项审计修复全部完成；详见 `src/AUDIT-DEEP.md`）
 
 ---
 
@@ -337,7 +337,15 @@ Telegram → Worker → GitHub issue → workflow dispatch
 
 **`set_var_if_nonempty` 守卫端到端实测（smoke repo）**：把修好的 `deploy-lobster-burger.yml` 推进 `jeffsia-blacksmith/testing_on_v2_bot`（commit `271699f`），并**删除**先前手动设的 `PROFILE_NAME`/`PERSONALITY` repo var（让 optional 变量回到空值，只靠守卫防 422），再透过本地 worker 派工 `/autoupdate`（run `30793815565`）。结果："Sync GitHub settings" ✅ **成功**（守卫跳过空 `PROFILE_NAME`/`PERSONALITY`，无 422），随后才卡在 "Ensure workers.dev subdomain" ❌（Cloudflare `HTTP 403`，CF 基建前置，非代码）。**证明守卫根治了原 422**——空 optional 变量不再让 deploy job 在该步崩。autoupdate 唯一剩余阻断 = Cloudflare workers.dev 子域权限（需给 smoke repo 的 `CLOUDFLARE_API_TOKEN` secret 加权限并注册子域，与 v2 无关）。
 
-**Git 提交（本地，未 push）**：`altShiftClawCore` @ `phase-r/refactor` — `5c259eb` fix(i18n+telegram) 反引号+错误转义、`a2aed86` docs CurrentRefactor；`altShiftClawToolkit` @ `fix/default-catalog-naming` — `053eb80` fix(workflow) 守卫；`altShiftClawAdminPage` @ `main` — `b7886c8` fix(seed) 守卫。`src-v2/db/d1.js`、`src-v2/telegram/flows/skills-callbacks.js`、`wrangler.v2.toml` 为前一轮 smoke 的未提交改动，未纳入本次提交。
+**GitHub Action 标签英文化（i18n(workflows)）**：`autoupdate.yml` 与 `deploy-lobster-burger.yml` 的 UI 标签（workflow `name`、`run-name`、job `name`、step `name`）原为中文（`🦞 更新龙虾堡核心` / `⚒️ 部署龙虾堡` / `版本比对` / `触发部署` / `更新已部署版本资讯` / `读取远端套件 manifest` / `略过摘要`），已全部译为英文（`🦞 Lobster Burger Core Update` / `⚒️ Deploy Lobster Burger` / `Version Check` / `Trigger deploy` / `Update deployed version metadata` / `Read remote package manifest` / `Skip summary`）。`deploy-lobster-burger.yml` 的 step `name` 原本已是英文，仅顶层 3 处译。运行时 echo/summary 内容与 Telegram `setMyCommands` 的 zh 本地化内容保持不动（非「标签」）。toolkit installer 与 admin seed 两份同步修改并保持 byte-identical。已 commit + push：`altShiftClawToolkit` `00d6083`、`altShiftClawAdminPage` `b42c0e3`；并推进 smoke repo `jeffsia-blacksmith/testing_on_v2_bot`（`autoupdate.yml` @ `9317252`、`deploy-lobster-burger.yml` @ `c15b263`）。YAML 全 4 份 valid。
+
+**Cloudflare `HTTP 403`（smoke repo `CLOUDFLARE_API_TOKEN` 权限）— 待用户配置**："Ensure workers.dev subdomain" 步 `GET /accounts/{id}/workers/subdomain` 回 403 = token 对该账号无权限（非「无子域」——无子域是 404）。smoke repo 的 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secret 已存在但 token 权限不足或账号范围不对。已给用户精确配置步骤（见下方），需用户在 Cloudflare 后台建/改 token 并 `gh secret set` 更新后重跑 `/autoupdate` 方能越过此步。与 v2 无关。
+
+**Git 提交（已全部 push）**：
+- `altShiftClawCore` @ `phase-r/refactor` — `5c259eb` fix(i18n+telegram) 反引号+错误转义、`a2aed86`/`7848beb` docs CurrentRefactor；已 push `e2c020a..7848beb`。
+- `altShiftClawToolkit` @ `fix/default-catalog-naming` — `053eb80` fix(workflow) 守卫、`00d6083` i18n(workflows) 标签英文化；已 push `b5fad74..00d6083`。
+- `altShiftClawAdminPage` @ `main` — `b7886c8` fix(seed) 守卫、`b42c0e3` i18n(seed) 标签英文化；已 push `1483da4..b42c0e3`。
+- `src-v2/db/d1.js`、`src-v2/telegram/flows/skills-callbacks.js`、`wrangler.v2.toml` 为前一轮 smoke 的未提交改动，未纳入本次提交。
 
 ---
 
