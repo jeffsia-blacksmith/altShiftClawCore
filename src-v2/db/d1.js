@@ -103,6 +103,63 @@ async function migrateAlbumQueue(db) {
     .run();
 }
 
+async function migrateIssueMetadata(db) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS issue_metadata (
+        repo TEXT NOT NULL,
+        issue_number INTEGER NOT NULL,
+        template TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (repo, issue_number)
+      )`,
+    )
+    .run();
+  await db
+    .prepare(
+      `CREATE INDEX IF NOT EXISTS idx_issue_metadata_repo_issue ON issue_metadata (repo, issue_number)`,
+    )
+    .run();
+}
+
+async function migrateSchedules(db) {
+  await db
+    .prepare(
+      `CREATE TABLE IF NOT EXISTS schedules (
+        id TEXT PRIMARY KEY,
+        repo TEXT NOT NULL,
+        issue_number INTEGER NOT NULL,
+        chat_id INTEGER,
+        prompt TEXT NOT NULL,
+        event_data TEXT,
+        rule_type TEXT NOT NULL,
+        rule_payload TEXT NOT NULL,
+        timezone TEXT NOT NULL DEFAULT 'Asia/Taipei',
+        next_run_at TEXT NOT NULL,
+        should_notify INTEGER NOT NULL DEFAULT 1 CHECK (should_notify IN (0, 1)),
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'cancelled')),
+        last_run_at TEXT,
+        last_error TEXT,
+        locked_until TEXT,
+        cancelled_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+    )
+    .run();
+  await db
+    .prepare(
+      `CREATE INDEX IF NOT EXISTS idx_schedules_due ON schedules (status, next_run_at, locked_until, created_at)`,
+    )
+    .run();
+  await db
+    .prepare(
+      `CREATE INDEX IF NOT EXISTS idx_schedules_issue ON schedules (repo, issue_number, status, next_run_at)`,
+    )
+    .run();
+}
+
 // Module-level lazy-once flag — 对齐 Qc（L11976）
 let migrated = false;
 
@@ -111,6 +168,8 @@ export async function ensureMigrated(db) {
   await migrateKvState(db);
   await initWorkflowNotificationsTable(db);
   await migrateAlbumQueue(db);
+  await migrateIssueMetadata(db);
+  await migrateSchedules(db);
   migrated = true;
 }
 

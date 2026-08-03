@@ -5,6 +5,7 @@ import { t, glang } from "../../i18n/index.js";
 import { InlineKeyboard } from "grammy";
 import { logError, logWarn } from "../../i18n/log.js";
 import { setRepoSecret } from "../../github/secrets.js";
+import { escapeMarkdownV2 } from "../markdown.js";
 
 const PREFIX = "skill-install:";
 
@@ -20,12 +21,12 @@ async function clearSkillState(store, chatId) {
   await store.delete(`${PREFIX}${chatId}`);
 }
 
-// Vt — target 标签
+// Vt — target 标签（对齐旧 bundle Vt L14787: escape title + \\#）
 function targetLabel(state, lang) {
   const L = lang ?? glang();
   return state.issueTitle
-    ? `🦞 ${state.issueTitle} #${state.issueNumber}`
-    : `🦞 #${state.issueNumber}`;
+    ? `🦞 ${escapeMarkdownV2(state.issueTitle)} \\#${state.issueNumber}`
+    : `🦞 \\#${state.issueNumber}`;
 }
 
 // 键盘 builders
