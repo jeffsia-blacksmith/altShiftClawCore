@@ -174,7 +174,9 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
     });
     await ctx.reply(buildTriggeredReply(match.name, inputs, lang), { parse_mode: "MarkdownV2" });
   } catch (e) {
-    await ctx.reply(t("core.triggerWorkflowFailed", { name: match.name, error: e.message ?? t("core.unknownError", {}, lang) }, lang), { parse_mode: "MarkdownV2" });
+    // error 文本不在 inline code 内，须转义 MarkdownV2 特殊字符（对齐旧 bundle Al: O(err)）
+    const errMsg = e?.message ?? t("core.unknownError", {}, lang);
+    await ctx.reply(t("core.triggerWorkflowFailed", { name: match.name, error: escapeMdV2(errMsg) }, lang), { parse_mode: "MarkdownV2" });
   }
   return true;
 }
