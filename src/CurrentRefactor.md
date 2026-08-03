@@ -341,10 +341,23 @@ Telegram → Worker → GitHub issue → workflow dispatch
 
 **Cloudflare `HTTP 403`（smoke repo `CLOUDFLARE_API_TOKEN` 权限）— 待用户配置**："Ensure workers.dev subdomain" 步 `GET /accounts/{id}/workers/subdomain` 回 403 = token 对该账号无权限（非「无子域」——无子域是 404）。smoke repo 的 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` secret 已存在但 token 权限不足或账号范围不对。已给用户精确配置步骤（见下方），需用户在 Cloudflare 后台建/改 token 并 `gh secret set` 更新后重跑 `/autoupdate` 方能越过此步。与 v2 无关。
 
+**Cloudflare AI 两条路径 + Token 拆分（重要修正）**：经实地深查，Cloudflare AI 在本系统有**两条独立路径**，先前「AI binding 零 token、只有一把部署 token」的说法不完整：
+- **路径 A — Worker 内部 AI**：`src-v2` Worker 运行时内经 `wrangler.toml` `[ai] binding = "AI"` 调 Workers AI（自然语言→工作流派工、时间解析）。**零 token**，账号绑定。smoke 实测 Llama 3.3 70B 即此路径。
+- **路径 B — `/llm` Coding Agent**：Coding Agent 跑在 **GitHub Actions runner**（CF 运行时之外），无法用 binding，须读 repo secret 经 **Workers AI REST API** `/accounts/{id}/ai/run/...`。原设计该 provider（`cloudflare-workers-ai`）的 `secretName` 复用部署 token `CLOUDFLARE_API_TOKEN` → 问题：(1) 部署 token 须同时背 Workers Scripts/D1/Account Settings **与** Workers AI 两套权限（最小权限原则破坏）；(2) `/llm` 重新输入 key 会经 `update-llm-secret.yml` 覆写 `CLOUDFLARE_API_TOKEN`，**把部署 token 一起打挂**（footgun）。
+
+**已拆分**为独立 secret `CLOUDFLARE_AI_API_TOKEN`（仅 Workers AI: Edit），与部署 token 分离：
+- `templates/default/githubclaw.json`（toolkit `templates/`+`installer/templates/`、admin seed 三份）`cloudflare-workers-ai.secretName`：`CLOUDFLARE_API_TOKEN` → `CLOUDFLARE_AI_API_TOKEN`；description 注明「separate from the deploy token」。
+- `issue-1.yml`（toolkit installer + admin seed 两份）`cloudflare-workers-ai` 分支改读 `secrets.CLOUDFLARE_AI_API_TOKEN`（env 别名 `CLOUDFLARE_API_KEY` 给 Coding Agent 不变），`CLOUDFLARE_ACCOUNT_ID` 仍共享（同账号、非机密）。
+- `/llm` BYOK flow 无需改（动态用 `provider.secretName`）；`update-llm-secret.yml` 白名单 `_API_KEY`/`_API_TOKEN` 已含新名。
+- `altShiftClawAdminPage/messages/zh-CN.json` `step2Desc`/`cap3` 修正：部署 token 仅需 Account Settings/D1/Workers Scripts（**不含** Workers AI），Workers AI token 另由 `/llm` 独立设定。
+
+**用户操作（smoke repo）**：(1) 部署 token `CLOUDFLARE_API_TOKEN` 给 Workers Scripts/D1/Account Settings（修 403）；(2) 另建一把仅 Workers AI: Edit 的 token，在 smoke bot 里 `/llm` 选 Cloudflare Workers AI 输入该 key（写入 `CLOUDFLARE_AI_API_TOKEN` secret）。两把分离。
+
 **Git 提交（已全部 push）**：
 - `altShiftClawCore` @ `phase-r/refactor` — `5c259eb` fix(i18n+telegram) 反引号+错误转义、`a2aed86`/`7848beb` docs CurrentRefactor；已 push `e2c020a..7848beb`。
-- `altShiftClawToolkit` @ `fix/default-catalog-naming` — `053eb80` fix(workflow) 守卫、`00d6083` i18n(workflows) 标签英文化；已 push `b5fad74..00d6083`。
-- `altShiftClawAdminPage` @ `main` — `b7886c8` fix(seed) 守卫、`b42c0e3` i18n(seed) 标签英文化；已 push `1483da4..b42c0e3`。
+- `altShiftClawToolkit` @ `fix/default-catalog-naming` — `053eb80` fix(workflow) 守卫、`00d6083` i18n(workflows) 标签英文化、`f004cf8` feat(llm) AI token 拆分；已 push `b5fad74..f004cf8`。
+- `altShiftClawAdminPage` @ `main` — `b7886c8` fix(seed) 守卫、`b42c0e3` i18n(seed) 标签英文化、`28245cc` feat(seed) AI token 拆分；已 push `1483da4..28245cc`。
+- smoke repo `jeffsia-blacksmith/testing_on_v2_bot`：issue-1.yml @ `f439e1a`、githubclaw.json @ `fdb4e49`（AI token 拆分）；autoupdate.yml @ `9317252`、deploy-lobster-burger.yml @ `c15b263`（标签英文化）。
 - `src-v2/db/d1.js`、`src-v2/telegram/flows/skills-callbacks.js`、`wrangler.v2.toml` 为前一轮 smoke 的未提交改动，未纳入本次提交。
 
 ---
