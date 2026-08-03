@@ -1,8 +1,6 @@
-# 重构进度总览（CurrentRefactor）
+# 重构进度总览（CurrentRefactor）— ✅ 完成
 
-> 本文件是 `altShiftClawCore` 重构的**唯一状态入口**，整合两条工作线：模组抽离（vendor extraction）+ i18n 完整化。
-> 与 `src/MODULE_MAP.md`（模组识别）互为补充：MODULE_MAP 回答「这是什么模组」；本文回答「重构做到哪、还剩什么、踩过什么坑」。
-> 最后更新：2026-08-03（**Phase W 实地端到端 smoke 通过 + MarkdownV2/空值 bug 扫描修复 + workflow 标签英文化** —— src-v2 以 `wrangler dev` + `.dev.vars` 真凭证本地起服，15 bot 命令全 200 OK、管理类 workflows、Telegram→Worker→GitHub issue→workflow dispatch→Pi Coding Agent(Llama 3.3 70B)→result comment→relay 回 Telegram 完整链路验证；修 `skills-callbacks.js` `targetLabel()` MarkdownV2 `#` 转义 bug；经 `/autoupdate` joblog 深查 + i18n 反引号扫描，定位并修复一批 EN i18n 缺闭合反引号（`workflowTriggered/CannotTrigger/Triggering`，新旧 bundle 同款）+ v2 `triggerWorkflowFailed` 错误未转义 + `deploy-lobster-burger.yml` repo variable 空值 422（toolkit+seed 两份 `set_var_if_nonempty` 守卫）；将 `autoupdate.yml`/`deploy-lobster-burger.yml` 的 GitHub Action UI 标签由中文译为英文（toolkit+seed 同步，并推进 smoke repo）；build 689KB；详见 §9c）；**剩余阻断**：smoke repo `CLOUDFLARE_API_TOKEN` secret 权限不足致 `/workers/subdomain` 403（待用户配置 token）；前轮 2026-07-30 Phase R 深度审计 4 轮完成 —— src-v2 8215 行，58 文件，17 命令 + 62 活跃回调 + 7 webhook + 5 媒体全对等；54 护栏绿（14 old + 40 v2）；i18n 813×2 对等，real gap=0；132 项审计修复全部完成；详见 `src/AUDIT-DEEP.md`）
+> **状态：Swap 完成（2026-08-03）。** Phase R 从头重写 + 4 轮深度审计（132 项修复）+ Phase S/T/U/V shadow-diff + Phase W 实地 smoke 全部通过。`src-v2/` 已正式 swap 为 `src/`（59 文件 / 9.9K 行），旧混淆 bundle 归档到 `src-legacy/`。54 护栏全绿，i18n 814×2，build 689KB。架构图见 `src/ARCHITECTURE.md`，历史审计记录见 `src-legacy/AUDIT-DEEP.md`。
 
 ---
 

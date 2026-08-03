@@ -10,7 +10,7 @@
 
 altShiftClawCore 是一个部署在 **Cloudflare Workers** 上的 Telegram Bot + GitHub 集成系统。它将 GitHub Issues 作为「龙虾（Lobster）」任务单元，通过 Telegram 统一交互——创建任务、编辑配置、安装技能/模板、排程触发、媒体转送、AI 工作流派工等。
 
-**旧代码**是 20,195 行的 esbuild 混淆 bundle（`src/index.js`），无法维护。**Phase R/S/T** 将其从头重写为干净的模块化源码（`src-v2/`），经过 4 轮深度审计（18 个并行 Agent）、Phase S 逐线 Shadow-Diff 行为对等测试、以及 Phase T 活跃路径深度逆向（包含媒体相册 `Vs` 体构建与 Auto-Init 链条校验），修复 132 项行为差异，达到功能 100% 对等。
+**旧代码**是 20,195 行的 esbuild 混淆 bundle（已归档到 `src-legacy/`），无法维护。**Phase R** 将其从头重写为干净的模块化源码（现为 `src/`），经过 4 轮深度审计（18 个并行 Agent）、Phase S 逐线 Shadow-Diff 行为对等测试、Phase T 活跃路径深度逆向、Phase U 端到端 full-chain 验证、Phase V relay 子系统完整重写、以及 Phase W 实地真凭证 smoke，修复 132 项行为差异，达到功能 100% 对等。2026-08-03 正式 swap 完成。
 
 ---
 
@@ -633,7 +633,7 @@ pie title 审计严重性分布
 
 ## 十三、对等性验证
 
-| 验证维度 | 旧 Bundle | src-v2 | 对等 |
+| 验证维度 | 旧 Bundle (src-legacy) | src (新源码) | 对等 |
 |---------|-----------|--------|------|
 | 源码行数 | 20,195 | 8,406 | 41.6% (干净模块化重写) |
 | 构建产物 | 630KB | 664KB | ✅ |
@@ -667,7 +667,7 @@ pie title 审计严重性分布
 
 ## 十五、结论
 
-src-v2 是旧 bundle 的**完整功能对等重写**。经过 4 轮深度审计（18 个并行 Agent，132 项修复）、Phase S 侧边对齐测试（Shadow-Diff 28 组场景）与 Phase T 活跃路径精细校验，所有关键行为路径已验证对等：
+`src/` 是旧 bundle 的**完整功能对等重写**。经过 4 轮深度审计（18 个并行 Agent，132 项修复）、Phase S 侧边对齐测试（Shadow-Diff 32 组场景）、Phase T 活跃路径精细校验、Phase U 端到端 full-chain 验证、Phase V relay 子系统完整重写、以及 Phase W 实地真凭证 smoke（15 命令 + 3 workflows + 完整 Telegram→GitHub→Coding-Agent→relay 链路），所有关键行为路径已验证对等。2026-08-03 正式 swap 完成，旧 bundle 归档到 `src-legacy/`。
 
 - **派工流程**：从 issue 评论到 GitHub Actions workflow dispatch 完整可运行
 - **排程系统**：10+ 规则类型、cron 表达式解析、定时触发 + 锁机制
