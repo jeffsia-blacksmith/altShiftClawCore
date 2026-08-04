@@ -623,12 +623,14 @@ export async function handleScheduleText(ctx) {
         { reply_markup: payloadKeyboard(lang) },
       );
     } else if (result.status === "ambiguous") {
+      const examples = t("schedule.flow.timeExamples", {}, lang);
       const msg = result.message
         ? t("schedule.flow.ambiguousClarify", { message: result.message }, lang)
-        : t("schedule.flow.ambiguousReply", {}, lang);
+        : t("schedule.flow.ambiguousReply", { examples }, lang);
       await ctx.reply(msg, { reply_markup: cancelKeyboard(lang) });
     } else {
-      await ctx.reply(t("schedule.flow.failedReply", {}, lang), { reply_markup: cancelKeyboard(lang) });
+      const examples = t("schedule.flow.timeExamples", {}, lang);
+      await ctx.reply(t("schedule.flow.failedReply", { examples }, lang), { reply_markup: cancelKeyboard(lang) });
     }
     return true;
   }
@@ -685,12 +687,14 @@ export async function handleScheduleText(ctx) {
       if (!sched) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
       await onScheduleAction(ctx, sched, "update", lang);
     } else if (result.status === "ambiguous") {
+      const examples = t("schedule.flow.timeExamples", {}, lang);
       const msg = result.message
         ? t("schedule.flow.ambiguousClarify", { message: result.message }, lang)
-        : t("schedule.flow.ambiguousReply", {}, lang);
+        : t("schedule.flow.ambiguousReply", { examples }, lang);
       await ctx.reply(msg, { reply_markup: cancelKeyboard(lang) });
     } else {
-      await ctx.reply(t("schedule.flow.failedReply", {}, lang), { reply_markup: cancelKeyboard(lang) });
+      const examples = t("schedule.flow.timeExamples", {}, lang);
+      await ctx.reply(t("schedule.flow.failedReply", { examples }, lang), { reply_markup: cancelKeyboard(lang) });
     }
     return true;
   }
