@@ -174,6 +174,7 @@ resource "cloudflare_worker_version" "github_claw" {
   account_id         = var.cloudflare_account_id
   worker_id          = cloudflare_worker.github_claw.id
   compatibility_date = "2026-03-09"
+  compatibility_flags = ["nodejs_compat"]
   main_module        = "index.js"
   bindings           = local.github_claw_bindings
 
