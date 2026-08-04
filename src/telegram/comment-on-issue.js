@@ -12,6 +12,19 @@ import { getSkillState } from "./flows/skills-callbacks.js";
 import { getTplState } from "./flows/templates-callbacks.js";
 import { getLineState } from "./flows/line-bot.js";
 
+// 临时状态消息：回复后 5 秒自动删除（processing / message received 这类一次性提示）
+async function replyTemporary(ctx, chatId, text, opts = {}) {
+  try {
+    const sent = await ctx.reply(text, opts);
+    if (sent && chatId && sent.message_id) {
+      setTimeout(() => {
+        ctx.api.deleteMessage(chatId, sent.message_id).catch(() => {});
+      }, 5000);
+    }
+    return sent;
+  } catch { return null; }
+}
+
 // Xl — telegram-meta header
 function buildTelegramMeta(ctx) {
   const meta = {
@@ -87,10 +100,10 @@ export async function handleCommentOnIssue(ctx) {
   }
   const acceptsDispatch = branchExists && workflowExists && workflowEnabled;
 
-  // 先回复 processing
+  // 先回复 processing（5 秒后自动删除）
   let processingMsg = null;
   if (acceptsDispatch) {
-    try { processingMsg = await ctx.reply(t("system.processing", {}, lang)); } catch {}
+    processingMsg = await replyTemporary(ctx, chatId, t("system.processing", {}, lang));
   }
 
   // !acceptsDispatch → 仍然建 issue comment（对齐旧 bundle su L17853: ALWAYS create comment）
@@ -160,7 +173,7 @@ export async function handleCommentOnIssue(ctx) {
       content: Buffer.from(newContent).toString("base64"), branch,
       ...(jsonlSha ? { sha: jsonlSha } : {}),
     });
-    await ctx.reply(t("system.messageReceived", {}, lang));
+    await replyTemporary(ctx, chatId, t("system.messageReceived", {}, lang));
   } catch (e) {
     logError("log.webhook.handleFailed", { error: e?.message ?? String(e) });
     await ctx.reply(t("core.unknownError", {}, lang));
