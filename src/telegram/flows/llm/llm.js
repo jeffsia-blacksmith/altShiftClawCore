@@ -16,9 +16,26 @@ async function getContent(octokit, owner, repo, path, ref) {
   return null;
 }
 
-// llmLoadCatalog — templates/default/githubclaw.json
+// llmLoadCatalog — 尝试 templates/default/githubclaw.json，或从任意 templates/*/githubclaw.json 读取
 async function loadCatalog(octokit, owner, repo) {
-  return await getContent(octokit, owner, repo, "templates/default/githubclaw.json", "main");
+  try {
+    const res = await getContent(octokit, owner, repo, "templates/default/githubclaw.json", "main");
+    if (res) return res;
+  } catch {}
+  try {
+    const { data } = await octokit.rest.repos.getContent({ owner, repo, path: "templates", ref: "main" });
+    if (Array.isArray(data)) {
+      for (const item of data) {
+        if (item.type === "dir") {
+          try {
+            const cat = await getContent(octokit, owner, repo, `templates/${item.name}/githubclaw.json`, "main");
+            if (cat) return cat;
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+  return null;
 }
 
 // llmReadSettings — issue-<n> 分支 .pi/settings.json

@@ -73,10 +73,9 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
         return row?.template ?? null;
       } catch { return null; }
     })(),
-    // 5. model sources (copilot/codex configs)
+    // 5. model sources (codex config)
     (async () => {
       const sources = [
-        { source: "copilot", label: "GitHub Copilot", path: ".copilot/config.json" },
         { source: "codex", label: "Codex", path: ".codex/config.toml" },
       ];
       const results = [];
@@ -85,10 +84,7 @@ async function gatherIssueData(octokit, d1, owner, repo, repoFullName, issueNumb
           const { data } = await octokit.rest.repos.getContent({ owner, repo, path: s.path, ref: branch });
           if (data.content) {
             const content = Buffer.from(data.content, "base64").toString("utf8");
-            let model = null;
-            if (s.source === "copilot") { try { model = JSON.parse(content).model ?? null; } catch {} }
-            else { model = parseCodexModel(content); }
-            results.push({ ...s, exists: true, model });
+            results.push({ ...s, exists: true, model: parseCodexModel(content) });
           } else { results.push({ ...s, exists: false, model: null }); }
         } catch { results.push({ ...s, exists: false, model: null }); }
       }
