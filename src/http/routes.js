@@ -112,6 +112,7 @@ export function createApp({ buildOctokit = defaultBuildOctokit } = {}) {
       d1: c.var.d1,
       ai: c.var.ai,
       config,
+      executionCtx: c.executionCtx,
     };
     const bot = createBot({ config, services });
     const handler = createTelegramWebhookHandler({

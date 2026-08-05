@@ -13,13 +13,19 @@ import { getTplState } from "./flows/templates-callbacks.js";
 import { getLineState } from "./flows/line-bot.js";
 
 // 临时状态消息：回复后 5 秒自动删除（processing / message received 这类一次性提示）
+// serverless Worker：setTimeout 需经 executionCtx.waitUntil 注册，否则 isolate 在
+// handleUpdate 返回后即被挂起，延迟删除永远不执行。
 async function replyTemporary(ctx, chatId, text, opts = {}) {
   try {
     const sent = await ctx.reply(text, opts);
     if (sent && chatId && sent.message_id) {
-      setTimeout(() => {
-        ctx.api.deleteMessage(chatId, sent.message_id).catch(() => {});
-      }, 5000);
+      const doDelete = () => ctx.api.deleteMessage(chatId, sent.message_id).catch(() => {});
+      const ec = ctx.services?.executionCtx;
+      if (ec?.waitUntil) {
+        ec.waitUntil(new Promise((resolve) => setTimeout(resolve, 5000)).then(doDelete));
+      } else {
+        setTimeout(doDelete, 5000);
+      }
     }
     return sent;
   } catch { return null; }
