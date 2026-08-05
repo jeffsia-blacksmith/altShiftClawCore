@@ -8,17 +8,17 @@
 
 ## 完成项
 
-| 阶段 | 内容 | 状态 |
-|------|------|------|
-| Phase 2 (A-E) | i18n 完整化（814 key × 2 语） | ✅ |
-| Phase R | 从头重写（17 命令 + 62 回调 + 7 webhook + 5 媒体） | ✅ |
-| 4 轮深度审计 | 132 项行为对等修复 | ✅ |
-| Phase S | Shadow-diff 32 场景（27 identical / 5 allowed / 0 regression） | ✅ |
-| Phase T | 活跃路径深度审计 + 修复 | ✅ |
-| Phase U | 端到端 full-chain 验证 | ✅ |
-| Phase V | Relay 子系统完整重写（~520 行） | ✅ |
-| Phase W | 实地真凭证 smoke（15 命令 + 3 workflows + 完整链路） | ✅ |
-| **Swap** | `src-v2/` → `src/`，旧 bundle → `src-legacy/` | ✅ |
+| 阶段           | 内容                                                           | 状态 |
+| -------------- | -------------------------------------------------------------- | ---- |
+| Phase 2 (A-E)  | i18n 完整化（814 key × 2 语）                                 | ✅   |
+| Phase R        | 从头重写（17 命令 + 62 回调 + 7 webhook + 5 媒体）             | ✅   |
+| 4 轮深度审计   | 132 项行为对等修复                                             | ✅   |
+| Phase S        | Shadow-diff 32 场景（27 identical / 5 allowed / 0 regression） | ✅   |
+| Phase T        | 活跃路径深度审计 + 修复                                        | ✅   |
+| Phase U        | 端到端 full-chain 验证                                         | ✅   |
+| Phase V        | Relay 子系统完整重写（~520 行）                                | ✅   |
+| Phase W        | 实地真凭证 smoke（15 命令 + 3 workflows + 完整链路）           | ✅   |
+| **Swap** | `src-v2/` → `src/`，旧 bundle → `src-legacy/`          | ✅   |
 
 ## 当前状态
 

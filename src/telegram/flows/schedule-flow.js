@@ -623,7 +623,7 @@ export async function handleScheduleText(ctx) {
       }
       await setSchedState(store, chatId, { ...state, step: "awaiting_payload", ruleType: result.ruleType, rulePayload: result.rulePayload, timezone: "Asia/Taipei", nextRunAt: result.nextRunAt });
       await ctx.reply(
-        `${t("schedule.flow.payloadPromptLine1", {}, lang)}\n${t("schedule.flow.payloadPromptLine2", {}, lang)}\n${t("schedule.flow.payloadPromptLine3", {}, lang)}`,
+        t("schedule.flow.payloadPromptLine1", {}, lang),
         { reply_markup: payloadKeyboard(lang) },
       );
     } else if (result.status === "ambiguous") {

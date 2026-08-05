@@ -150,21 +150,21 @@ function buildStatusCardText(e, lang) {
   lines.push(titlePart);
   // Models — removed per user request (was "🤖 Models in use / Defined by Workflow")
   // LLM
-  lines.push("", t("core.infoCardLLM", {}, L));
-  lines.push(`\\- ${O(t("core.llmProviderLabel", {}, L))}: ${e.llm.provider ? O(e.llm.provider) : O(t("core.llmNotSet", {}, L))}`);
-  lines.push(`\\- ${O(t("core.llmModelLabel", {}, L))}: ${e.llm.model ? O(e.llm.model) : O(t("core.llmNotSet", {}, L))}`);
+  lines.push("", `*${O(t("core.infoCardLLM", {}, L))}*`);
+  lines.push(`\\- *${O(t("core.llmProviderLabel", {}, L))}*: ${e.llm.provider ? O(e.llm.provider) : O(t("core.llmNotSet", {}, L))}`);
+  lines.push(`\\- *${O(t("core.llmModelLabel", {}, L))}*: ${e.llm.model ? O(e.llm.model) : O(t("core.llmNotSet", {}, L))}`);
   // Template
-  lines.push("", t("core.infoCardTemplate", {}, L));
+  lines.push("", `*${O(t("core.infoCardTemplate", {}, L))}*`);
   lines.push(O(e.templateName?.trim() || t("core.none", {}, L)));
   // Skills
-  lines.push("", t("core.infoCardSkills", {}, L));
+  lines.push("", `*${O(t("core.infoCardSkills", {}, L))}*`);
   if (e.skills.length > 0) {
     for (const s of e.skills) lines.push(`\\- ${O(s)}`);
   } else {
     lines.push(`\\- ${O(t("schedule.no_skills_installed", {}, L))}`);
   }
   // Schedules
-  lines.push("", t("core.infoCardSchedules", {}, L));
+  lines.push("", `*${O(t("core.infoCardSchedules", {}, L))}*`);
   if (e.schedules.items.length === 0) {
     lines.push(`\\- ${O(t("schedule.no_schedules_set", {}, L))}`);
   } else {
@@ -177,18 +177,18 @@ function buildStatusCardText(e, lang) {
       const typeLabel = scheduleRuleTypeLabel(sch.ruleType, L);
       const desc = scheduleRuleDescription(sch, L);
       lines.push(`\\- *${O(typeLabel)}*: ${O(desc)}`);
-      lines.push(`  \\- ${O(t("core.infoCardStatus", {}, L))}: ${O(statusLabel)} \\(${O(notifyLabel)}\\)`);
-      if (sch.nextRunAt) lines.push(`  \\- ${O(t("core.infoCardNextRun", {}, L))}: ${O(formatLocalTime(sch.nextRunAt, L))}`);
-      if (sch.prompt) lines.push(`  \\- ${O(t("core.infoCardPrompt", {}, L))}: ${O(sch.prompt)}`);
+      lines.push(`  \\- *${O(t("core.infoCardStatus", {}, L))}*: ${O(statusLabel)} \\(${O(notifyLabel)}\\)`);
+      if (sch.nextRunAt) lines.push(`  \\- *${O(t("core.infoCardNextRun", {}, L))}*: ${O(formatLocalTime(sch.nextRunAt, L))}`);
+      if (sch.prompt) lines.push(`  \\- *${O(t("core.infoCardPrompt", {}, L))}*: ${O(sch.prompt)}`);
     }
   }
   // Task status
-  lines.push("", t("core.infoCardTaskStatus", {}, L));
+  lines.push("", `*${O(t("core.infoCardTaskStatus", {}, L))}*`);
   if (e.workflow.exists) {
     const fileLink = e.workflow.url
       ? `[${O(e.workflow.file)}](${escapeUrl(e.workflow.url)})`
       : O(e.workflow.file);
-    lines.push(`\\- File: ${fileLink}`);
+    lines.push(`\\- *${O(t("core.infoCardFile", {}, L))}*: ${fileLink}`);
     // Simplified: Status line
     let statusText;
     if (!e.workflow.enabled || e.workflow.status === "disabled") {
@@ -205,7 +205,7 @@ function buildStatusCardText(e, lang) {
       // must NOT wrap in O() (would double-escape). Matches old bundle `Cy`.
       statusText = t("schedule.workflowState.idle", {}, L);
     }
-    lines.push(`\\- Status: ${statusText}`);
+    lines.push(`\\- *${O(t("core.infoCardStatus", {}, L))}*: ${statusText}`);
   } else {
     lines.push(O("No workflow configured yet. You can run /edit to reset the template and enable the Lobster workflow."));
   }
