@@ -366,11 +366,92 @@ export function templatesUnknownGraphqlErrorReply(lang) {
   return t("templates.unknownGraphqlError", {}, lang ?? glang());
 }
 
+// cronToHuman — parse 5-field cron expression into a human-readable string
+const CRON_WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const CRON_WEEKDAYS_ZH = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const CRON_MONTHS_EN = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const CRON_MONTHS_ZH = ["", "1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"];
+
+function cronFieldValues(field, min, max) {
+  if (field === "*") return null;
+  const vals = new Set();
+  for (const part of field.split(",")) {
+    const [rangePart, stepPart] = part.split("/");
+    const step = stepPart ? parseInt(stepPart, 10) : 1;
+    if (rangePart === "*" || rangePart === undefined) { for (let d = min; d <= max; d += step) vals.add(d); continue; }
+    if (rangePart.includes("-")) {
+      const [a, b] = rangePart.split("-").map(Number);
+      for (let d = a; d <= b; d += step) vals.add(d);
+      continue;
+    }
+    vals.add(parseInt(rangePart, 10));
+  }
+  return [...vals].sort((a, b) => a - b);
+}
+
+function cronToHuman(expr, lang) {
+  const L = lang;
+  const isZh = L === "zh-CN";
+  const fields = expr.trim().split(/\s+/);
+  if (fields.length !== 5) return expr;
+  const [fMin, fHour, fDom, fMonth, fDow] = fields;
+  const minutes = cronFieldValues(fMin, 0, 59);
+  const hours = cronFieldValues(fHour, 0, 23);
+  const dom = cronFieldValues(fDom, 1, 31);
+  const month = cronFieldValues(fMonth, 1, 12);
+  const dow = cronFieldValues(fDow, 0, 6);
+  const pad = (n) => String(n).padStart(2, "0");
+  const wdNames = isZh ? CRON_WEEKDAYS_ZH : CRON_WEEKDAYS_EN;
+  const monNames = isZh ? CRON_MONTHS_ZH : CRON_MONTHS_EN;
+
+  // Build time string
+  let timePart;
+  if (hours && minutes) {
+    timePart = hours.map((h) => minutes.map((m) => `${pad(h)}:${pad(m)}`).join(", ")).join(", ");
+  } else if (hours && !minutes) {
+    timePart = hours.map((h) => `${pad(h)}:00`).join(", ");
+  } else if (!hours && minutes) {
+    timePart = isZh ? `每小时第 ${minutes.map(pad).join(", ")} 分` : `past :${minutes.map(pad).join(", ")}`;
+  } else {
+    timePart = isZh ? "每小时" : "every hour";
+  }
+
+  // Build day-of-week part
+  let dowPart = "";
+  if (dow) {
+    dowPart = dow.map((d) => wdNames[d]).join(isZh ? "、" : "–");
+  }
+
+  // Build month part
+  let monthPart = "";
+  if (month) {
+    monthPart = month.map((m) => monNames[m]).join(isZh ? "、" : "–");
+  }
+
+  // Build day-of-month part
+  let domPart = "";
+  if (dom) {
+    domPart = isZh ? `${dom.map((d) => `第${d}天`).join("、")}` : `day ${dom.join(", ")}`;
+  }
+
+  // Combine parts
+  const parts = [];
+  if (monthPart) parts.push(monthPart);
+  if (domPart) parts.push(domPart);
+  if (dowPart) parts.push(dowPart);
+  const dayPart = parts.length > 0 ? parts.join(isZh ? " " : " ") : (isZh ? "每天" : "Daily");
+
+  if (isZh) {
+    return `${dayPart} ${timePart}`;
+  }
+  return `${dayPart} at ${timePart}`;
+}
+
 // br — schedule rule description (对齐旧 bundle br L5045-5079)
 export function scheduleRuleDescription(rule, lang) {
   const L = lang ?? glang();
   const rp = rule.rulePayload ?? {};
-  if (rule.ruleType === "cron" && typeof rp.expression === "string") return rp.expression;
+  if (rule.ruleType === "cron" && typeof rp.expression === "string") return cronToHuman(rp.expression, L);
   if (rule.ruleType === "interval" && typeof rp.minutes === "number")
     return t("schedule.minutely", { minutes: rp.minutes }, L);
   if (rule.ruleType === "once" && typeof rp.run_at === "string") {

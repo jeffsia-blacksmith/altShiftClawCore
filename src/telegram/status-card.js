@@ -144,7 +144,7 @@ function buildStatusCardText(e, lang) {
   const L = lang;
   const lines = [];
   // Title
-  lines.push(t("core.infoCardTitle", {}, L));
+  lines.push(`*${O(t("core.infoCardTitle", {}, L))}*`);
   // Issue line: #<n> <title>
   const titlePart = e.issue.title ? `\\#${e.issue.number} ${O(e.issue.title)}` : `\\#${e.issue.number}`;
   lines.push(titlePart);
