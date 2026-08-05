@@ -157,7 +157,10 @@ async function readTemplateTree(octokit, owner, repo, template) {
 function flattenTemplateTree(entries, prefix, personality, clawLanguage) {
   if (!entries?.length) return [];
   const out = [];
-  const langLabel = clawLanguage === "zh-CN" ? "Simplified Chinese (China)" : "English";
+  const langLabel =
+    clawLanguage === "zh-CN" ? "Simplified Chinese (China)" :
+    clawLanguage === "ms"   ? "Malay" :
+    "English";
   for (const s of entries) {
     const fullPath = prefix ? `${prefix}/${s.name}` : s.name;
     if (s.type === "blob" && s.object?.__typename === "Blob") {
