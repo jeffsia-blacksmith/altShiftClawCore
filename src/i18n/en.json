@@ -316,9 +316,9 @@
     "editTimePrompt": "🕒 (1/2) Enter the new run time for schedule {name}\n\nFor example: every 5 minutes, every hour on the dot, every day at 12 noon, every Monday at 2pm, Mon and Wed at 3pm, every weekday at 2pm, every holiday at 9am, or run once at 9:00, 12:00, 15:00, 18:00, 21:00, 24:00",
     "editPayloadPrompt": "📦 (1/2) Set the Payload for schedule {name}? (optional)\n\nCurrent value: {current}\nType the new Payload content directly, or click \"Skip\" to clear.\nIf you enter a JSON object, the schedule will keep the original event_data when triggered and expand it into workflow inputs.",
     "flow": {
-      "timeExamples": "Today 6pm, Tomorrow 8am, Every 5 minutes, Every hour on the dot, Every day at 12 noon, Every Monday at 2pm, Every weekday at 2pm, Every holiday at 9am, Daily at 9:00, 12:00, 18:00",
+      "timeExamples": "• Today 6pm\n• Tomorrow 8am\n• Every 5 minutes\n• Every hour on the dot\n• Every day at 12 noon\n• Every Monday at 2pm\n• Every weekday at 2pm\n• Daily at 9:00, 12:00, 18:00",
       "timePromptQuestion": "Got it! When would you like it to run?",
-      "examplesLine": "For example: {examples}",
+      "examplesLine": "Examples:",
       "payloadPromptLine1": "📦 Payload data? (optional — enter JSON or Skip)",
       "payloadPromptLine2": "",
       "payloadPromptLine3": "",

@@ -316,9 +316,9 @@
     "editTimePrompt": "🕒 (1/2) 请输入排程 {name} 的新执行时间\n\n例如：每 5 分钟、每小时整点、每天中午12点、每周一下午2点、星期一跟星期三的下午三点、每个工作日下午2点、每个假日早上9点、每天9:00、12:00、15:00、18:00、21:00、24:00执行一次",
     "editPayloadPrompt": "📦 (1/2) 请设定排程 {name} 的 Payload 资料？(可选)\n\n目前值：{current}\n直接输入新的 Payload 内容，或点选「略过」清空。\n若输入的是 JSON object，排程触发时会保留原始 event_data，并额外展开成 workflow inputs。",
     "flow": {
-      "timeExamples": "今天晚上6点、明天早上8点、每 5 分钟、每小时整点、每天中午12点、每周一下午2点、每个工作日下午2点、每个假日早上9点、每天 9:00、12:00、18:00 执行",
+      "timeExamples": "• 今天晚上6点\n• 明天早上8点\n• 每 5 分钟\n• 每小时整点\n• 每天中午12点\n• 每周一晚上2点\n• 每个工作日下午2点\n• 每天 9:00、12:00、18:00",
       "timePromptQuestion": "收到！你希望在什么时候执行？",
-      "examplesLine": "例如：{examples}",
+      "examplesLine": "例如：",
       "payloadPromptLine1": "📦 Payload 资料？（可选 — 输入 JSON 或略过）",
       "payloadPromptLine2": "",
       "payloadPromptLine3": "",

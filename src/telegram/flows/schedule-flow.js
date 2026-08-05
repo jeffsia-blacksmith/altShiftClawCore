@@ -608,7 +608,7 @@ export async function handleScheduleText(ctx) {
       return true;
     }
     await setSchedState(store, chatId, { ...state, step: "awaiting_time", prompt });
-    await ctx.reply(`${t("schedule.flow.timePromptQuestion", {}, lang)}\n${t("schedule.flow.examplesLine", { examples: t("schedule.flow.timeExamples", {}, lang) }, lang)}`, { reply_markup: cancelKeyboard(lang) });
+    await ctx.reply(`${t("schedule.flow.timePromptQuestion", {}, lang)}\n${t("schedule.flow.examplesLine", {}, lang)}\n${t("schedule.flow.timeExamples", {}, lang)}`, { reply_markup: cancelKeyboard(lang) });
     return true;
   }
 
