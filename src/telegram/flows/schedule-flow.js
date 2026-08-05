@@ -189,7 +189,8 @@ function formatLocalTime(iso, lang) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const opts = { timeZone: "Asia/Taipei", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
+  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en-GB", opts);
 }
 
 // 键盘 builders

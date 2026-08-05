@@ -8,13 +8,13 @@ import { listSchedulesForIssue } from "../db/schedules.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as fp } from "./markdown.js";
 import { scheduleRuleTypeLabel, scheduleRuleDescription } from "./edge-replies.js";
 
-// Bt — locale-formatted timestamp (对齐旧 bundle Bt L5178-5181)
+// Bt — locale-formatted timestamp (DD/MM/YYYY, HH:MM in Asia/Taipei)
 function formatLocalTime(iso, lang) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  const locale = lang === "zh-CN" ? "zh-CN" : "en";
-  return d.toLocaleString(locale, { timeZone: "Asia/Taipei" });
+  const opts = { timeZone: "Asia/Taipei", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
+  return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en-GB", opts);
 }
 
 // escapeUrl — escape MarkdownV2 link URL (对齐旧 bundle: escape `\` and `)`)

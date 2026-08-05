@@ -457,7 +457,7 @@ export function scheduleRuleDescription(rule, lang) {
   if (rule.ruleType === "once" && typeof rp.run_at === "string") {
     const o = new Date(rp.run_at);
     if (Number.isNaN(o.getTime())) return t("schedule.once", {}, L);
-    return t("schedule.run_at_once", { run_at: o.toLocaleString(L === "zh-CN" ? "zh-CN" : "en", { timeZone: "Asia/Taipei" }) }, L);
+    return t("schedule.run_at_once", { run_at: o.toLocaleString(L === "zh-CN" ? "zh-CN" : "en-GB", { timeZone: "Asia/Taipei", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) }, L);
   }
   const r = typeof rp.hour === "number" ? String(rp.hour).padStart(2, "0") : "??";
   const n = typeof rp.minute === "number" ? String(rp.minute).padStart(2, "0") : "00";
