@@ -9,7 +9,9 @@
     "welcomeReady1": "🎉 太好了！{profileName} 已经准备好啰！",
     "welcomeReady2": "🦞 你的小龙虾在这里等你 → {url}",
     "autoInitCreated": "🦞 已自动建立第一只小龙虾「{title}」(#{number})！",
-    "autoInitFailed": "⚠️ 自动建立小龙虾失败，请手动使用 /new 建立。"
+    "autoInitFailed": "⚠️ 自动建立小龙虾失败，请手动使用 /new 建立。",
+    "start_desc": "🚀 初始化并查看小龙虾列表",
+    "menu_desc": "❓ 显示所有指令说明"
   },
   "mediaLabel": {
     "photo": "📷 照片",

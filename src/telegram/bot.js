@@ -32,11 +32,15 @@ import { handleCommentOnIssue } from "./comment-on-issue.js";
 import { handleNaturalLanguageCommand } from "./ai-inference.js";
 import { handleSingleMedia, handleAlbumMedia, fieldExt } from "../media/relay.js";
 import { t, glang } from "../i18n/index.js";
+import { syncBotCommands } from "./sync-commands.js";
 
 export function createBot({ config, services }) {
   const bot = new Bot(config.telegram.botToken, {
     client: { apiRoot: config.telegram.apiBaseUrl ?? "https://api.telegram.org" },
   });
+
+  // 启动时同步斜杠命令菜单（☰ / /）；命令描述由 i18n 生成，跟随 CLAW_LANGUAGE。
+  syncBotCommands(bot, config);
 
   // 1. AccessGuard — 对齐 Pd（L12010-12049）
   bot.use(

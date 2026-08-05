@@ -9,7 +9,9 @@
     "welcomeReady1": "🎉 Hebat! {profileName} sudah sedia!",
     "welcomeReady2": "🦞 Lobster anda menunggu anda di sini → {url}",
     "autoInitCreated": "🦞 Telah mencipta lobster pertama anda secara automatik [{title}] (#{number})!",
-    "autoInitFailed": "⚠️ Penciptaan lobster automatik gagal - sila guna /new untuk mencipta satu secara manual."
+    "autoInitFailed": "⚠️ Penciptaan lobster automatik gagal - sila guna /new untuk mencipta satu secara manual.",
+    "start_desc": "🚀 Mulakan dan lihat senarai lobster",
+    "menu_desc": "❓ Tunjukkan semua arahan"
   },
   "mediaLabel": {
     "photo": "📷 Foto",
