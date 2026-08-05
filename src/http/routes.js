@@ -48,6 +48,31 @@ export function createApp({ buildOctokit = defaultBuildOctokit } = {}) {
     return c.json({ ok: true, service: "githubclaw-core", version });
   });
 
+  // 探针：Workers AI binding 是否可用（部署后 curl 即可确认排程时间解析能否走 AI 路径）
+  app.get("/health/ai", async (c) => {
+    const start = Date.now();
+    const ai = c.var?.ai ?? null;
+    const model = c.var?.config?.scheduleTimeUnderstanding?.model ?? "@cf/openai/gpt-oss-20b";
+    if (!ai) {
+      return c.json({ ok: false, ai_bound: false, model, error: "AI binding not attached (env.AI is null). Schedule time parsing will use the local fallback.", elapsed_ms: Date.now() - start });
+    }
+    try {
+      const resp = await ai.run(model, {
+        messages: [{ role: "user", content: "ping" }],
+        max_tokens: 1,
+        temperature: 0,
+      });
+      let sample = "";
+      if (typeof resp === "string") sample = resp.slice(0, 40);
+      else if (resp?.result?.response) sample = String(resp.result.response).slice(0, 40);
+      else if (resp?.response) sample = String(resp.response).slice(0, 40);
+      else if (resp?.choices?.[0]?.message?.content) sample = String(resp.choices[0].message.content).slice(0, 40);
+      return c.json({ ok: true, ai_bound: true, model, sample, elapsed_ms: Date.now() - start });
+    } catch (e) {
+      return c.json({ ok: false, ai_bound: true, model, error: e?.message ?? String(e), elapsed_ms: Date.now() - start });
+    }
+  });
+
   // bu — POST /github/webhook（L20049-20068）
   app.post("/github/webhook", async (c) => {
     const config = c.var.config;

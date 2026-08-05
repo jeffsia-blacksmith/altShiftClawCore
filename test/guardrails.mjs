@@ -79,6 +79,30 @@ await hit("GET / → 200 (root alias)", "/", {}, async (res) => {
   if (b.ok !== true) throw new Error(`ok !== true`);
 });
 
+// /health/ai with no AI binding → ok:false, ai_bound:false (no fetch/AI call attempted)
+await hit("GET /health/ai (no AI binding) → ok:false ai_bound:false", "/health/ai", {}, async (res) => {
+  is(res, 200);
+  const b = await json(res);
+  if (b.ok !== false) throw new Error(`expected ok:false, got ${b.ok}`);
+  if (b.ai_bound !== false) throw new Error(`expected ai_bound:false, got ${b.ai_bound}`);
+  if (!b.model || !b.error) throw new Error(`expected model+error, got ${JSON.stringify(b)}`);
+});
+
+// /health/ai with a working AI binding → ok:true, ai_bound:true, sample present
+{
+  const envWithAI = { ...MOCK_ENV, AI: mockAI({ status: "pong" }) };
+  try {
+    const req = new Request("https://test.dev/health/ai");
+    const res = await handler(req, envWithAI, { waitUntil: () => {} });
+    is(res, 200);
+    const b = await res.json();
+    if (b.ok !== true || b.ai_bound !== true) throw new Error(`expected ok+ai_bound true, got ${JSON.stringify(b)}`);
+    if (!b.model || typeof b.sample !== "string") throw new Error(`expected model+sample, got ${JSON.stringify(b)}`);
+    console.log("  ✓ GET /health/ai (mock AI bound) → ok:true ai_bound:true sample");
+    pass++;
+  } catch (e) { console.error(`  ✗ /health/ai (mock AI): ${e.message}`); fail++; }
+}
+
 console.log("guardrails: 404 routing");
 await hit("GET /__nonexistent__ → 404", "/__nonexistent__", {}, async (res) => {
   if (res.status === 200) throw new Error("should not be 200");

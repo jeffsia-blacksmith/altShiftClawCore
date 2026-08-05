@@ -891,6 +891,55 @@ console.log("guardrails-v2: Batch C+D — schedule flow + template_reset + curre
   } catch (e) { console.error(`  ✗ schedule_flow_cancel: ${e.message}`); fail++; } finally { mock.restore(); }
 }
 
+// set_schedule:7 → prompt → "every 5 minutes" (NO AI binding → fallback parseSimpleTime)
+// Regression: the awaiting_time fallback previously only handled `每 N 分` / `every N min` /
+// `once`, so every example format shown to the user returned "failed" and the user was
+// stuck re-entering forever. Verifies the fallback now resolves an example format.
+{
+  const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });
+  const replies = [], cbAnswers = [];
+  const mock = installMockFetch([
+    tg.getMe(),
+    tg.sendMessage(replies),
+    tg.answerCallback(cbAnswers),
+    gh.issueGet({ number: 7, title: "My Lobster", state: "open" }),
+  ]);
+  const ctx = capturingCtx();
+  const post = async (update) => {
+    const req = new Request("https://test.dev/telegram/webhook", {
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": env.TELEGRAM_WEBHOOK_SECRET, "content-type": "application/json" },
+      body: JSON.stringify(update),
+    });
+    const res = await handler(req, env, ctx); await ctx.drain();
+    if (res.status !== 200) throw new Error(`step HTTP ${res.status}`);
+  };
+  const textUpdate = (text, mid = 10) => ({
+    update_id: Math.floor(Math.random() * 1e9),
+    message: { message_id: mid, from: { id: 111, is_bot: false, first_name: "Test" }, chat: { id: 111, type: "private" }, date: 1700000000, text },
+  });
+  const readState = () => JSON.parse(env.SCHEDULES_DB.getKv("schedule-flow:111") ?? "null");
+  try {
+    // 1. set_schedule:7 → awaiting_prompt
+    await post({ update_id: 100, callback_query: { id: "s1", from: { id: 111 }, message: { message_id: 1, chat: { id: 111, type: "private" }, date: 1, text: "x" }, chat_instance: "x", data: "set_schedule:7" } });
+    if (readState()?.step !== "awaiting_prompt") throw new Error(`step1 state=${JSON.stringify(readState())}`);
+    // 2. prompt text → awaiting_time
+    await post(textUpdate("do the thing", 11));
+    const st2 = readState();
+    if (st2?.step !== "awaiting_time" || st2.prompt !== "do the thing") throw new Error(`step2 state=${JSON.stringify(st2)}`);
+    // 3. time text (no AI binding → fallback must resolve, not fail)
+    await post(textUpdate("every 5 minutes", 12));
+    const st3 = readState();
+    if (st3?.step !== "awaiting_payload") throw new Error(`step3 expected awaiting_payload, got ${JSON.stringify(st3)}`);
+    if (st3.ruleType !== "interval") throw new Error(`step3 ruleType=${st3.ruleType} (expected interval)`);
+    if (!st3.nextRunAt) throw new Error("step3 nextRunAt missing");
+    const last = replies[replies.length - 1];
+    if (!last?.text || last.text.includes("rephrase") || !last.text.toLowerCase().includes("payload")) throw new Error(`step3 reply looks like failure: ${last?.text}`);
+    console.log("  ✓ set_schedule flow: \"every 5 minutes\" resolved via fallback (no AI) → awaiting_payload interval");
+    pass++;
+  } catch (e) { console.error(`  ✗ set_schedule flow fallback: ${e.message}`); fail++; } finally { mock.restore(); }
+}
+
 // current_edit:<issueNum> → sets active issue + enterEditAnswer toast
 {
   const env = baseEnv({ TELEGRAM_ALLOWED_FROM_ID: "111", TELEGRAM_ALLOWED_CHAT_ID: "111" });

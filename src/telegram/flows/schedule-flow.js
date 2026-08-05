@@ -702,32 +702,105 @@ export async function handleScheduleText(ctx) {
   return false;
 }
 
-// AI 时间解析（对齐旧 bundle Ul L13887-13940 + Wn L13750-13778）
+// AI 时间解析（对齐旧 bundle Ul L13887-13940 + HT/KT L13826-13877 + Wn L13750-13778）
 // 优先用 Workers AI binding；fallback 到 parseSimpleTime
+const AI_ALLOWED_RULES = new Set(["once", "interval", "cron"]);
+const AI_ERROR_RE = /workers ai|workflow inputs|json|response_format|parser|cron|stack|exception|timeout|service/i;
+const AI_FALLBACK_MSG = ""; // empty → caller shows generic failedReply
+
+// KT — 校验并规范化 AI 返回的 rulePayload（对齐旧 bundle KT L13826-13855）
+function sanitizeAiPayload(ruleType, payload) {
+  const r = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : null;
+  if (!r) return null;
+  if (ruleType === "once") {
+    let n = typeof r.run_at === "string" ? r.run_at.trim() : "";
+    if (!n) return null;
+    // naive local time → assume Asia/Taipei
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(n) && !/[Zz]|[+-]\d{2}(:\d{2})?$/.test(n)) n = `${n}+08:00`;
+    const d = new Date(n);
+    return Number.isNaN(d.getTime()) ? null : { run_at: d.toISOString() };
+  }
+  if (ruleType === "interval") {
+    const m = Number(r.minutes);
+    return Number.isInteger(m) && m > 0 ? { minutes: m } : null;
+  }
+  if (ruleType === "cron") {
+    const expr = typeof r.expression === "string" ? r.expression.trim().replace(/\s+/g, " ") : "";
+    return expr ? { expression: expr } : null;
+  }
+  return null;
+}
+
+// HT — 处理 AI 解析结果：白名单 + payload 校验 + computeNextRun，computeNextRun 抛错时优雅降级
+function handleAiResult(parsed, now) {
+  if (parsed.status !== "resolved") {
+    if (parsed.status === "ambiguous") {
+      const msg = typeof parsed.message === "string" && !AI_ERROR_RE.test(parsed.message) ? parsed.message.trim() : "";
+      const candidates = Array.isArray(parsed.candidates) ? parsed.candidates.map(String).map(s => s.trim()).filter(Boolean) : [];
+      return { status: "ambiguous", message: msg, candidates };
+    }
+    return { status: "failed" };
+  }
+  if (!parsed.ruleType || !AI_ALLOWED_RULES.has(parsed.ruleType)) {
+    console.warn("[schedule AI] rejected unknown ruleType:", parsed.ruleType);
+    return { status: "failed" };
+  }
+  const payload = sanitizeAiPayload(parsed.ruleType, parsed.rulePayload);
+  if (!payload) {
+    console.warn("[schedule AI] rejected invalid payload for", parsed.ruleType, parsed.rulePayload);
+    return { status: "failed" };
+  }
+  try {
+    const nextRunAt = computeNextRun({ ruleType: parsed.ruleType, rulePayload: payload, now });
+    if (!nextRunAt) return { status: "failed" }; // e.g. once in the past
+    return { status: "resolved", ruleType: parsed.ruleType, rulePayload: payload, nextRunAt };
+  } catch (e) {
+    console.warn("[schedule AI] computeNextRun threw for", parsed.ruleType, payload, e?.message ?? String(e));
+    return { status: "failed" };
+  }
+}
+
+// BT — AI system prompt（对齐旧 bundle BT L13796-13824，含示例 + 约束）
+function buildScheduleSystemPrompt(now) {
+  return [
+    "You are a schedule parser.",
+    "Convert the user's natural-language schedule into exactly one JSON object.",
+    "Output JSON only. No prose, no markdown.",
+    "",
+    "Allowed resolved rule types (rulePayload shape):",
+    '- once -> rulePayload: {"run_at":"ISO8601 with timezone, e.g. 2026-04-08T10:00:00+08:00 or 2026-04-08T02:00:00.000Z"}',
+    '- interval -> rulePayload: {"minutes":N} for "every N minutes" only',
+    '- cron -> rulePayload: {"expression":"M H D Mo W"} for all other recurring schedules',
+    "",
+    "Rules:",
+    "- Prefer cron for recurring schedules.",
+    "- Do not invent additional rule types.",
+    '- Use timezone "Asia/Taipei" for resolved results.',
+    "- Interpret 24:00 as next-day 00:00.",
+    "- If a recurring schedule has multiple times and one cron can express it, combine them into one cron.",
+    '- If the input is ambiguous, return status "ambiguous" with a short message and candidate rewrites.',
+    '- If the input cannot be represented as one canonical rule, return status "unknown" with a short message.',
+    "",
+    "Examples:",
+    '{"status":"resolved","ruleType":"once","rulePayload":{"run_at":"2026-04-08T10:00:00.000Z"},"timezone":"Asia/Taipei"}',
+    '{"status":"resolved","ruleType":"interval","rulePayload":{"minutes":5},"timezone":"Asia/Taipei"}',
+    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 12 * * *"},"timezone":"Asia/Taipei"}',
+    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 0,9,12,15,18,21 * * *"},"timezone":"Asia/Taipei"}',
+    '{"status":"ambiguous","message":"Please clarify your intent.","candidates":["Run once today at 6pm","Run every day at 6pm"]}',
+    '{"status":"unknown","message":"Please rephrase more clearly."}',
+    "",
+    `Current time: ${now.toISOString()}`,
+  ].join("\n");
+}
+
 async function parseScheduleTime(text, { now, ai, model }) {
   const AI_RETRIES = 2; // Ll=2（对齐旧 bundle L13791）
   const AI_BACKOFF_MS = 1000; // UT=1e3（对齐旧 bundle L13792）
   if (ai) {
-    let lastError;
+    const aiModel = model ?? "@cf/openai/gpt-oss-20b"; // nc（对齐旧 bundle L9213）
+    const systemPrompt = buildScheduleSystemPrompt(now);
     for (let attempt = 1; attempt <= AI_RETRIES; attempt++) {
       try {
-        const aiModel = model ?? "@cf/openai/gpt-oss-20b"; // nc（对齐旧 bundle L9213）
-        const systemPrompt = `You are a schedule parser.
-Convert the user's natural-language schedule into exactly one JSON object.
-Output JSON only. No prose, no markdown.
-
-Allowed resolved rule types (rulePayload shape):
-- once -> rulePayload: {"run_at":"ISO8601"}
-- interval -> rulePayload: {"minutes":N} for "every N minutes"
-- cron -> rulePayload: {"expression":"M H D Mo W"}
-
-Rules:
-- Prefer cron for recurring schedules.
-- Use timezone "Asia/Taipei" for resolved results.
-- If ambiguous, return {"status":"ambiguous","message":"...","candidates":[...]}
-- If cannot parse, return {"status":"unknown","message":"..."}
-
-Current time: ${now.toISOString()}`;
         const resp = await ai.run(aiModel, {
           messages: [
             { role: "system", content: systemPrompt },
@@ -742,39 +815,171 @@ Current time: ${now.toISOString()}`;
         else if (resp?.result?.response) aiText = resp.result.response;
         else if (resp?.response) aiText = resp.response;
         else if (resp?.choices?.[0]?.message?.content) aiText = resp.choices[0].message.content;
+        if (!aiText || !aiText.trim()) throw new Error("empty AI response");
         const parsed = JSON.parse(aiText.trim().replace(/^```json\s*/i, "").replace(/```$/i, "").trim());
-        if (parsed.status === "resolved" && parsed.ruleType && parsed.rulePayload) {
-          const nextRunAt = computeNextRun({ ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, now });
-          return { status: "resolved", ruleType: parsed.ruleType, rulePayload: parsed.rulePayload, nextRunAt };
-        }
-        if (parsed.status === "ambiguous") {
-          return { status: "ambiguous", message: parsed.message ?? "", candidates: parsed.candidates ?? [] };
-        }
-        return { status: "failed" };
+        return handleAiResult(parsed, now);
       } catch (e) {
-        lastError = e;
         console.error(`[schedule AI] parse failed (attempt ${attempt}/${AI_RETRIES}):`, e?.message ?? String(e));
         if (attempt < AI_RETRIES) await new Promise(r => setTimeout(r, AI_BACKOFF_MS));
       }
     }
     // 所有重试失败 → fallback（对齐旧 bundle Ul 最终失败路径）
+    console.error("[schedule AI] all retries failed, falling back to parseSimpleTime");
   }
   return parseSimpleTime(text);
 }
+// Fallback natural-language time parser (used when the Workers AI binding is
+// unavailable or errors). Must cover every format shown in
+// schedule.flow.timeExamples so the user is never stuck in awaiting_time.
+const WEEKDAYS = {
+  sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2, tues: 2,
+  wednesday: 3, wed: 3, weds: 3, thursday: 4, thu: 4, thur: 4, thurs: 4,
+  friday: 5, fri: 5, saturday: 6, sat: 6,
+};
+function parseTimeOfDay(raw) {
+  if (raw == null) return null;
+  const s = String(raw).toLowerCase().trim();
+  if (!s) return null;
+  if (s === "noon" || s === "midday") return { hour: 12, minute: 0 };
+  if (s === "midnight") return { hour: 0, minute: 0 };
+  const ampm = s.match(/^(\d{1,2})(?::(\d{1,2}))?\s*(am|pm)$/);
+  if (ampm) {
+    let h = parseInt(ampm[1], 10);
+    const m = ampm[2] ? parseInt(ampm[2], 10) : 0;
+    if (ampm[3] === "pm" && h !== 12) h += 12;
+    if (ampm[3] === "am" && h === 12) h = 0;
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return { hour: h, minute: m };
+  }
+  const hm = s.match(/^(\d{1,2})(?::(\d{1,2}))?$/);
+  if (hm) {
+    const h = parseInt(hm[1], 10);
+    const m = hm[2] ? parseInt(hm[2], 10) : 0;
+    if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+    return { hour: h, minute: m };
+  }
+  return null;
+}
+function extractTimeOfDay(s) {
+  const m = s.toLowerCase().match(/\b(\d{1,2}(?::\d{1,2})?\s*(?:am|pm)?|noon|midnight)\b/);
+  return m ? parseTimeOfDay(m[1]) : null;
+}
+function nextDailyAt(hour, minute, now) {
+  const parts = toLocalParts(now);
+  let d = fromLocalParts({ year: parts.year, month: parts.month, day: parts.day, hour, minute });
+  if (d.getTime() <= now.getTime()) {
+    const next = addDays(parts, 1);
+    d = fromLocalParts({ year: next.year, month: next.month, day: next.day, hour, minute });
+  }
+  return d.toISOString();
+}
+function onceRunAt(runAt) {
+  return { status: "resolved", ruleType: "once", rulePayload: { run_at: runAt }, nextRunAt: runAt };
+}
 function parseSimpleTime(text) {
-  const t = text.toLowerCase().trim();
-  const chineseEvery = text.trim().match(/每\s*(\d+)\s*分/);
+  const raw = text.trim();
+  const t = raw.toLowerCase();
+  const now = new Date();
+
+  // Chinese: 每 N 分(钟)
+  const chineseEvery = raw.match(/每\s*(\d+)\s*分/);
   if (chineseEvery) {
     const minutes = parseInt(chineseEvery[1], 10);
-    return { status: "resolved", ruleType: "every_N_minutes", rulePayload: { minutes }, nextRunAt: new Date(Date.now() + minutes * 60000).toISOString() };
+    return { status: "resolved", ruleType: "interval", rulePayload: { minutes }, nextRunAt: addMinutes(now, minutes).toISOString() };
   }
-  const every = t.match(/every\s+(\d+)\s*(min|minute|minutes)/);
-  if (every) {
-    const minutes = parseInt(every[1], 10);
-    return { status: "resolved", ruleType: "every_N_minutes", rulePayload: { minutes }, nextRunAt: new Date(Date.now() + minutes * 60000).toISOString() };
+
+  // every N minutes / every N min
+  const everyMin = t.match(/every\s+(\d+)\s*(min|minute|minutes)/);
+  if (everyMin) {
+    const minutes = parseInt(everyMin[1], 10);
+    return { status: "resolved", ruleType: "interval", rulePayload: { minutes }, nextRunAt: addMinutes(now, minutes).toISOString() };
   }
-  if (t === "once" || t.includes("once")) {
-    return { status: "resolved", ruleType: "once", rulePayload: null, nextRunAt: new Date(Date.now() + 60000).toISOString() };
+
+  // every minute / minutely
+  if (/\bevery\s+minute\b|\bminutely\b/.test(t)) {
+    return { status: "resolved", ruleType: "minutely", rulePayload: { interval_minutes: 1 }, nextRunAt: computeNextRun({ ruleType: "minutely", rulePayload: { interval_minutes: 1 }, now }) }
   }
+
+  // every N hours
+  const everyHour = t.match(/every\s+(\d+)\s*(hr|hour|hours)/);
+  if (everyHour) {
+    const hours = parseInt(everyHour[1], 10);
+    return { status: "resolved", ruleType: "hourly", rulePayload: { interval_hours: hours, minute: 0 }, nextRunAt: computeNextRun({ ruleType: "hourly", rulePayload: { interval_hours: hours, minute: 0 }, now }) }
+  }
+
+  // every hour / hourly (on the dot)
+  if (/\bevery\s+hour\b|\bhourly\b/.test(t)) {
+    return { status: "resolved", ruleType: "hourly", rulePayload: { interval_hours: 1, minute: 0 }, nextRunAt: computeNextRun({ ruleType: "hourly", rulePayload: { interval_hours: 1, minute: 0 }, now }) }
+  }
+
+  const timeOfDay = extractTimeOfDay(t);
+
+  // every day / daily [at HH:MM]
+  if (/every\s*day|daily|everyday/.test(t)) {
+    const { hour, minute } = timeOfDay ?? { hour: 0, minute: 0 };
+    return { status: "resolved", ruleType: "daily", rulePayload: { hour, minute }, nextRunAt: nextDailyAt(hour, minute, now) };
+  }
+
+  // every weekday / weekdays [at HH:MM]
+  if (/every\s+weekday|weekdays|\bweekday\b/.test(t)) {
+    const { hour, minute } = timeOfDay ?? { hour: 9, minute: 0 };
+    return { status: "resolved", ruleType: "weekday", rulePayload: { hour, minute }, nextRunAt: computeNextRun({ ruleType: "weekday", rulePayload: { hour, minute }, now }) }
+  }
+
+  // every weekend / weekends [at HH:MM]
+  if (/every\s+weekend|weekends|\bweekend\b/.test(t)) {
+    const { hour, minute } = timeOfDay ?? { hour: 9, minute: 0 };
+    return { status: "resolved", ruleType: "weekenday", rulePayload: { hour, minute }, nextRunAt: computeNextRun({ ruleType: "weekenday", rulePayload: { hour, minute }, now }) }
+  }
+
+  // every <Day-of-week> [at HH:MM]
+  const dayMatch = t.match(/every\s+(\w+)/);
+  if (dayMatch) {
+    const wd = WEEKDAYS[dayMatch[1].replace(/s$/, "")];
+    if (wd != null) {
+      const { hour, minute } = timeOfDay ?? { hour: 9, minute: 0 };
+      return { status: "resolved", ruleType: "weekly", rulePayload: { weekdays: [wd], hour, minute }, nextRunAt: computeNextRun({ ruleType: "weekly", rulePayload: { weekdays: [wd], hour, minute }, now }) }
+    }
+  }
+
+  // on <Day> / bare <Day> [at HH:MM]
+  const onDay = t.match(/\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday)s?\b/);
+  if (onDay) {
+    const wd = WEEKDAYS[onDay[1]];
+    const { hour, minute } = timeOfDay ?? { hour: 9, minute: 0 };
+    return { status: "resolved", ruleType: "weekly", rulePayload: { weekdays: [wd], hour, minute }, nextRunAt: computeNextRun({ ruleType: "weekly", rulePayload: { weekdays: [wd], hour, minute }, now }) }
+  }
+
+  // today [at HH:MM]
+  if (/\btoday\b/.test(t)) {
+    const parts = toLocalParts(now);
+    const { hour, minute } = timeOfDay ?? { hour: parts.hour, minute: parts.minute };
+    let d = fromLocalParts({ year: parts.year, month: parts.month, day: parts.day, hour, minute });
+    if (d.getTime() <= now.getTime()) {
+      const next = addDays(parts, 1);
+      d = fromLocalParts({ year: next.year, month: next.month, day: next.day, hour, minute });
+    }
+    return onceRunAt(d.toISOString());
+  }
+
+  // tomorrow [at HH:MM]
+  if (/\btomorrow\b/.test(t)) {
+    const parts = toLocalParts(now);
+    const next = addDays(parts, 1);
+    const { hour, minute } = timeOfDay ?? { hour: 9, minute: 0 };
+    return onceRunAt(fromLocalParts({ year: next.year, month: next.month, day: next.day, hour, minute }).toISOString());
+  }
+
+  // bare time-of-day (e.g. "9:00", "6pm") → daily at that time
+  const bareTime = parseTimeOfDay(t);
+  if (bareTime) {
+    return { status: "resolved", ruleType: "daily", rulePayload: bareTime, nextRunAt: nextDailyAt(bareTime.hour, bareTime.minute, now) };
+  }
+
+  // once / one time / just once
+  if (/\bonce\b|one\s+time|just\s+once/.test(t)) {
+    return onceRunAt(addMinutes(now, 1).toISOString());
+  }
+
   return { status: "failed" };
 }
