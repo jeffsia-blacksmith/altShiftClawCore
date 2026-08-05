@@ -15,7 +15,7 @@ export async function createSchedule(db, data) {
     )
     .bind(
       id, data.repo, data.issueNumber, data.chatId ?? null, data.prompt ?? "", data.eventData ?? null,
-      data.ruleType ?? null, rulePayload, data.timezone ?? "Asia/Taipei", data.nextRunAt ?? null,
+      data.ruleType ?? null, rulePayload, data.timezone ?? "Asia/Kuala_Lumpur", data.nextRunAt ?? null,
       shouldNotify, status, data.lastRunAt ?? null, data.lastError ?? null, data.lockedUntil ?? null,
       data.cancelledAt ?? null, now, now,
     )

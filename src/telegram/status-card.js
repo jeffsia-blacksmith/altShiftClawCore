@@ -8,12 +8,12 @@ import { listSchedulesForIssue } from "../db/schedules.js";
 import { escapeMarkdownV2 as O, MARKDOWN_V2_PARSE_MODE as fp } from "./markdown.js";
 import { scheduleRuleTypeLabel, scheduleRuleDescription } from "./edge-replies.js";
 
-// Bt — locale-formatted timestamp (DD/MM/YYYY, HH:MM in Asia/Taipei)
+// Bt — locale-formatted timestamp (DD/MM/YYYY, HH:MM in Asia/Kuala_Lumpur)
 function formatLocalTime(iso, lang) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  const opts = { timeZone: "Asia/Taipei", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
+  const opts = { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
   return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en-GB", opts);
 }
 

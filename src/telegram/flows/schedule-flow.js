@@ -27,7 +27,7 @@ async function clearSchedState(store, chatId) {
 }
 
 // Wn — 下次运行时间计算（完整版，对齐旧 bundle Wn L13750-13778 + helpers L13510-13748）
-// 时区：Asia/Taipei (UTC+8)
+// 时区：Asia/Kuala_Lumpur (UTC+8)
 const TZ_OFFSET = 28800000; // 8h in ms
 
 function toLocalParts(date = new Date()) {
@@ -189,7 +189,7 @@ function formatLocalTime(iso, lang) {
   if (!iso) return "";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  const opts = { timeZone: "Asia/Taipei", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
+  const opts = { timeZone: "Asia/Kuala_Lumpur", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" };
   return d.toLocaleString(lang === "zh-CN" ? "zh-CN" : "en-GB", opts);
 }
 
@@ -622,7 +622,7 @@ export async function handleScheduleText(ctx) {
         await ctx.reply(t("schedule.flow.failedUnderstand", {}, lang));
         return true;
       }
-      await setSchedState(store, chatId, { ...state, step: "awaiting_payload", ruleType: result.ruleType, rulePayload: result.rulePayload, timezone: "Asia/Taipei", nextRunAt: result.nextRunAt });
+      await setSchedState(store, chatId, { ...state, step: "awaiting_payload", ruleType: result.ruleType, rulePayload: result.rulePayload, timezone: "Asia/Kuala_Lumpur", nextRunAt: result.nextRunAt });
       await ctx.reply(
         t("schedule.flow.payloadPromptLine1", {}, lang),
         { reply_markup: payloadKeyboard(lang) },
@@ -686,7 +686,7 @@ export async function handleScheduleText(ctx) {
       const current = await getSchedule(d1, state.scheduleId);
       const sched = await updateSchedule(d1, state.scheduleId, {
         ruleType: result.ruleType, rulePayload: result.rulePayload,
-        timezone: "Asia/Taipei", nextRunAt: result.nextRunAt,
+        timezone: "Asia/Kuala_Lumpur", nextRunAt: result.nextRunAt,
         status: current?.status === "paused" ? "paused" : "active",
       });
       if (!sched) { await clearSchedState(store, chatId); await ctx.reply(t("schedule.flow.scheduleNotFound", {}, lang)); return true; }
@@ -720,7 +720,7 @@ function sanitizeAiPayload(ruleType, payload) {
   if (ruleType === "once") {
     let n = typeof r.run_at === "string" ? r.run_at.trim() : "";
     if (!n) return null;
-    // naive local time → assume Asia/Taipei
+    // naive local time → assume Asia/Kuala_Lumpur
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(n) && !/[Zz]|[+-]\d{2}(:\d{2})?$/.test(n)) n = `${n}+08:00`;
     const d = new Date(n);
     return Number.isNaN(d.getTime()) ? null : { run_at: d.toISOString() };
@@ -780,17 +780,17 @@ function buildScheduleSystemPrompt(now) {
     "Rules:",
     "- Prefer cron for recurring schedules.",
     "- Do not invent additional rule types.",
-    '- Use timezone "Asia/Taipei" for resolved results.',
+    '- Use timezone "Asia/Kuala_Lumpur" for resolved results.',
     "- Interpret 24:00 as next-day 00:00.",
     "- If a recurring schedule has multiple times and one cron can express it, combine them into one cron.",
     '- If the input is ambiguous, return status "ambiguous" with a short message and candidate rewrites.',
     '- If the input cannot be represented as one canonical rule, return status "unknown" with a short message.',
     "",
     "Examples:",
-    '{"status":"resolved","ruleType":"once","rulePayload":{"run_at":"2026-04-08T10:00:00.000Z"},"timezone":"Asia/Taipei"}',
-    '{"status":"resolved","ruleType":"interval","rulePayload":{"minutes":5},"timezone":"Asia/Taipei"}',
-    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 12 * * *"},"timezone":"Asia/Taipei"}',
-    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 0,9,12,15,18,21 * * *"},"timezone":"Asia/Taipei"}',
+    '{"status":"resolved","ruleType":"once","rulePayload":{"run_at":"2026-04-08T10:00:00.000Z"},"timezone":"Asia/Kuala_Lumpur"}',
+    '{"status":"resolved","ruleType":"interval","rulePayload":{"minutes":5},"timezone":"Asia/Kuala_Lumpur"}',
+    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 12 * * *"},"timezone":"Asia/Kuala_Lumpur"}',
+    '{"status":"resolved","ruleType":"cron","rulePayload":{"expression":"0 0,9,12,15,18,21 * * *"},"timezone":"Asia/Kuala_Lumpur"}',
     '{"status":"ambiguous","message":"Please clarify your intent.","candidates":["Run once today at 6pm","Run every day at 6pm"]}',
     '{"status":"unknown","message":"Please rephrase more clearly."}',
     "",

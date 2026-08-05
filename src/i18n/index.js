@@ -4,11 +4,15 @@
 
 import zhCNTranslation from "./zh-CN.json" with { type: "json" };
 import enTranslation from "./en.json" with { type: "json" };
+import msTranslation from "./ms.json" with { type: "json" };
 
 const translations = {
   "zh-CN": zhCNTranslation,
   en: enTranslation,
+  ms: msTranslation,
 };
+
+const SUPPORTED_LOCALES = Object.keys(translations);
 
 export function t(key, params = {}, lang = "en") {
   let dict = translations[lang] || translations.en;
@@ -66,7 +70,7 @@ export async function getLanguage(services) {
 }
 
 export function glang() {
-  return typeof globalThis !== "undefined" && globalThis.globalLanguage === "zh-CN"
-    ? "zh-CN"
-    : "en";
+  if (typeof globalThis === "undefined") return "en";
+  const g = globalThis.globalLanguage;
+  return g && SUPPORTED_LOCALES.includes(g) ? g : "en";
 }

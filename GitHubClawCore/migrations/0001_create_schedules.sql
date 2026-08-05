@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS schedules (
   event_data TEXT,
   rule_type TEXT NOT NULL,
   rule_payload TEXT NOT NULL,
-  timezone TEXT NOT NULL DEFAULT 'Asia/Taipei',
+  timezone TEXT NOT NULL DEFAULT 'Asia/Kuala_Lumpur',
   next_run_at TEXT NOT NULL,
   should_notify INTEGER NOT NULL DEFAULT 1 CHECK (should_notify IN (0, 1)),
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'paused', 'cancelled')),
