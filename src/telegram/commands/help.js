@@ -32,10 +32,26 @@ const HELP_LINES = [
   "help.llm_desc",
 ];
 
+const SECTION_HEADERS = new Set([
+  "help.title",
+  "help.lobster_burger_management",
+  "help.lobster_management",
+]);
+
 export function buildHelpText(repoFullName, lang) {
-  return HELP_LINES.map((line) =>
-    line === "" ? "" : escapeMarkdownV2(t(line, { repoFullName }, lang)),
-  ).join("\n");
+  return HELP_LINES.map((line) => {
+    if (line === "") return "";
+    const val = t(line, { repoFullName }, lang);
+    if (SECTION_HEADERS.has(line)) {
+      return `*${escapeMarkdownV2(val)}*`;
+    }
+    // Command lines: "/cmd  description" → "• */cmd* — description"
+    const m = val.match(/^(\/\S+)\s+(.*)$/);
+    if (m) {
+      return `• *${escapeMarkdownV2(m[1])}* \\— ${escapeMarkdownV2(m[2])}`;
+    }
+    return escapeMarkdownV2(val);
+  }).join("\n");
 }
 
 export function registerHelp(composer) {
