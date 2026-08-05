@@ -154,9 +154,10 @@ async function readTemplateTree(octokit, owner, repo, template) {
   return !obj || obj.__typename !== "Tree" ? null : obj;
 }
 // hm — 递归展平 Tree entries 为 {path, content}（对齐 L6820-6840）
-function flattenTemplateTree(entries, prefix, personality) {
+function flattenTemplateTree(entries, prefix, personality, clawLanguage) {
   if (!entries?.length) return [];
   const out = [];
+  const langLabel = clawLanguage === "zh-CN" ? "Simplified Chinese (China)" : "English";
   for (const s of entries) {
     const fullPath = prefix ? `${prefix}/${s.name}` : s.name;
     if (s.type === "blob" && s.object?.__typename === "Blob") {
@@ -164,20 +165,21 @@ function flattenTemplateTree(entries, prefix, personality) {
       if (/^\.github\/workflows\//i.test(fullPath)) continue;
       let content = s.object.text ?? "";
       if (personality) content = content.replace(/\{\{personality\}\}/g, personality);
+      content = content.replace(/\{\{response_language\}\}/g, langLabel);
       out.push({ path: fullPath, content });
       continue;
     }
     if (s.type === "tree" && s.object?.__typename === "Tree") {
       if (!Array.isArray(s.object.entries)) throw new Error(t("templates.nestedTooDeep", { path: fullPath }, glang()));
-      out.push(...flattenTemplateTree(s.object.entries, fullPath, personality));
+      out.push(...flattenTemplateTree(s.object.entries, fullPath, personality, clawLanguage));
     }
   }
   return out;
 }
-export async function readTemplateFiles(octokit, owner, repo, template, personality = "") {
+export async function readTemplateFiles(octokit, owner, repo, template, personality = "", clawLanguage = "en") {
   const tree = await readTemplateTree(octokit, owner, repo, template);
   if (!tree) throw Object.assign(new Error(t("templates.notInstalled", { name: template }, glang())), { code: "TEMPLATE_NOT_INSTALLED" });
-  return flattenTemplateTree(tree.entries, "", { personality });
+  return flattenTemplateTree(tree.entries, "", personality, clawLanguage);
 }
 
 // Pn — 创建 orphan 分支
@@ -294,7 +296,7 @@ export async function osCreateFinalize(ctx, state) {
   const personality = config.personality || "";
 
   // 2. 读取模板文件（排除 .github/workflows/）
-  const files = await readTemplateFiles(octokit, owner, repo, template, personality);
+  const files = await readTemplateFiles(octokit, owner, repo, template, personality, config.language);
 
   // 3. 创建 orphan 分支 issue-<n>
   await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: init issue #${issueNumber} orphan branch (template: ${template})`);
@@ -359,7 +361,7 @@ export async function osEditFinalize(ctx, state) {
   if (state.resetTemplate) {
     const tpl = state.template || "default";
     try {
-      const files = await readTemplateFiles(octokit, owner, repo, tpl, personality);
+      const files = await readTemplateFiles(octokit, owner, repo, tpl, personality, config.language);
       await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: reset issue #${issueNumber} template (template: ${tpl})`);
       await syncWorkflowFile(octokit, owner, repo, issueNumber, tpl);
       finalTemplate = tpl;

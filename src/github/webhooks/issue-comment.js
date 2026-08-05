@@ -25,6 +25,16 @@ export function registerIssueCommentHandlers(webhooks, env) {
     const isBot = payload.sender?.type === "Bot";
     const isSchedBot = isScheduledTriggerBot(payload);
     const pending = isMediaPending(payload);
+
+    // Scheduled-trigger comments are prompts FOR the lobster — they should not
+    // be relayed to the Telegram chat. Only dispatch the coding agent.
+    if (isSchedBot) {
+      await dispatchCodingAgent(payload, env).catch((e) => {
+        logError("log.webhook.dispatchToCodingAgentFailed", { error: e?.message ?? String(e) });
+      });
+      return;
+    }
+
     const relayP = relayComment(payload, env).catch((e) => {
       logError("log.webhook.relayToTelegramFailed", { error: e?.message ?? String(e) });
       throw e;
@@ -33,7 +43,7 @@ export function registerIssueCommentHandlers(webhooks, env) {
       await relayP;
       return;
     }
-    if (isBot && !isSchedBot) {
+    if (isBot) {
       await relayP;
       return;
     }

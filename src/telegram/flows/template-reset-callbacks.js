@@ -55,7 +55,7 @@ export function registerTemplateResetCallbacks(composer) {
     if (!issueNum || !template) { await ctx.answerCallbackQuery(t("core.invalidParams", {}, lang)); return; }
     const personality = config.personality || "";
     try {
-      const files = await readTemplateFiles(octokit, owner, repo, template, personality);
+      const files = await readTemplateFiles(octokit, owner, repo, template, personality, config.language);
       await createOrphanBranch(octokit, owner, repo, `issue-${issueNum}`, files, `chore: reset issue #${issueNum} template (template: ${template})`);
       await syncWorkflowFile(octokit, owner, repo, issueNum, template);
       await upsertIssueTemplate(d1, repoFullName, issueNum, template);

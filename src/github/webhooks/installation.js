@@ -47,7 +47,7 @@ async function createFirstLobster(env, chatId) {
   const issueNumber = data.number;
   const branch = `issue-${issueNumber}`;
   // 对齐 kE L19381-19394：Er→Pn→Sr→Vr→rr（全部不包裹，任一抛出 → autoInitFailed）
-  const files = await readTemplateFiles(octokit, owner, repo, template, personality);
+  const files = await readTemplateFiles(octokit, owner, repo, template, personality, config.language);
   const fileItems = files.map((f) => ({ path: f.path, content: f.content }));
   await createOrphanBranch(octokit, owner, repo, branch, fileItems, `chore: init issue #${issueNumber} orphan branch (template: ${template})`);
   await syncWorkflowFile(octokit, owner, repo, issueNumber, template);

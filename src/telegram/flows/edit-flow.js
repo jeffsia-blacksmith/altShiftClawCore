@@ -200,7 +200,7 @@ async function osEditFinalize(ctx, state) {
     let rebuilt = false;
     for (const tpl of templateChain) {
       try {
-        const files = await readTemplateFiles(octokit, owner, repo, tpl, config.personality || "");
+        const files = await readTemplateFiles(octokit, owner, repo, tpl, config.personality || "", config.language);
         await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: init issue #${issueNumber} orphan branch (rebuild, template: ${tpl})`);
         rebuilt = true;
         break;
@@ -246,7 +246,7 @@ async function osEditFinalize(ctx, state) {
   if (state.resetTemplate && state.template) {
     try {
       const { readTemplateFiles, createOrphanBranch, syncWorkflowFile, upsertIssueTemplate } = await import("../../github/branches.js");
-      const files = await readTemplateFiles(octokit, owner, repo, state.template, config.personality || "");
+      const files = await readTemplateFiles(octokit, owner, repo, state.template, config.personality || "", config.language);
       await createOrphanBranch(octokit, owner, repo, `issue-${issueNumber}`, files, `chore: reset issue #${issueNumber} template (template: ${state.template})`);
       await syncWorkflowFile(octokit, owner, repo, issueNumber, state.template);
       finalTemplate = state.template;
