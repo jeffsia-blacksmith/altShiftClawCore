@@ -22,16 +22,16 @@ async function clearTplState(store, chatId) {
 }
 
 async function fetchTemplatesCatalog(config) {
-  const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/templates?ref=main";
+  const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/installer/templates?ref=main";
   const resp = await fetch(url, {
     headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": config.github.apiVersion, "User-Agent": config.github.userAgent },
   });
   if (!resp.ok) return [];
   const data = await resp.json();
-  return Array.isArray(data) ? data.filter((d) => d.type === "dir").map((d) => ({ name: d.name })) : [];
+  return Array.isArray(data) ? data.filter((d) => d.type === "dir" && !d.name.startsWith(".")).map((d) => ({ name: d.name })) : [];
 }
 async function fetchTemplateManifest(config, name) {
-  const url = `https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/templates/${name}/githubclaw.json?ref=main`;
+  const url = `https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/installer/templates/${name}/githubclaw.json?ref=main`;
   const resp = await fetch(url, {
     headers: { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": config.github.apiVersion, "User-Agent": config.github.userAgent },
   });

@@ -16,12 +16,12 @@ async function setTemplateInstallState(store, chatId, state) {
   await store.put(`template-install:${chatId}`, JSON.stringify(state), { expirationTtl: 900 });
 }
 
-// 远端模板目录（On L12765-12785：从 altShiftClawToolkit:main/templates 拉）
+// 远端模板目录（On L12765-12785：从 altShiftClawToolkit:main/installer/templates 拉）
 async function fetchRemoteTemplateCatalog(config) {
   if (catalogCache !== null && Date.now() - catalogCacheTime < CATALOG_TTL) {
     return catalogCache;
   }
-  const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/templates?ref=main";
+  const url = "https://api.github.com/repos/jeffsia-blacksmith/altShiftClawToolkit/contents/installer/templates?ref=main";
   try {
     const resp = await fetch(url, {
       headers: {
@@ -33,7 +33,7 @@ async function fetchRemoteTemplateCatalog(config) {
     if (!resp.ok) throw new Error(`template catalog fetch failed: ${resp.status}`);
     const data = await resp.json();
     if (!Array.isArray(data)) return [];
-    const catalog = data.filter((it) => it.type === "dir").map((it) => ({ name: it.name }));
+    const catalog = data.filter((it) => it.type === "dir" && !it.name.startsWith(".")).map((it) => ({ name: it.name }));
     catalogCache = catalog;
     catalogCacheTime = Date.now();
     return catalog;
