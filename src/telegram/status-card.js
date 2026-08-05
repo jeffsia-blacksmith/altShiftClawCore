@@ -148,16 +148,7 @@ function buildStatusCardText(e, lang) {
   // Issue line: #<n> <title>
   const titlePart = e.issue.title ? `\\#${e.issue.number} ${O(e.issue.title)}` : `\\#${e.issue.number}`;
   lines.push(titlePart);
-  // Models
-  lines.push("", t("core.infoCardModels", {}, L));
-  const modelLines = e.models.sources.filter((s) => s.model?.trim());
-  if (modelLines.length === 0) {
-    lines.push(`\\- ${O(t("schedule.workflow_defined_label", {}, L))}`);
-  } else {
-    for (const s of modelLines) {
-      lines.push(`\\- ${O(s.label)} \\(${O(s.model)}\\)`);
-    }
-  }
+  // Models — removed per user request (was "🤖 Models in use / Defined by Workflow")
   // LLM
   lines.push("", t("core.infoCardLLM", {}, L));
   lines.push(`\\- ${O(t("core.llmProviderLabel", {}, L))}: ${e.llm.provider ? O(e.llm.provider) : O(t("core.llmNotSet", {}, L))}`);
@@ -178,17 +169,17 @@ function buildStatusCardText(e, lang) {
     lines.push(`\\- ${O(t("schedule.no_schedules_set", {}, L))}`);
   } else {
     for (const sch of e.schedules.items) {
-      const parts = [];
       const statusLabel = sch.status === "active" ? t("schedule.schedule_status_enabled", {}, L)
         : sch.status === "paused" ? t("schedule.schedule_status_paused", {}, L)
         : sch.status === "cancelled" ? t("schedule.schedule_status_cancelled", {}, L)
         : sch.status;
       const notifyLabel = sch.shouldNotify ? t("schedule.notify_open", {}, L) : t("schedule.notify_close", {}, L);
+      const typeLabel = scheduleRuleTypeLabel(sch.ruleType, L);
       const desc = scheduleRuleDescription(sch, L);
-      parts.push(`${scheduleRuleTypeLabel(sch.ruleType, L)}：${desc}｜${statusLabel}｜${notifyLabel}`);
-      if (sch.nextRunAt) parts.push(t("schedule.cardNextRun", { time: formatLocalTime(sch.nextRunAt, L) }, L));
-      if (sch.prompt) parts.push(t("schedule.cardPrompt", { prompt: sch.prompt }, L));
-      lines.push(`\\- ${O(parts.join("｜"))}`);
+      lines.push(`\\- *${O(typeLabel)}*: ${O(desc)}`);
+      lines.push(`  \\- ${O(t("core.infoCardStatus", {}, L))}: ${O(statusLabel)} \\(${O(notifyLabel)}\\)`);
+      if (sch.nextRunAt) lines.push(`  \\- ${O(t("core.infoCardNextRun", {}, L))}: ${O(formatLocalTime(sch.nextRunAt, L))}`);
+      if (sch.prompt) lines.push(`  \\- ${O(t("core.infoCardPrompt", {}, L))}: ${O(sch.prompt)}`);
     }
   }
   // Task status

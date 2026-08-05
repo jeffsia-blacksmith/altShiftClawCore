@@ -294,7 +294,9 @@ function buildChatScheduleListText(schedules, lang) {
   const lines = [t("schedule.thisChatListTitle", {}, lang)];
   schedules.forEach((s, i) => {
     const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
-    lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
+    lines.push(`${i + 1}. ${s.prompt ?? ""}`);
+    lines.push(`   🗓️ ${scheduleRuleTypeLabel(s.ruleType, lang)}: ${ruleDesc}`);
+    lines.push(`   📍 ${s.status ?? ""}`);
     lines.push(`   🆔 ${s.id}`);
     lines.push(`   ⏭️ ${formatLocalTime(s.nextRunAt, lang)}`);
   });
@@ -320,7 +322,9 @@ function buildIssueScheduleListText(schedules, title, issueNumber, lang) {
   const lines = [t("schedule.listTitle", { name: title ?? "", issueNumber }, lang)];
   schedules.forEach((s, i) => {
     const ruleDesc = (scheduleRuleDescription(s, lang) || s.ruleType) ?? "";
-    lines.push(`${i + 1}. ${s.prompt ?? ""}｜${ruleDesc}｜${s.status ?? ""}`);
+    lines.push(`${i + 1}. ${s.prompt ?? ""}`);
+    lines.push(`   🗓️ ${scheduleRuleTypeLabel(s.ruleType, lang)}: ${ruleDesc}`);
+    lines.push(`   📍 ${s.status ?? ""}`);
     lines.push(`   🆔 ${s.id}`);
     lines.push(`   ⏭️ ${formatLocalTime(s.nextRunAt, lang)}`);
   });

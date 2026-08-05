@@ -981,7 +981,7 @@ await (async () => {
     if (missing.length) throw new Error(`zh missing keys: ${missing.slice(0, 5).join(", ")}`);
     const extra = zhKeys.filter((k) => !enKeys.includes(k));
     if (extra.length) throw new Error(`zh extra keys: ${extra.slice(0, 5).join(", ")}`);
-    if (enKeys.length !== 814) throw new Error(`expected 814 leaf keys, got ${enKeys.length}`);
+    if (enKeys.length !== 817) throw new Error(`expected 817 leaf keys, got ${enKeys.length}`);
     console.log(`  ✓ i18n parity ${enKeys.length}×2 (en=zh, zero mismatch)`);
     pass++;
   } catch (e) {
