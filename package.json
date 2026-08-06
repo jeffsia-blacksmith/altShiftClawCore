@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node build.mjs",
     "check": "node build.mjs --check",
+    "release": "node release.mjs",
     "test:guardrails": "node test/guardrails.mjs",
     "test:guardrails-v2": "node test/guardrails-v2.mjs",
     "test:shadow-diff": "node test/shadow-diff.mjs"
