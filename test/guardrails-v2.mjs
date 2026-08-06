@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createHmac } from "node:crypto";
+import { DEFAULT_VERSION } from "../src/config.js";
 import {
   makeD1,
   installMockFetch,
@@ -407,6 +408,56 @@ console.log("guardrails-v2: GitHub webhook event dispatch");
   }
 }
 
+// issue_comment.created with a markdown table → relayed as a fenced ```text block
+{
+  const env = baseEnv();
+  const issueBody = `<!-- telegram-meta: {"chat_id":111,"msg_id":50} -->`;
+  const commentBody = `## 推荐店铺\n\n| 店铺 | 位置 | 类型 |\n|------|------|------|\n| GADGET HUB | S53 | 配件 |\n\n**营业时间：** 10:00\n\n---\n\n<!-- githubclaw-brain-result: {"source":"githubclaw-worker-brain"} -->`;
+  const payload = JSON.stringify({
+    action: "created",
+    issue: { number: 9, title: "Table test", body: issueBody, html_url: "https://github.com/test-owner/test-repo/issues/9" },
+    comment: { id: 101, body: commentBody, html_url: "https://github.com/test-owner/test-repo/issues/9#issuecomment-101" },
+    sender: { login: "claw-bot", type: "Bot" },
+  });
+  const sig = "sha256=" + createHmac("sha256", env.GITHUB_WEBHOOK_SECRET).update(payload).digest("hex");
+  const tgReplies = [];
+  const mock = installMockFetch([tg.getMe(), tg.sendMessage(tgReplies)]);
+  const ctx = capturingCtx();
+  try {
+    const req = new Request("https://test.dev/github/webhook", {
+      method: "POST",
+      headers: {
+        "x-github-delivery": "deliv-3",
+        "x-github-event": "issue_comment",
+        "x-hub-signature-256": sig,
+        "content-type": "application/json",
+      },
+      body: payload,
+    });
+    const res = await handler(req, env, ctx);
+    await ctx.drain();
+    is(res, 200);
+    const b = await json(res);
+    if (b.ok !== true) throw new Error(`expected {ok:true}, got ${JSON.stringify(b)}`);
+    if (tgReplies.length < 1) throw new Error(`expected telegram relay, got ${tgReplies.length}`);
+    const text = tgReplies[0].text ?? "";
+    // table rows should be wrapped in a ```text block, not shown as escaped \|
+    if (!text.includes("```text\n| 店铺 | 位置 | 类型 |")) throw new Error(`table not code-blocked: ${text}`);
+    if (text.includes("\\|")) throw new Error(`pipe escaped as \\|: ${text}`);
+    // bold + heading preserved
+    if (!text.includes("*营业时间：*")) throw new Error(`bold not preserved: ${text}`);
+    // horizontal rule replaced with unicode line, not \-\-\-
+    if (text.includes("\\-\\-\\-")) throw new Error(`hr not converted: ${text}`);
+    console.log("  ✓ issue_comment.created (markdown table) → code-blocked + HR converted");
+    pass++;
+  } catch (e) {
+    console.error(`  ✗ issue_comment markdown table: ${e.message}`);
+    fail++;
+  } finally {
+    mock.restore();
+  }
+}
+
 // issues.opened → 200，无副作用
 {
   const env = baseEnv();
@@ -787,7 +838,7 @@ await hitTg("POST /version → hardcoded version string", guardedEnv, tgUpdate("
   if (replies.length !== 1) throw new Error(`expected 1 reply, got ${replies.length}`);
   const text = replies[0].text ?? "";
   if (!text.startsWith("🦞 altShiftClawCore v")) throw new Error(`wrong version text: ${text}`);
-  if (!text.includes("0.2.24")) throw new Error(`missing version 0.2.24: ${text}`);
+  if (!text.includes(DEFAULT_VERSION)) throw new Error(`missing version ${DEFAULT_VERSION}: ${text}`);
 });
 
 // /schedules with no schedules → empty list reply (schedule.thisChatListEmpty = "No schedules currently.")

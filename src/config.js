@@ -4,7 +4,7 @@
 // 严格必填校验（telegram.botToken / github.owner / github.repo）在 R1+ 启用；
 // R0 暂不抛 ConfigError，避免空 env 的 guardrail 启动即崩。
 
-const DEFAULT_VERSION = "0.3.0";
+export const DEFAULT_VERSION = "0.3.0";
 const DEFAULT_API_BASE = "https://api.github.com";
 
 export class ConfigError extends Error {
