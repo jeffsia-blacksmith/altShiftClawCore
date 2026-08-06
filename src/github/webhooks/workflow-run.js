@@ -128,10 +128,12 @@ async function sendNotify(ctx, env, requestId, text, lang, replyMarkup = undefin
 
 // 各完成通知文本 builder（对齐 zm/CE/xE/OE — 含 status fallback "unknown"）
 function autoupdateNotifyText(conclusion, status, lang) {
-  if (conclusion === "success") return t("core.coreUpdateSuccess", {}, lang);
-  if (conclusion === "cancelled") return t("core.coreUpdateCancelled", {}, lang);
-  if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) return t("core.coreUpdateFailed", {}, lang);
-  return t("core.coreUpdateEnded", { result: escapeMdV2(conclusion || status || "unknown") }, lang);
+  let text;
+  if (conclusion === "success") text = t("core.coreUpdateSuccess", {}, lang);
+  else if (conclusion === "cancelled") text = t("core.coreUpdateCancelled", {}, lang);
+  else if (["failure", "timed_out", "startup_failure", "action_required"].includes(conclusion)) text = t("core.coreUpdateFailed", {}, lang);
+  else text = t("core.coreUpdateEnded", { result: escapeMdV2(conclusion || status || "unknown") }, lang);
+  return escapeMdV2(text);
 }
 function skillsNotifyText(sourceType, conclusion, status, name, target, lang) {
   const action = sourceType === "skill_remove" ? t("skills.action_remove", {}, lang)
