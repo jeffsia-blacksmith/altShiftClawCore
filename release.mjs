@@ -80,13 +80,19 @@ const pkg = readJson("package.json");
 pkg.version = nextVersion;
 writeJson("package.json", pkg);
 
+// ---- bump package-lock.json (root + first package entry) ----
+const lock = readJson("package-lock.json");
+if (lock.version !== undefined) lock.version = nextVersion;
+if (lock.packages && lock.packages[""]) lock.packages[""].version = nextVersion;
+writeJson("package-lock.json", lock);
+
 // ---- bump manifest version (NOT revision) ----
 const manifest = readJson("github-claw-worker-package.json");
 manifest.version = nextVersion;
 writeJson("github-claw-worker-package.json", manifest);
 
 // ---- commit + tag ----
-execSync("git add src/config.js package.json github-claw-worker-package.json", {
+execSync("git add src/config.js package.json package-lock.json github-claw-worker-package.json", {
   cwd: root,
   stdio: "inherit",
 });

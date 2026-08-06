@@ -10,12 +10,13 @@ This fork no longer tracks the upstream `duotify` version (`0.2.24`). It uses
 
 ## Where the version lives
 
-The version must stay **in sync** across these 4 places:
+The version must stay **in sync** across these places:
 
 | File | Field | What it drives |
 |---|---|---|
 | `src/config.js:7` | `DEFAULT_VERSION` | Version the running worker reports (e.g. `/health`, config `version`) |
 | `package.json:3` | `version` | npm package version |
+| `package-lock.json` | `version` (root + `packages[""]`) | npm lockfile version |
 | `github-claw-worker-package.json:2` | `version` | Published manifest `version` |
 | `github-claw-worker-package.json:3` | `revision` | **Do NOT edit manually** — the publish workflow overwrites it with the git commit SHA |
 
