@@ -3,6 +3,7 @@
 // 当 message:text 以 / 开头但不是已知命令时，RT 尝试匹配工作流别名。
 
 import { t, glang } from "../i18n/index.js";
+import { logError, logWarn } from "../i18n/log.js";
 
 // slugify 工作流文件名（对齐旧 bundle Gn L12973-12975: [A-Za-z][A-Za-z0-9_-]* → normalize -/_ to _）
 function slugify(name) {
@@ -168,11 +169,30 @@ export async function handleNaturalLanguageCommand(ctx, commandName, argsText) {
   }
 
   // 派工
+  const requestId = crypto.randomUUID();
   try {
     await octokit.rest.actions.createWorkflowDispatch({
-      owner, repo, workflow_id: match.path.split("/").pop(), ref: defaultBranch, inputs,
+      owner, repo, workflow_id: match.path.split("/").pop(), ref: defaultBranch, inputs: { ...inputs, request_id: requestId },
     });
-    await ctx.reply(buildTriggeredReply(match.name, inputs, lang), { parse_mode: "MarkdownV2" });
+    const sent = await ctx.reply(buildTriggeredReply(match.name, inputs, lang), { parse_mode: "MarkdownV2" });
+    // 记录 workflow notification，让 workflow_run.completed webhook 能把本条消息编辑成完成通知
+    try {
+      const { createWorkflowNotification } = await import("../github/webhooks/workflow-run.js");
+      const { d1 } = ctx.services;
+      await createWorkflowNotification(d1, {
+        requestId,
+        repo: config.github.repoFullName,
+        workflowName: match.name,
+        workflowPath: match.path,
+        title: sent?.text ?? "",
+        channel: "telegram",
+        chatId: chatId != null ? String(chatId) : null,
+        messageId: sent?.message_id != null ? String(sent.message_id) : null,
+        sourceId: null,
+        sourceType: null,
+        payloadJson: JSON.stringify({}),
+      });
+    } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
   } catch (e) {
     // error 文本不在 inline code 内，须转义 MarkdownV2 特殊字符（对齐旧 bundle Al: O(err)）
     const errMsg = e?.message ?? t("core.unknownError", {}, lang);
