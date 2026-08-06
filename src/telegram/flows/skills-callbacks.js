@@ -220,6 +220,7 @@ export function registerSkillCallbacks(composer) {
     if (!state) { await ctx.answerCallbackQuery(t("skills.process_expired", {}, lang)); return; }
     const skillName = ctx.callbackQuery.data.slice("skills_remove_confirm_from_list:".length);
     const requestId = crypto.randomUUID();
+    let dispatchFailed = null;
     try {
       await octokit.rest.actions.createWorkflowDispatch({
         owner, repo, workflow_id: "remove-skill.yml", ref: "main",
@@ -231,11 +232,16 @@ export function registerSkillCallbacks(composer) {
         await createWorkflowNotification(d1, { requestId, repo: config.github.repoFullName, workflowName: "remove-skill", workflowPath: ".github/workflows/remove-skill.yml", title: ctx.callbackQuery?.message?.text ?? "", channel: "telegram", messageId: ctx.callbackQuery?.message?.message_id ?? null, sourceId: skillName, sourceType: "skill_remove", chatId, payloadJson: JSON.stringify({ issue_number: state.issueNumber }) });
       } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     } catch (e) {
-      logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) });
+      dispatchFailed = e?.message ?? String(e);
+      logError("log.workflow.dispatchFailed", { error: dispatchFailed });
     }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.removing", {}, lang));
-    await ctx.editMessageText(t("skills.removing_progress", { name: escapeMarkdownV2(skillName), target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    if (dispatchFailed) {
+      await ctx.editMessageText(t("skills.remove_dispatch_failed", { name: escapeMarkdownV2(skillName), error: escapeMarkdownV2(dispatchFailed) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    } else {
+      await ctx.editMessageText(t("skills.removing_progress", { name: escapeMarkdownV2(skillName), target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    }
   });
 
   // skills_remove_back:<name>
@@ -308,6 +314,7 @@ export function registerSkillCallbacks(composer) {
       try { await setRepoSecret(octokit, owner, repo, upperName, trimmedVal); } catch (e) { logWarn("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
     }
     const requestId = crypto.randomUUID();
+    let dispatchFailed = null;
     try {
       await octokit.rest.actions.createWorkflowDispatch({
         owner, repo, workflow_id: "skills.yml", ref: "main",
@@ -325,10 +332,14 @@ export function registerSkillCallbacks(composer) {
           sourceId: skillName, sourceType: "skill_install", payloadJson,
         });
       } catch (e) { logError("log.webhook.handleFailed", { error: e?.message ?? String(e) }); }
-    } catch (e) { logError("log.workflow.dispatchFailed", { error: e?.message ?? String(e) }); }
+    } catch (e) { dispatchFailed = e?.message ?? String(e); logError("log.workflow.dispatchFailed", { error: dispatchFailed }); }
     await clearSkillState(store, chatId);
     await ctx.answerCallbackQuery(t("skills.installing", {}, lang));
-    await ctx.editMessageText(t("skills.installing_progress", { name: escapeMarkdownV2(skillName), target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    if (dispatchFailed) {
+      await ctx.editMessageText(t("skills.install_dispatch_failed", { name: escapeMarkdownV2(skillName), error: escapeMarkdownV2(dispatchFailed) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    } else {
+      await ctx.editMessageText(t("skills.installing_progress", { name: escapeMarkdownV2(skillName), target: targetLabel(state, lang) }, lang), { parse_mode: "MarkdownV2", reply_markup: { inline_keyboard: [] } });
+    }
   });
 
   // skills_cancel:0

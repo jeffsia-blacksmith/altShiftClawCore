@@ -85,6 +85,8 @@
     "removing": "⏳ Removing...",
     "installing_progress": "⏳ Installing skill *{name}* to {target}\\. You will be notified when done\\.",
     "removing_progress": "⏳ Removing skill *{name}* from {target}\\. You will be notified when done\\.",
+    "install_dispatch_failed": "❌ Failed to trigger skill *{name}* installation\\. Error: {error}",
+    "remove_dispatch_failed": "❌ Failed to trigger skill *{name}* removal\\. Error: {error}",
     "remove_confirm": "🗑 Remove skill *{name}* from {target}?\n\nAll files of this skill will be deleted after removal\\. You can reinstall it if needed\\.",
     "install_cancelled": "❌ Skill installation cancelled",
     "secret_value_required": "⚠️ Secret value for {name} is required and cannot be empty"

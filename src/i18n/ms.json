@@ -85,6 +85,8 @@
     "removing": "⏳ Membuang...",
     "installing_progress": "⏳ Kemahiran *{name}* sedang dipasang ke {target}. Anda akan dimaklumkan apabila selesai\\.",
     "removing_progress": "⏳ Kemahiran *{name}* sedang dibuang dari {target}. Anda akan dimaklumkan apabila selesai\\.",
+    "install_dispatch_failed": "❌ Gagal mencetuskan pemasangan kemahiran *{name}*. Ralat: {error}",
+    "remove_dispatch_failed": "❌ Gagal mencetuskan pembuangan kemahiran *{name}*. Ralat: {error}",
     "remove_confirm": "🗑 Buang kemahiran *{name}* dari {target}?\n\nSemua fail kemahiran ini akan dipadam selepas pembuangan. Anda boleh pasang semula jika diperlukan\\.",
     "install_cancelled": "❌ Pemasangan kemahiran dibatalkan",
     "secret_value_required": "⚠️ Nilai rahsia untuk {name} diperlukan dan tidak boleh kosong"

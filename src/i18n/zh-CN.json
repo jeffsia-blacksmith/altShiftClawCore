@@ -85,6 +85,8 @@
     "removing": "⏳ 移除中...",
     "installing_progress": "⏳ 技能 *{name}* 正在安装到 {target}，完成后会通知你",
     "removing_progress": "⏳ 技能 *{name}* 正在从 {target} 移除，完成后会通知你",
+    "install_dispatch_failed": "❌ 无法触发技能 *{name}* 安装。错误：{error}",
+    "remove_dispatch_failed": "❌ 无法触发技能 *{name}* 移除。错误：{error}",
     "remove_confirm": "🗑 确定要从 {target} 移除技能「*{name}*」吗？\n\n移除后该技能的所有文件将被删除，如需要可重新安装。",
     "install_cancelled": "❌ 已取消技能安装",
     "secret_value_required": "⚠️ 技能 {name} 的环境变量值不能为空，请重新输入"
